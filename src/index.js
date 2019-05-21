@@ -1,3 +1,4 @@
+const process = require('process');
 const spawn = require('child_process').spawn;
 const Koa = require('koa');
 const Router = require('koa-router');
@@ -14,6 +15,16 @@ router.get('/getAlignmentHeader', (ctx, next) => {
   ctx.body = child.stdout;
 
   console.log(JSON.stringify(ctx.query, null, 2));
+});
+
+router.get('/getAlignment', (ctx, next) => {
+  const alignmentUrl = decodeURIComponent(ctx.query.alignmentUrl);
+
+  const child = spawn('samtools', ['view', alignmentUrl, '18']);
+
+  child.stderr.pipe(process.stderr);
+
+  ctx.body = child.stdout;
 });
 
 app
