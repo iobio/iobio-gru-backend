@@ -19,16 +19,21 @@ function run(command, args) {
 class RPCServer {
   constructor(config) {
 
+    this._config = config;
     this._app = new Koa();
     this._router = new Router();
 
     for (const methodName in config) {
       this._router.get('/' + methodName, (ctx, next) => {
 
-        const pipeline = config[methodName].pipeline(ctx.query);
+        console.log(JSON.stringify(ctx.query, null, 2));
+
+        // TODO: error handling for invalid params
+        const params = this._parseParams(config[methodName], ctx.query);
+        console.log(params);
+        const pipeline = config[methodName].pipeline(params);
         const command = pipeline[0];
         const child = run(command[0], command.slice(1));
-        console.log(JSON.stringify(ctx.query, null, 2));
 
         if (config[methodName].returnStream === false) {
           // TODO: do something different here?
@@ -49,9 +54,32 @@ class RPCServer {
       .use(this._router.allowedMethods())
       .listen(port);
   }
+
+  _parseParams(method, queryParams) {
+    const params = {};
+
+    for (const key in method.params) {
+      const type = method.params[key];
+
+      switch (type) {
+        case 'URL':
+          params[key] = decodeURIComponent(queryParams[key]);
+          break;
+        case 'String':
+          params[key] = queryParams[key];
+          break;
+        default:
+          throw new Error("Invalid type: " + type);
+          break;
+      }
+    }
+
+    return params;
+  }
 }
 
 const rpcConfig = {
+
   getAlignmentHeader: {
     params: {
       url: 'URL',
@@ -63,16 +91,19 @@ const rpcConfig = {
     },
     returnStream: false,
   },
+
   getAlignment: {
     params: {
       url: 'URL',
+      chr: 'String',
     },
     pipeline: (params) => {
       return [
-        ['samtools', 'view', params.url, '18'],
+        ['samtools', 'view', params.url, params.chr],
       ];
     },
   },
+
 };
 
 
