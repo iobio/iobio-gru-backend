@@ -78,34 +78,6 @@ class RPCServer {
   }
 }
 
-const rpcConfig = {
-
-  getAlignmentHeader: {
-    params: {
-      url: 'URL',
-    },
-    pipeline: (params) => {
-      return [
-        ['samtools', 'view', '-H', params.url],
-      ];
-    },
-    returnStream: false,
-  },
-
-  getAlignment: {
-    params: {
-      url: 'URL',
-      chr: 'String',
-    },
-    pipeline: (params) => {
-      return [
-        ['samtools', 'view', params.url, params.chr],
-      ];
-    },
-  },
-
+module.exports = {
+  RPCServer,
 };
-
-
-const server = new RPCServer(rpcConfig);
-server.start(9001);
