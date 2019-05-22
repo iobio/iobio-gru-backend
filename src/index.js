@@ -7,10 +7,19 @@ const cors = require('@koa/cors');
 const app = new Koa();
 const router = new Router();
 
-router.get('/getAlignmentHeader', (ctx, next) => {
-  const alignmentUrl = decodeURIComponent(ctx.query.alignmentUrl);
+const aliases = {
+  'samtools': 'anderspitman/samtools',
+};
 
-  const child = spawn('samtools', ['view', '-H', alignmentUrl]);
+function run(command, args) {
+  const child = spawn('docker', ['run', '--rm', aliases[command]].concat(args));
+  return child;
+}
+
+router.get('/getAlignmentHeader', (ctx, next) => {
+  const url = decodeURIComponent(ctx.query.url);
+
+  const child = run('samtools', ['view', '-H', url]);
 
   ctx.body = child.stdout;
 
@@ -18,9 +27,9 @@ router.get('/getAlignmentHeader', (ctx, next) => {
 });
 
 router.get('/getAlignment', (ctx, next) => {
-  const alignmentUrl = decodeURIComponent(ctx.query.alignmentUrl);
+  const url = decodeURIComponent(ctx.query.url);
 
-  const child = spawn('samtools', ['view', alignmentUrl, '18']);
+  const child = run('samtools', ['view', url, '18']);
 
   child.stderr.pipe(process.stderr);
 
