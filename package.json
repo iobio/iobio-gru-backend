@@ -1,5 +1,5 @@
 {
-  "name": "gene-backend",
+  "name": "iobio-backend",
   "version": "0.1.0",
   "description": "",
   "main": "./src/index.js",
