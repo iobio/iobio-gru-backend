@@ -4,40 +4,77 @@ const Koa = require('koa');
 const Router = require('koa-router');
 const cors = require('@koa/cors');
 
-const app = new Koa();
-const router = new Router();
 
-const aliases = {
-  'samtools': 'anderspitman/samtools',
+const COMMANDS = {
+  'samtools': {
+    dockerImage: 'anderspitman/samtools',
+  },
 };
 
 function run(command, args) {
-  const child = spawn('docker', ['run', '--rm', aliases[command]].concat(args));
+  const child = spawn('docker', ['run', '--rm', COMMANDS[command].dockerImage].concat(args));
   return child;
 }
 
-router.get('/getAlignmentHeader', (ctx, next) => {
-  const url = decodeURIComponent(ctx.query.url);
+class RPCServer {
+  constructor(config) {
 
-  const child = run('samtools', ['view', '-H', url]);
+    this._app = new Koa();
+    this._router = new Router();
 
-  ctx.body = child.stdout;
+    for (const methodName in config) {
+      this._router.get('/' + methodName, (ctx, next) => {
 
-  console.log(JSON.stringify(ctx.query, null, 2));
-});
+        const pipeline = config[methodName].pipeline(ctx.query);
+        const command = pipeline[0];
+        const child = run(command[0], command.slice(1));
+        console.log(JSON.stringify(ctx.query, null, 2));
 
-router.get('/getAlignment', (ctx, next) => {
-  const url = decodeURIComponent(ctx.query.url);
+        if (config[methodName].returnStream === false) {
+          // TODO: do something different here?
+          ctx.body = child.stdout;
+        }
+        else {
+          ctx.body = child.stdout;
+        }
+      });
+    }
 
-  const child = run('samtools', ['view', url, '18']);
+  }
 
-  child.stderr.pipe(process.stderr);
+  start(port) {
+    this._app
+      .use(cors())
+      .use(this._router.routes())
+      .use(this._router.allowedMethods())
+      .listen(port);
+  }
+}
 
-  ctx.body = child.stdout;
-});
+const rpcConfig = {
+  getAlignmentHeader: {
+    params: {
+      url: 'URL',
+    },
+    pipeline: (params) => {
+      return [
+        ['samtools', 'view', '-H', params.url],
+      ];
+    },
+    returnStream: false,
+  },
+  getAlignment: {
+    params: {
+      url: 'URL',
+    },
+    pipeline: (params) => {
+      return [
+        ['samtools', 'view', params.url, '18'],
+      ];
+    },
+  },
+};
 
-app
-  .use(cors())
-  .use(router.routes())
-  .use(router.allowedMethods())
-  .listen(9001);
+
+const server = new RPCServer(rpcConfig);
+server.start(9001);
