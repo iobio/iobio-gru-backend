@@ -1,18 +1,12 @@
-const process = require('process');
 const spawn = require('child_process').spawn;
 const Koa = require('koa');
 const Router = require('koa-router');
 const cors = require('@koa/cors');
 
 
-const COMMANDS = {
-  'samtools': {
-    dockerImage: 'anderspitman/samtools',
-  },
-};
-
-function run(command, args) {
-  const child = spawn('docker', ['run', '--rm', COMMANDS[command].dockerImage].concat(args));
+function run(tool, args) {
+  const toolPath = './tools/' + tool;
+  const child = spawn(toolPath, args);
   return child;
 }
 
