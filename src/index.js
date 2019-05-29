@@ -20,22 +20,26 @@ class RPCServer {
     for (const methodName in config) {
       this._router.get('/' + methodName, (ctx, next) => {
 
-        console.log(JSON.stringify(ctx.query, null, 2));
-
         // TODO: error handling for invalid params
         const params = this._parseParams(config[methodName], ctx.query);
-        console.log(params);
         const pipeline = config[methodName].pipeline(params);
-        const command = pipeline[0];
-        const child = run(command[0], command.slice(1));
 
-        if (config[methodName].returnStream === false) {
-          // TODO: do something different here?
-          ctx.body = child.stdout;
+        //const command = pipeline[0];
+
+        let prev;
+        let child;
+
+        for (const stage of pipeline) {
+          child = run(stage[0], stage.slice(1));
+
+          if (prev) {
+            prev.stdout.pipe(child.stdin);
+          }
+
+          prev = child;
         }
-        else {
-          ctx.body = child.stdout;
-        }
+
+        ctx.body = child.stdout;
       });
     }
 
