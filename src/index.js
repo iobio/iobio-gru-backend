@@ -101,7 +101,8 @@ class RPCServer {
         ctx.body = stream;
       }
       catch (e) {
-        ctx.throw(e);
+        ctx.status = 500;
+        ctx.body = e;
       }
     });
 
