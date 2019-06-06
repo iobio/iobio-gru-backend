@@ -1,3 +1,4 @@
+const fs = require('fs');
 const spawn = require('child_process').spawn;
 const Koa = require('koa');
 const Router = require('koa-router');
@@ -63,7 +64,16 @@ class RPCServer {
           const args = stage[1];
           const options = stage[2];
 
-          child = spawn('./tools/' + name, args);
+          const path = './tools/' + name;
+
+          try {
+            fs.accessSync(path, fs.constants.X_OK);  
+          }
+          catch (err) {
+            throw new Error("ERROR: Failed to run tool: " + name);
+          }
+
+          child = spawn(path, args);
 
           if (options && options.ignoreStderr !== true) {
             child.stderr.setEncoding('utf8');
@@ -104,7 +114,7 @@ class RPCServer {
       }
       catch (e) {
         ctx.status = 500;
-        ctx.body = e;
+        ctx.body = e.message;
       }
     });
 
