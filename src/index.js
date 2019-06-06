@@ -39,15 +39,15 @@ class RPCServer {
           }
         }
 
-        function onExit(e) {
+        function onExit(exitCode, command) {
           if (!aborted) {
             aborted = true;
 
             // TODO: if already started streaming, either send an HTTP
             // trailer here or switch to WebSockets so we can report the
             // error.
-            if (e !== 0) {
-              reject("ERROR: Process exited with code: " + e);
+            if (exitCode !== 0) {
+              reject(`ERROR: Process exited with code ${exitCode}: ${command}`);
             }
           }
         }
@@ -70,7 +70,9 @@ class RPCServer {
             child.stderr.on('data', onStderr);
           }
 
-          child.on('exit', onExit);
+          child.on('exit', (exitCode) => {
+            onExit(exitCode, JSON.stringify(stage));
+          });
 
           if (prev) {
             prev.stdout.pipe(child.stdin);
