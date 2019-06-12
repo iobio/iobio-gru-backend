@@ -20,29 +20,30 @@ async function run(path, args, options) {
   return new Promise((resolve, reject) => {
 
     //proc.stdout.setEncoding('utf8');
-    //proc.stderr.setEncoding('utf8');
+    proc.stderr.setEncoding('utf8');
+
+    const BUF_SIZE = 1024;
+    let buf = "";
 
     function onStdout(data) {
-      console.log("stdout");
-      //console.log(data);
-      settled = true;
 
-      proc.stdout.removeListener('data', onStdout);
-      proc.stderr.removeListener('data', onStderr);
-      proc.removeListener('exit', onExit);
+      console.log("DATA");
 
-      // put the data back so the caller will read it. Need to pause since
-      // we're currently streaming.
-      proc.stdout.pause();
-      proc.stdout.unshift(data);
+      buf += data;
 
-      resolve(proc);
+      if (buf.length > BUF_SIZE) {
+        proc.stdout.removeListener('data', onStdout);
+        proc.stdout.pause();
+        proc.stdout.unshift(buf);
+        buf = "";
+        resolve(proc);
+      }
     }
     proc.stdout.on('data', onStdout);
 
     function onStderr(data) {
-      //console.log("stderr");
-      //console.log(data);
+      console.log("stderr");
+      console.log(data);
       if (options && !options.ignoreStderr) {
         console.log("stderr");
         if (!settled) {
@@ -55,10 +56,17 @@ async function run(path, args, options) {
 
     function onExit(e) {
       console.log("exit");
+
       if (!settled) {
         settled = true;
 
         if (e === 0) {
+          // Just in case the overall length is less than BUF_SIZE, make sure
+          // it gets passed on.
+          if (buf.length > 0) {
+            proc.stdout.pause();
+            proc.stdout.unshift(buf);
+          }
           resolve(proc);
         }
         else {
