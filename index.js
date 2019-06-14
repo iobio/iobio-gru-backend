@@ -11,6 +11,10 @@ const app = new Koa();
 const router = new Router();
 
 
+router.get('/', async (ctx) => {
+  ctx.body = "<h1>I be healthful</h1>";
+});
+
 router.get('/alignmentHeader', async (ctx) => {
   await handle(ctx, 'alignmentHeader.sh', [ctx.query.url]);
 });
