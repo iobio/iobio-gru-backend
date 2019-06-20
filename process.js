@@ -11,7 +11,6 @@ async function run(path, args, options) {
   const proc = spawn(path, args);
 
   if (options && options.inStream) {
-    console.log("pipeit");
     options.inStream.pipe(proc.stdin);
   }
 
@@ -27,8 +26,6 @@ async function run(path, args, options) {
 
     function onStdout(data) {
 
-      console.log("DATA");
-
       buf += data;
 
       if (buf.length > BUF_SIZE) {
@@ -42,10 +39,7 @@ async function run(path, args, options) {
     proc.stdout.on('data', onStdout);
 
     function onStderr(data) {
-      console.log("stderr");
-      console.log(data);
       if (options && !options.ignoreStderr) {
-        console.log("stderr");
         if (!settled) {
           settled = true;
           reject(new Error(data));
@@ -55,7 +49,6 @@ async function run(path, args, options) {
     proc.stderr.on('data', onStderr);
 
     function onExit(e) {
-      console.log("exit");
 
       if (!settled) {
         settled = true;
