@@ -21,7 +21,7 @@ pushd bamstatsAlive
 # TODO: I'm sure there's a way to override just CFLAGS=-static without
 # resorting to a git patch, but I couldn't get it to work in 5 minutes so
 # gave up.
-git patch ../build/static_link.patch
+git apply ../build/static_link.patch
 export BAMTOOLS=../bamtools-${BAMTOOLS_VERSION}
 make
 popd
