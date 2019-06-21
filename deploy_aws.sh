@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Example usage:
+# SSH_KEY_FILE=iobioServers.cer ./deploy_aws.sh
+
 workers=$(./get_aws_addresses.py)
 
 for worker in ${workers}
