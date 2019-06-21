@@ -9,7 +9,7 @@ export PATH := ./tools:$(PATH)
 run: local_install
 	$(node) index.js
 
-local_install: node npm node_modules $(tools)
+local_install: node npm node_modules tool_bin $(tools)
 
 npm: node
 
@@ -19,8 +19,11 @@ node:
 	rm node-$(node_version)-linux-x64.tar.xz
 	mv node-$(node_version)-linux-x64 node
 
+tool_bin:
+	mkdir tool_bin
+
 tool_bin/%:
-	./download_tool.sh $*
+	tools/download_tool.sh $*
 
 node_modules:
 	$(npm) install
@@ -29,3 +32,4 @@ node_modules:
 clean:
 	rm -rf node
 	rm -rf node_modules
+	rm -rf tool_bin
