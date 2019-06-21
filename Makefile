@@ -1,7 +1,8 @@
 node_version = v10.16.0
 node = node/bin/node
 npm = node/bin/npm
-tools = tool_bin/baiReadDepther tool_bin/bamstatsAlive tool_bin/craiReadDepther tool_bin/curl tool_bin/samtools
+tool_names = baiReadDepther bamstatsAlive craiReadDepther curl samtools
+tools = $(patsubst %, tool_bin/%, $(tool_names))
 
 export PATH := ./tools:$(PATH)
 
