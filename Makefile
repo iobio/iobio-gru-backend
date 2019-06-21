@@ -7,7 +7,7 @@ tools = $(patsubst %, tool_bin/%, $(tool_names))
 export PATH := ./tools:$(PATH)
 
 run: local_install
-	$(node) index.js
+	$(node) src/index.js
 
 local_install: node npm node_modules tool_bin $(tools)
 
