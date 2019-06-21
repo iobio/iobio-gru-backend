@@ -40,7 +40,7 @@ router.get('/alignmentStatsStream', async (ctx) => {
 
 async function handle(ctx, scriptName, args) {
   try {
-    const scriptPath = path.join(__dirname, '/scripts', scriptName);
+    const scriptPath = path.join(__dirname, '../scripts', scriptName);
     const proc = await run(scriptPath, args);
     ctx.body = proc.stdout;
   }
