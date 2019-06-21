@@ -11,7 +11,7 @@ do
     
     echo Starting server
     ssh -i ${SSH_KEY_FILE} ubuntu@${worker} killall node
-    ssh -i ${SSH_KEY_FILE} ubuntu@${worker} 'cd iobio-backend; PATH=./tools:$PATH nohup node/bin/node index.js > log.out 2> log.err < /dev/null &'
+    ssh -i ${SSH_KEY_FILE} ubuntu@${worker} 'cd iobio-backend; PATH=./tool_bin:$PATH nohup node/bin/node index.js > log.out 2> log.err < /dev/null &'
     
     echo Done
 
