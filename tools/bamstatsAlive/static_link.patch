@@ -1,0 +1,10 @@
+diff --git a/Makefile b/Makefile
+index ccd59f5..bee0c86 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,4 +1,4 @@
+-CFLAGS=-std=c++11 -I$(BAMTOOLS)/src -I$(BAMTOOLS) -Ilib/jansson-2.8/src 
++CFLAGS=-static -std=c++11 -I$(BAMTOOLS)/src -I$(BAMTOOLS) -Ilib/jansson-2.8/src 
+ LDFLAGS=-L$(BAMTOOLS)/lib -L$(BAMTOOLS)/build/src/api -lbamtools -lz
+ 
+ .SUFFIXES: .cc
