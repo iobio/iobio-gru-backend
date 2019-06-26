@@ -9,6 +9,9 @@ export PATH := ./tools:$(PATH)
 run: local_install
 	$(node) src/index.js
 
+deploy_aws: local_install
+	./deploy_aws.sh
+
 local_install: node npm node_modules tool_bin $(tools)
 
 npm: node
