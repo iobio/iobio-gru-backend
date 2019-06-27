@@ -34,7 +34,7 @@ router.get('/alignmentStatsStream', async (ctx) => {
   const samtoolsRegions = regions.map(function(d) { return d.name+ ":"+ d.start + '-' + d.end;}).join(' ');
   const bamstatsRegions = JSON.stringify(regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
 
-  await handle(ctx, 'alignmentStatsStream.sh', [ctx.query.url, samtoolsRegions, bamstatsRegions]);
+  await handle(ctx, 'alignmentStatsStream.sh', [ctx.query.url, samtoolsRegions, ctx.query.indexUrl, bamstatsRegions]);
 });
 
 
