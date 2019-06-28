@@ -45,6 +45,10 @@ router.get('/variantHeader', async (ctx) => {
   await handle(ctx, 'variantHeader.sh', [ctx.query.url]);
 });
 
+router.get('/vcfReadDepth', async (ctx) => {
+  await handle(ctx, 'vcfReadDepth.sh', [ctx.query.url]);
+});
+
 
 async function handle(ctx, scriptName, args) {
   try {
