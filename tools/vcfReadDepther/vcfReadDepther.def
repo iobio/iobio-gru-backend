@@ -27,8 +27,8 @@ From: alpine:3.9
     cd ..
 
     rm -rf /build
-    #apk del build-base zlib-dev bzip2-dev xz-dev curl-dev git
-    apk add libbz2 xz libcurl
+    apk del build-base zlib-dev bzip2-dev xz-dev curl-dev git
+    apk add libstdc++ libbz2 xz libcurl
     rm -rf /var/cache/apk/*
 
 %runscript
