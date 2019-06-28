@@ -15,6 +15,8 @@ router.get('/', async (ctx) => {
   ctx.body = "<h1>I be healthful</h1>";
 });
 
+// bam.iobio endpoints
+//
 router.get('/alignmentHeader', async (ctx) => {
   await handle(ctx, 'alignmentHeader.sh', [ctx.query.url]);
 });
@@ -38,10 +40,16 @@ router.get('/alignmentStatsStream', async (ctx) => {
 });
 
 
+// gene.iobio endpoints
+router.get('/variantHeader', async (ctx) => {
+  await handle(ctx, 'variantHeader.sh', [ctx.query.url]);
+});
+
+
 async function handle(ctx, scriptName, args) {
   try {
     const scriptPath = path.join(__dirname, '../scripts', scriptName);
-    const proc = await run(scriptPath, args);
+    const proc = await run(scriptPath, args, {});
     ctx.body = proc.stdout;
   }
   catch (e) {
