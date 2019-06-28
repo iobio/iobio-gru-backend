@@ -1,0 +1,33 @@
+Bootstrap: library
+From: alpine:3.9
+
+%files
+    tbi_to_csi.c /build/tbi_to_csi.c
+    tabixHelper.sh /usr/bin/tabixHelper
+
+%post
+    export HTSLIB_VERSION=1.9
+    apk update
+    apk add build-base bash curl curl-dev bzip2-dev xz-dev xz-libs
+    cd /build
+    curl -Ls https://github.com/samtools/htslib/releases/download/${HTSLIB_VERSION}/htslib-${HTSLIB_VERSION}.tar.bz2 | tar -xjf -
+    cd htslib-${HTSLIB_VERSION}
+    ./configure --enable-libcurl
+    make -j4
+    LIBS='-lcurl -lcrypto'
+    cp ../tbi_to_csi.c ./
+    gcc -g -O2 -I. -pthread -o tbi_to_csi tbi_to_csi.c libhts.a -lcurl -lcrypto -lz -lm -llzma -lbz2
+    cp tabix /usr/bin/
+    cp tbi_to_csi /usr/bin/
+    strip /usr/bin/tabix
+    strip /usr/bin/tbi_to_csi
+
+    cd ..
+    rm -rf htslib-${HTSLIB_VERSION}
+    apk del build-base zlib-dev bzip2-dev xz-dev curl-dev
+    apk add libbz2 xz libcurl
+    rm -rf /var/cache/apk/*
+
+
+%runscript
+    /usr/bin/tabixHelper $@
