@@ -49,11 +49,34 @@ router.get('/vcfReadDepth', async (ctx) => {
   await handle(ctx, 'vcfReadDepth.sh', [ctx.query.url]);
 });
 
+router.get('/alignmentCoverage', async (ctx) => {
 
-async function handle(ctx, scriptName, args) {
+  const url = ctx.query.url;
+  const indexUrl = ctx.query.indexUrl;
+  const samtoolsRegion = JSON.parse(ctx.query.samtoolsRegion);
+  const maxPoints = ctx.query.maxPoints;
+  const coverageRegions = JSON.parse(ctx.query.coverageRegions);
+
+  const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
+  const spanningRegionArg = "-r " + samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
+
+  const coverageRegionsArg = coverageRegions.length === 0 ? '' :
+    "-p " + coverageRegions
+      .filter(d => d.name && d.start && d.end)
+      .map(d => d.name + ":" + d.start + ':' + d.end)
+      .join(' ');
+
+  const maxPointsArg = "-m " + maxPoints;
+
+  const args = [url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg, coverageRegionsArg];
+
+  await handle(ctx, 'alignmentCoverage.sh', args, { ignoreStderr: true });
+});
+
+async function handle(ctx, scriptName, args, options) {
   try {
     const scriptPath = path.join(__dirname, '../scripts', scriptName);
-    const proc = await run(scriptPath, args, {});
+    const proc = await run(scriptPath, args, options ? options : {});
     ctx.body = proc.stdout;
   }
   catch (e) {

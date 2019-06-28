@@ -1,0 +1,15 @@
+Bootstrap: library
+From: alpine:3.9
+
+%files
+    summarize_coverage.py /
+    coverage.sh /
+
+%post
+    apk update
+    apk add bash python3
+
+    rm -rf /var/cache/apk/*
+
+%runscript
+    /coverage.sh $@
