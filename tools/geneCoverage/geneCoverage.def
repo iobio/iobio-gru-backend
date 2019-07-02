@@ -1,0 +1,36 @@
+Bootstrap: library
+From: alpine:3.9
+
+%files
+    geneCoverageHelper.sh /usr/bin/geneCoverageHelper
+
+%post
+
+    BAMTOOLS_VERSION=2.5.1
+
+    apk update
+    apk add build-base bash wget git cmake zlib-dev
+
+    wget -q https://github.com/pezmaster31/bamtools/archive/v${BAMTOOLS_VERSION}.tar.gz
+    tar xzf v${BAMTOOLS_VERSION}.tar.gz
+
+    cd bamtools-${BAMTOOLS_VERSION}
+    mkdir build
+    cd build
+    cmake -DEnableNodeJS=true ..
+    make -j4
+    make install
+
+    cd /
+    git clone https://github.com/AlistairNWard/gene_coverage.git
+    cd gene_coverage/src
+    g++ -I/bamtools-${BAMTOOLS_VERSION}/src -o /usr/bin/genecoverage *.cpp -lbamtools -lz -lm
+    strip /usr/bin/genecoverage
+
+    apk del build-base wget git cmake zlib-dev
+    apk add libstdc++
+    rm -rf /bamtools-${BAMTOOLS_VERSION}
+    rm -rf /var/cache/apk/*
+
+%runscript
+    /usr/bin/genecoverage $@
