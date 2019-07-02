@@ -21,20 +21,21 @@ async function run(path, args, options) {
     //proc.stdout.setEncoding('utf8');
     proc.stderr.setEncoding('utf8');
 
-    const BUF_SIZE = 1024;
-    let buf = "";
+    //const BUF_SIZE = 1024;
+    //let buf = "";
 
     function onStdout(data) {
 
-      buf += data;
+      //buf += data;
 
-      if (buf.length > BUF_SIZE) {
+      //if (buf.length > BUF_SIZE) {
         proc.stdout.removeListener('data', onStdout);
         proc.stdout.pause();
-        proc.stdout.unshift(buf);
-        buf = "";
+        proc.stdout.unshift(data);
+        //proc.stdout.unshift(buf);
+        //buf = "";
         resolve(proc);
-      }
+      //}
     }
     proc.stdout.on('data', onStdout);
 
@@ -56,10 +57,11 @@ async function run(path, args, options) {
         if (e === 0) {
           // Just in case the overall length is less than BUF_SIZE, make sure
           // it gets passed on.
-          if (buf.length > 0) {
-            proc.stdout.pause();
-            proc.stdout.unshift(buf);
-          }
+          //if (buf.length > 0) {
+          //  proc.stdout.pause();
+          //  console.log("unshift");
+          //  proc.stdout.unshift(buf);
+          //}
           resolve(proc);
         }
         else {
