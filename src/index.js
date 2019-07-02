@@ -73,6 +73,28 @@ router.get('/alignmentCoverage', async (ctx) => {
   await handle(ctx, 'alignmentCoverage.sh', args, { ignoreStderr: true });
 });
 
+router.get('/geneCoverage', async (ctx) => {
+
+  const url = ctx.query.url;
+  const indexUrl = ctx.query.indexUrl;
+  const refName = ctx.query.refName;
+  const geneName = ctx.query.geneName;
+  const regionStart = ctx.query.regionStart;
+  const regionEnd = ctx.query.regionEnd;
+  const regions = JSON.parse(ctx.query.regions);
+
+  let regionStr = "#" + geneName + "\n";
+  regions.forEach(function(region) {
+    regionStr += refName + ":" + region.start + "-" + region.end + "\n";
+  });
+
+  const samtoolsRegionArg = refName + ':' + regionStart + '-' + regionEnd;
+
+  const args = [url, indexUrl, samtoolsRegionArg, regionStr];
+
+  await handle(ctx, 'geneCoverage.sh', args);
+});
+
 async function handle(ctx, scriptName, args, options) {
   try {
     const scriptPath = path.join(__dirname, '../scripts', scriptName);
