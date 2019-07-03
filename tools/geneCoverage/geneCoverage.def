@@ -1,9 +1,6 @@
 Bootstrap: library
 From: alpine:3.9
 
-%files
-    geneCoverageHelper.sh /usr/bin/geneCoverageHelper
-
 %post
 
     BAMTOOLS_VERSION=2.5.1
