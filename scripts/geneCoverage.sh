@@ -5,24 +5,22 @@ index_url=$2
 samtools_region=$3
 region_file_str=$4
 
-# TODO: should probably re-enable this, but it was going into an endless loop
-#while true; do
-#    region_file_path=/tmp/iobio_region_file_$(cat /proc/sys/kernel/random/uuid).txt
-#    echo ${region_file_path}
-#    if [ ! -f ${region_file_path} ]; then
-#        break;
-#    fi
-#done
+while true; do
+    tmp_dir=/tmp/iobio_gene_coverage_$(cat /proc/sys/kernel/random/uuid)
+    if [ ! -d $tmp_dir ]; then
+        break;
+    fi
+done
 
-region_file_path=/tmp/iobio_region_file_$(cat /proc/sys/kernel/random/uuid)
-# TODO: it doesn't seem to work unless I have the .txt on the end...
-printf "$region_file_str" > ${region_file_path}.txt
+mkdir $tmp_dir
 
-samtools_od view -b $url $samtools_region $index_url > ${region_file_path}.aln
+# TODO: it doesn't seem to work unless I have a file extension on the end...
+printf "$region_file_str" > $tmp_dir/region_file.txt
 
-samtools index ${region_file_path}.aln
+samtools_od view -b $url $samtools_region $index_url > $tmp_dir/alignment.aln
 
-#geneCoverage -b <(samtools index $url $samtools_region $index_url) -r $region_file_path.txt
-geneCoverage -b $region_file_path.aln -r $region_file_path.txt
+samtools index $tmp_dir/alignment.aln
 
-rm -rf $region_file_path
+geneCoverage -b $tmp_dir/alignment.aln -r $tmp_dir/region_file.txt
+
+rm -rf $tmp_dir
