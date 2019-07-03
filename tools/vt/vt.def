@@ -1,0 +1,23 @@
+Bootstrap: library
+From: alpine:3.9
+
+%post
+
+    apk update
+    apk add build-base git zlib-dev bzip2-dev xz-dev xz-libs curl-dev
+
+    git clone https://github.com/atks/vt
+    cd vt
+    git checkout db574945014233a797eeafedad6e5f7e1ad2297a
+    make -j8
+    cp vt /usr/bin/
+    strip /usr/bin/vt
+
+    cd ..
+    rm -rf vt
+    apk del build-base zlib-dev bzip2-dev git curl-dev
+    apk add libstdc++ libbz2 libcurl
+    rm -rf /var/cache/apk/*
+
+%runscript
+    /usr/bin/vt $@
