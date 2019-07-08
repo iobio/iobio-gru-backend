@@ -10,11 +10,11 @@ do
     echo $worker
 
     echo Copying files to ${worker}
-    rsync -av -e "ssh -i ${SSH_KEY_FILE} -oStrictHostKeyChecking=no" --exclude=".git" --delete ./* ubuntu@${worker}:iobio-backend
+    rsync -av -e "ssh -i ${SSH_KEY_FILE} -oStrictHostKeyChecking=no" --exclude=".git" --delete ./* ubuntu@${worker}:/mnt/data/
     
     echo Starting server
     ssh -i ${SSH_KEY_FILE} ubuntu@${worker} killall node
-    ssh -i ${SSH_KEY_FILE} ubuntu@${worker} 'cd iobio-backend; PATH=./tool_bin:$PATH nohup node/bin/node src/index.js > log.out 2> log.err < /dev/null &'
+    ssh -i ${SSH_KEY_FILE} ubuntu@${worker} 'cd /mnt/data; PATH=./tool_bin:$PATH nohup node/bin/node src/index.js > log.out 2> log.err < /dev/null &'
     
     echo Done
 
