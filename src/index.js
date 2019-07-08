@@ -95,6 +95,29 @@ router.get('/geneCoverage', async (ctx) => {
   await handle(ctx, 'geneCoverage.sh', args);
 });
 
+router.get('/normalizeVariants', async (ctx) => {
+
+  const vcfUrl = ctx.query.vcfUrl;
+  const tbiUrl = ctx.query.tbiUrl;
+  const refName = ctx.query.refName;
+  const regions = JSON.parse(ctx.query.regions);
+  const contigStr = decodeURIComponent(ctx.query.contigStr);
+  const refFastaFile = decodeURIComponent(ctx.query.refFastaFile);
+
+  let regionParm = "";
+  regions.forEach(function(region) {
+    if (regionParm.length > 0) {
+      regionParm += " ";
+    }
+    regionParm += region.refName + ":" + region.start + "-" + region.end;
+  });
+
+  const args = [vcfUrl, tbiUrl, refName, regionParm, contigStr, refFastaFile];
+
+  await handle(ctx, 'normalizeVariants.sh', args);
+});
+
+
 async function handle(ctx, scriptName, args, options) {
   try {
     const scriptPath = path.join(__dirname, '../scripts', scriptName);
