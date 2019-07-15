@@ -40,6 +40,7 @@ async function run(path, args, options) {
     proc.stdout.on('data', onStdout);
 
     function onStderr(data) {
+      console.error(data);
       if (options && !options.ignoreStderr) {
         if (!settled) {
           settled = true;

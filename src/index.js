@@ -117,6 +117,27 @@ router.get('/normalizeVariants', async (ctx) => {
   await handle(ctx, 'normalizeVariants.sh', args);
 });
 
+router.get('/annotateVariants', async (ctx) => {
+
+  console.log(ctx.query);
+  const q = ctx.query;
+
+  const contigStr = genContigFileStr(JSON.parse(q.refNames));
+  const regionStr = genRegionStr(JSON.parse(q.regions));
+  const vcfSampleNamesStr = JSON.parse(q.vcfSampleNames).join("\n");
+  const refFastaFile = './data/' + q.refFastaFile;
+
+  const args = [
+    q.vcfUrl, q.tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+    refFastaFile, q.genomeBuildName, q.vepREVELFile, q.vepAF, q.isRefSeq,
+    q.hgvsNotation, q.getRsId,
+  ];
+
+  console.log(args);
+  //await handle(ctx, 'annotateVariants.sh', args);
+  await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
+});
+
 
 async function handle(ctx, scriptName, args, options) {
   try {
@@ -129,6 +150,22 @@ async function handle(ctx, scriptName, args, options) {
     ctx.status = 500;
     ctx.body = e;
   }
+}
+
+function genContigFileStr(refNames) {
+  let contigStr = "";
+  for (const ref of refNames) {
+    contigStr += "##contig=<ID=" + ref + ">\n";
+  }
+  return contigStr;
+}
+
+function genRegionStr(regions) {
+  let regionStr = "";
+  for (const region of regions) {
+    regionStr += region.name + ':' + region.start + '-' + region.end + " ";
+  }
+  return regionStr;
 }
 
 app

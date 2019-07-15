@@ -165,6 +165,6 @@ RUN echo >> $OPT/.profile && \
     ./INSTALL.pl -a a -l && rm -rf t travisci .travis.yml
 
 ENTRYPOINT [ "vep", "-i", "STDIN", "--format", "vcf", "--cache", \
-  "--dir_cache", "vep-cache", "--offline", "--vcf", "-o", "STDOUT", \
+  "--dir_cache", "./data/vep-cache", "--offline", "--vcf", "-o", "STDOUT", \
   "--no_stats", "--no_escape", "--sift", "b", "--polyphen", "b", \
   "--regulatory", "--fork", "4" ]

@@ -3,6 +3,18 @@
 # Example usage:
 # SSH_KEY_FILE=iobioServers.cer ./deploy_aws.sh
 
+SSH_OPTIONS="-oStrictHostKeyChecking=no"
+
+if [ -n "${SSH_KEY_FILE}" ]
+then
+    SSH_OPTIONS="${SSH_OPTIONS} -i ${SSH_KEY_FILE}"
+    echo $SSH_OPTIONS
+fi
+
+echo "SSH options:"
+echo ${SSH_OPTIONS}
+
+
 workers=$(./get_aws_addresses.py)
 
 for worker in ${workers}
@@ -10,12 +22,15 @@ do
     echo $worker
 
     echo Copying files to ${worker}
-    rsync -av -e "ssh -i ${SSH_KEY_FILE} -oStrictHostKeyChecking=no" --exclude=".git" --delete ./* ubuntu@${worker}:/mnt/data/
+    rsync -av -e "ssh ${SSH_OPTIONS}" \
+        --exclude=".git" --exclude="tools" --exclude="data" --exclude="vep-cache" \
+        --delete ./* ubuntu@${worker}:iobio-backend
     
     echo Starting server
-    ssh -i ${SSH_KEY_FILE} ubuntu@${worker} killall node
-    ssh -i ${SSH_KEY_FILE} ubuntu@${worker} 'cd /mnt/data; PATH=./tool_bin:$PATH nohup node/bin/node src/index.js > log.out 2> log.err < /dev/null &'
-    
-    echo Done
+    ssh $SSH_OPTIONS ubuntu@$worker "killall node"
+    ssh $SSH_OPTIONS ubuntu@$worker 'cd iobio-backend; PATH=./tool_bin:$PATH nohup node/bin/node src/index.js > log.out 2> log.err < /dev/null &'
+    #ssh $SSH_OPTIONS ubuntu@$worker "ln -s -f /mnt/data/data iobio-backend/"
+    #ssh $SSH_OPTIONS ubuntu@$worker "ln -s -f /mnt/data/vep-cache iobio-backend/"
 
+    printf "Done\n\n"
 done
