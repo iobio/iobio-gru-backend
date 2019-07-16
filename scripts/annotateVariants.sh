@@ -22,13 +22,13 @@ fi
 subsetStage=cat
 
 if [ "$vcfSampleNamesStr" ]; then
-    samplesFile=/tmp/iobio_annotateVariants_samplesFile_$(cat /proc/sys/kernel/random/uuid)
+    samplesFile=$(mktemp)
     echo -e "$vcfSampleNamesStr" > $samplesFile
 
     subsetStage="vt subset -s $samplesFile -"
 fi
 
-contigFile=/tmp/iobio_annotateVariants_contigFile_$(cat /proc/sys/kernel/random/uuid)
+contigFile=$(mktemp)
 echo -e "$contigStr" > $contigFile
 
 
@@ -38,26 +38,26 @@ if [ "$vepREVELFile" ]; then
     vepArgs="$vepArgs --plugin REVEL,$vepREVELFile"
 fi
 
-if [ "$vepAF" ]; then
+if [ "$vepAF" == "true" ]; then
     vepArgs="$vepArgs --af --af_gnomad --af_esp --af_1kg --max_af"
 fi
 
-if [ "$isRefSeq" ]; then
+if [ "$isRefSeq" == "true" ]; then
     vepArgs="$vepArgs --refseq"
 fi
 
-if [ "$hgvsNotation" ]; then
+if [ "$hgvsNotation" == "true" ]; then
     vepArgs="$vepArgs --hgvs"
 fi
 
-if [ "$hgvsNotation" ]; then
+if [ "$hgvsNotation" == "true" ]; then
     vepArgs="$vepArgs --check_existing"
 fi
 
 # TODO: compare globalGetRsId to what gene is doing. It's returning a
 # function. Not sure what the semantics should be.
 #if [ "$hgvsNotation" ] || [ "$globalGetRsId" ] || [ "$isRefSeq" ]; then
-if [ "$hgvsNotation" ] || [ "$isRefSeq" ]; then
+if [ "$hgvsNotation" == "true" ] || [ "$isRefSeq" == "true" ]; then
     vepArgs="$vepArgs --fasta $refFastaFile"
 fi
 
