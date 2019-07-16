@@ -102,7 +102,7 @@ router.get('/normalizeVariants', async (ctx) => {
   const refName = ctx.query.refName;
   const regions = JSON.parse(ctx.query.regions);
   const contigStr = decodeURIComponent(ctx.query.contigStr);
-  const refFastaFile = decodeURIComponent(ctx.query.refFastaFile);
+  const refFastaFile = './data/' + decodeURIComponent(ctx.query.refFastaFile);
 
   let regionParm = "";
   regions.forEach(function(region) {
@@ -125,11 +125,12 @@ router.get('/annotateVariants', async (ctx) => {
   const contigStr = genContigFileStr(JSON.parse(q.refNames));
   const regionStr = genRegionStr(JSON.parse(q.regions));
   const vcfSampleNamesStr = JSON.parse(q.vcfSampleNames).join("\n");
+  const vepREVELFile = './data/' + q.vepREVELFile;
   const refFastaFile = './data/' + q.refFastaFile;
 
   const args = [
     q.vcfUrl, q.tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-    refFastaFile, q.genomeBuildName, q.vepREVELFile, q.vepAF, q.isRefSeq,
+    refFastaFile, q.genomeBuildName, vepREVELFile, q.vepAF, q.isRefSeq,
     q.hgvsNotation, q.getRsId,
   ];
 
