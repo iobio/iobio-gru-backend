@@ -40,7 +40,12 @@ router.get('/alignmentStatsStream', async (ctx) => {
 });
 
 
+
+
+
+
 // gene.iobio endpoints
+//
 router.get('/variantHeader', async (ctx) => {
   await handle(ctx, 'variantHeader.sh', [ctx.query.url]);
 });
@@ -138,6 +143,24 @@ router.get('/annotateVariants', async (ctx) => {
   //await handle(ctx, 'annotateVariants.sh', args);
   await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
+
+
+
+
+
+
+// genepanel endpoints
+//
+router.get('/clinphen', async (ctx) => {
+
+  const args = [ctx.query.notes];
+
+  await handle(ctx, 'clinphen.sh', args);
+});
+
+
+
+
 
 
 async function handle(ctx, scriptName, args, options) {

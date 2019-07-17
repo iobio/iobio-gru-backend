@@ -1,0 +1,16 @@
+Bootstrap: library
+From: alpine:3.9
+
+%post
+
+    apk update
+    #apk add build-base git zlib-dev bzip2-dev xz-dev xz-libs curl-dev
+    apk add python3 python3-dev build-base
+
+    pip3 install clinphen
+
+    apk del python3-dev build-base
+    rm -rf /var/cache/apk/*
+
+%runscript
+    clinphen $@
