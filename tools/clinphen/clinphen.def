@@ -9,6 +9,8 @@ From: alpine:3.9
 
     pip3 install clinphen
 
+    python3 -m nltk.downloader -d /usr/share/nltk_data wordnet
+
     apk del python3-dev build-base
     rm -rf /var/cache/apk/*
 
