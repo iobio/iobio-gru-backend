@@ -7,6 +7,8 @@ while true; do
     fi
 done
 
+DIR=$PWD
+
 mkdir -p /tmp/$uuid
 cd /tmp/$uuid
 
@@ -58,8 +60,13 @@ elif [[ $last_arg == http*bai* ]]; then
 else
     samtools_args=$@
 fi
+
+export REF_PATH=$DIR/ref_cache/%2s/%2s/%s:http://www.ebi.ac.uk/ena/cram/md5/%s
+export REF_CACHE=$DIR/ref_cache/%2s/%2s/%s
+
 samtools $samtools_args
 samtoolsRetCode=$?
+
 cd ..
 rm -rf /tmp/$uuid
 exit $samtoolsRetCode 
