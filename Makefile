@@ -29,7 +29,7 @@ tool_bin/%:
 	tools/download_tool.sh $*
 
 node_modules:
-	$(npm) install
+	$(node) $(npm) install
 
 .PHONY: clean
 clean:
