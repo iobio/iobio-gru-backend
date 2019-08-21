@@ -1,6 +1,7 @@
 const Koa = require('koa');
 const Router = require('koa-router');
 const cors = require('@koa/cors');
+const logger = require('koa-logger');
 const path = require('path');
 const { run } = require('./process.js');
 const spawn = require('child_process').spawn;
@@ -193,6 +194,7 @@ function genRegionStr(regions) {
 }
 
 app
+  .use(logger())
   .use(cors())
   .use(router.routes())
   .use(router.allowedMethods())
