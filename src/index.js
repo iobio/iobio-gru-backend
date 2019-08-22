@@ -48,7 +48,7 @@ router.get('/alignmentStatsStream', async (ctx) => {
 // gene.iobio endpoints
 //
 router.get('/variantHeader', async (ctx) => {
-  await handle(ctx, 'variantHeader.sh', [ctx.query.url]);
+  await handle(ctx, 'variantHeader.sh', [ctx.query.url, ctx.query.indexUrl]);
 });
 
 router.get('/vcfReadDepth', async (ctx) => {
