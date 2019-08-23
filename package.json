@@ -11,13 +11,14 @@
   "license": "ISC",
   "devDependencies": {
     "chai": "^4.2.0",
-    "koa-logger": "^3.2.1",
     "mocha": "^6.1.4",
     "nodemon": "^1.19.0"
   },
   "dependencies": {
     "@koa/cors": "^2.2.3",
     "koa": "^2.7.0",
+    "koa-bodyparser": "^4.2.1",
+    "koa-logger": "^3.2.1",
     "koa-router": "^7.4.0"
   }
 }

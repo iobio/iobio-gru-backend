@@ -2,6 +2,7 @@ const Koa = require('koa');
 const Router = require('koa-router');
 const cors = require('@koa/cors');
 const logger = require('koa-logger');
+const bodyParser = require('koa-bodyparser');
 const path = require('path');
 const { run } = require('./process.js');
 const spawn = require('child_process').spawn;
@@ -55,13 +56,15 @@ router.get('/vcfReadDepth', async (ctx) => {
   await handle(ctx, 'vcfReadDepth.sh', [ctx.query.url]);
 });
 
-router.get('/alignmentCoverage', async (ctx) => {
+router.post('/alignmentCoverage', async (ctx) => {
 
-  const url = ctx.query.url;
-  const indexUrl = ctx.query.indexUrl;
-  const samtoolsRegion = JSON.parse(ctx.query.samtoolsRegion);
-  const maxPoints = ctx.query.maxPoints;
-  const coverageRegions = JSON.parse(ctx.query.coverageRegions);
+  console.log(JSON.stringify(ctx.request.body, null, 2));
+
+  const url = ctx.request.body.url;
+  const indexUrl = ctx.request.body.indexUrl;
+  const samtoolsRegion = ctx.request.body.samtoolsRegion;
+  const maxPoints = ctx.request.body.maxPoints;
+  const coverageRegions = ctx.request.body.coverageRegions;
 
   const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
   const spanningRegionArg = "-r " + samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
@@ -196,6 +199,7 @@ function genRegionStr(regions) {
 app
   .use(logger())
   .use(cors())
+  .use(bodyParser())
   .use(router.routes())
   .use(router.allowedMethods())
   .listen(9001);
