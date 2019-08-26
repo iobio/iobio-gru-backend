@@ -35,7 +35,7 @@ echo -e "$contigStr" > $contigFile
 vepArgs="--assembly $genomeBuildName --format vcf --allele_number"
 
 if [ "$vepREVELFile" ]; then
-    vepArgs="$vepArgs --plugin REVEL,$vepREVELFile"
+    vepArgs="$vepArgs --dir_plugins ./data/vep-cache/Plugins --plugin REVEL,$vepREVELFile"
 fi
 
 if [ "$vepAF" == "true" ]; then
