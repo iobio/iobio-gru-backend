@@ -58,13 +58,14 @@ router.get('/vcfReadDepth', async (ctx) => {
 
 router.post('/alignmentCoverage', async (ctx) => {
 
-  console.log(JSON.stringify(ctx.request.body, null, 2));
+  const params = JSON.parse(ctx.request.body);
+  console.log(JSON.stringify(params, null, 2));
 
-  const url = ctx.request.body.url;
-  const indexUrl = ctx.request.body.indexUrl;
-  const samtoolsRegion = ctx.request.body.samtoolsRegion;
-  const maxPoints = ctx.request.body.maxPoints;
-  const coverageRegions = ctx.request.body.coverageRegions;
+  const url = params.url;
+  const indexUrl = params.indexUrl;
+  const samtoolsRegion = params.samtoolsRegion;
+  const maxPoints = params.maxPoints;
+  const coverageRegions = params.coverageRegions;
 
   const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
   const spanningRegionArg = "-r " + samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
@@ -201,7 +202,9 @@ app
   .use(cors({
     maxAge: 86400,
   }))
-  .use(bodyParser())
+  .use(bodyParser({
+    enableTypes: ['json', 'text'],
+  }))
   .use(router.routes())
   .use(router.allowedMethods())
   .listen(9001);
