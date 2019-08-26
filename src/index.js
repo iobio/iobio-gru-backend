@@ -198,7 +198,9 @@ function genRegionStr(regions) {
 
 app
   .use(logger())
-  .use(cors())
+  .use(cors({
+    maxAge: 86400,
+  }))
   .use(bodyParser())
   .use(router.routes())
   .use(router.allowedMethods())
