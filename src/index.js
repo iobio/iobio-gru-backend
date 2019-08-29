@@ -133,7 +133,7 @@ router.get('/annotateVariants', async (ctx) => {
   const q = ctx.query;
 
   const contigStr = genContigFileStr(JSON.parse(q.refNames));
-  const regionStr = genRegionStr(JSON.parse(q.regions));
+  const regionStr = genRegionsStr(JSON.parse(q.regions));
   const vcfSampleNamesStr = JSON.parse(q.vcfSampleNames).join("\n");
   const vepREVELFile = './data/' + q.vepREVELFile;
   const refFastaFile = './data/' + q.refFastaFile;
@@ -147,6 +147,27 @@ router.get('/annotateVariants', async (ctx) => {
   console.log(args);
   //await handle(ctx, 'annotateVariants.sh', args);
   await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
+});
+
+router.post('/freebayesJointCall', async (ctx) => {
+  console.log("freebayes");
+
+  const params = JSON.parse(ctx.request.body);
+  console.log(JSON.stringify(params, null, 2));
+
+  const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
+  const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
+  const region = genRegionStr(params.region);
+  const refFastaFile = './data/' + params.refFastaFile;
+
+  const args = [
+    alignments,
+    indices,
+    region,
+    refFastaFile,
+  ];
+
+  await handle(ctx, 'freebayesJointCall.sh', args, { ignoreStderr: true });
 });
 
 
@@ -189,7 +210,11 @@ function genContigFileStr(refNames) {
   return contigStr;
 }
 
-function genRegionStr(regions) {
+function genRegionStr(region) {
+  return region.refName + ':' + region.start + '-' + region.end;
+}
+
+function genRegionsStr(regions) {
   let regionStr = "";
   for (const region of regions) {
     regionStr += region.name + ':' + region.start + '-' + region.end + " ";
