@@ -158,13 +158,41 @@ router.post('/freebayesJointCall', async (ctx) => {
   const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
   const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
   const region = genRegionStr(params.region);
+  const vepREVELFile = './data/' + params.vepREVELFile;
   const refFastaFile = './data/' + params.refFastaFile;
+  const contigStr = genContigFileStr(params.refNames);
+
+
+  const fbArgs = params.fbArgs;
+  const freebayesArgs = [];
+  if (fbArgs) {
+    for (var key in fbArgs) {
+      var theArg = fbArgs[key];
+      if (theArg.hasOwnProperty('argName')) {
+        if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
+          if (theArg.value && theArg.value == true) {
+              freebayesArgs.push(theArg.argName);
+          }
+        } else {
+          if (theArg.value && theArg.value != '') {
+            freebayesArgs.push(theArg.argName);
+            freebayesArgs.push(theArg.value);
+          }
+        }
+
+      }
+    }
+  }
+
+  const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
+
+  console.log(freebayesArgs);
+  const extraArgs = freebayesArgs;
 
   const args = [
-    alignments,
-    indices,
-    region,
-    refFastaFile,
+    alignments, indices, region, refFastaFile, useSuggestedVariants,
+    params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
+    params.isRefSeq, extraArgs,
   ];
 
   await handle(ctx, 'freebayesJointCall.sh', args, { ignoreStderr: true });
