@@ -129,7 +129,6 @@ router.get('/normalizeVariants', async (ctx) => {
 
 router.get('/annotateVariants', async (ctx) => {
 
-  console.log(ctx.query);
   const q = ctx.query;
 
   const contigStr = genContigFileStr(JSON.parse(q.refNames));
@@ -144,7 +143,6 @@ router.get('/annotateVariants', async (ctx) => {
     q.hgvsNotation, q.getRsId,
   ];
 
-  console.log(args);
   //await handle(ctx, 'annotateVariants.sh', args);
   await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
