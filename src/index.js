@@ -150,7 +150,6 @@ router.get('/annotateVariants', async (ctx) => {
 });
 
 router.post('/freebayesJointCall', async (ctx) => {
-  console.log("freebayes");
 
   const params = JSON.parse(ctx.request.body);
   console.log(JSON.stringify(params, null, 2));
@@ -196,6 +195,32 @@ router.post('/freebayesJointCall', async (ctx) => {
   ];
 
   await handle(ctx, 'freebayesJointCall.sh', args, { ignoreStderr: true });
+});
+
+router.post('/clinvarCountsForGene', async (ctx) => {
+  const params = JSON.parse(ctx.request.body);
+  console.log(JSON.stringify(params, null, 2));
+
+  const region = genRegionStr(params.region);
+  const regions = params.regions;
+
+  let regionParts = "";
+  if (regions) {
+    regions.forEach(function(region) {
+      if (regionParts.length > 0) {
+        regionParts += ",";
+      }
+      regionParts += region.start + "-" + region.end;
+    })
+  }
+
+  const binLength = params.binLength ? params.binLength : '';
+
+  const args = [
+    params.clinvarUrl, region, binLength, regionParts,
+  ];
+
+  await handle(ctx, 'clinvarCountsForGene.sh', args);
 });
 
 
