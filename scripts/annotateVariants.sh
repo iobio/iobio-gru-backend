@@ -9,10 +9,11 @@ refFastaFile=$6
 genomeBuildName=$7
 vepREVELFile=$8
 vepAF=$9
-isRefSeq=${10}
-hgvsNotation=${11}
-getRsId=${12}
-#globalGetRsId=${13}
+vepPluginDir=${10}
+isRefSeq=${11}
+hgvsNotation=${12}
+getRsId=${13}
+#globalGetRsId=${14}
 
 if [ "$tbiUrl" == "null" ]; then
     tbiUrl=
@@ -35,7 +36,7 @@ echo -e "$contigStr" > $contigFile
 vepArgs="--assembly $genomeBuildName --format vcf --allele_number"
 
 if [ "$vepREVELFile" ]; then
-    vepArgs="$vepArgs --dir_plugins ./data/vep-cache/Plugins --plugin REVEL,$vepREVELFile"
+    vepArgs="$vepArgs --dir_plugins $vepPluginDir --plugin REVEL,$vepREVELFile"
 fi
 
 if [ "$vepAF" == "true" ]; then

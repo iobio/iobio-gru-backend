@@ -136,11 +136,12 @@ router.get('/annotateVariants', async (ctx) => {
   const vcfSampleNamesStr = JSON.parse(q.vcfSampleNames).join("\n");
   const vepREVELFile = './data/' + q.vepREVELFile;
   const refFastaFile = './data/' + q.refFastaFile;
+  const vepPluginDir = './data/vep-cache/Plugins';
 
   const args = [
     q.vcfUrl, q.tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-    refFastaFile, q.genomeBuildName, vepREVELFile, q.vepAF, q.isRefSeq,
-    q.hgvsNotation, q.getRsId,
+    refFastaFile, q.genomeBuildName, vepREVELFile, q.vepAF, vepPluginDir,
+    q.isRefSeq, q.hgvsNotation, q.getRsId,
   ];
 
   //await handle(ctx, 'annotateVariants.sh', args);
