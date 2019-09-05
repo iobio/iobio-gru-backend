@@ -17,7 +17,6 @@ getRsId=${14}
 gnomadUrl=${15}
 gnomadRegionFileStr=${16}
 gnomadHeaderFile=${17}
-#globalGetRsId=${14}
 
 # default optional stages to no-op
 subsetStage=cat
@@ -83,14 +82,11 @@ if [ "$hgvsNotation" == "true" ]; then
     vepArgs="$vepArgs --hgvs"
 fi
 
-if [ "$hgvsNotation" == "true" ]; then
+if [ "$getRsId" == "true" ]; then
     vepArgs="$vepArgs --check_existing"
 fi
 
-# TODO: compare globalGetRsId to what gene is doing. It's returning a
-# function. Not sure what the semantics should be.
-#if [ "$hgvsNotation" ] || [ "$globalGetRsId" ] || [ "$isRefSeq" ]; then
-if [ "$hgvsNotation" == "true" ] || [ "$isRefSeq" == "true" ]; then
+if [ "$hgvsNotation" == "true" ] || [ "$getRsId" == "true" ] || [ "$isRefSeq" == "true" ]; then
     vepArgs="$vepArgs --fasta $refFastaFile"
 fi
 
