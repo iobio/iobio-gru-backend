@@ -172,7 +172,7 @@ router.post('/freebayesJointCall', async (ctx) => {
   const vepREVELFile = dataPath(params.vepREVELFile);
   const refFastaFile = dataPath(params.refFastaFile);
   const contigStr = genContigFileStr(params.refNames);
-
+  const samplesFileStr = params.sampleNames.join('\n');
 
   const fbArgs = params.fbArgs;
   const freebayesArgs = [];
@@ -203,7 +203,7 @@ router.post('/freebayesJointCall', async (ctx) => {
   const args = [
     alignments, indices, region, refFastaFile, useSuggestedVariants,
     params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
-    params.isRefSeq, extraArgs,
+    params.isRefSeq, samplesFileStr, extraArgs,
   ];
 
   await handle(ctx, 'freebayesJointCall.sh', args, { ignoreStderr: true });

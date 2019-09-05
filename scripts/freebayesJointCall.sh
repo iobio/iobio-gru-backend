@@ -2,8 +2,6 @@
 
 #set -x
 
-echo $@ > fbArgs.txt
-
 alignmentUrls=$1
 alignmentIndices=$2
 region=$3
@@ -14,15 +12,20 @@ genomeBuildName=$7
 vepREVELFile=$8
 vepAF=$9
 isRefSeq=${10}
-extraArgs=${11}
+samplesFileStr=${11}
+extraArgs=${12}
 
 contigFile=$(mktemp)
 echo -e "$contigStr" > $contigFile
 
+samplesFile=$(mktemp)
+echo -e "$samplesFileStr" > $samplesFile
+
+
 # TODO: using samtools and tabix instead of samtools_od and tabix_od would
 # likely be faster
 
-freebayesArgs=""
+freebayesArgs="-s $samplesFile"
 
 # split alignments by ','
 IFS=','
@@ -60,7 +63,6 @@ if [ "$isRefSeq" == "true" ]; then
     vepArgs="$vepArgs --refseq"
 fi
 
-echo $vepArgs > vepArgs.txt
 
 wait
 
