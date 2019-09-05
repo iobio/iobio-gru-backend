@@ -28,7 +28,7 @@ do
     
     echo Starting server
     ssh $SSH_OPTIONS ubuntu@$worker "killall node"
-    ssh $SSH_OPTIONS ubuntu@$worker 'PATH=./iobio-backend/tool_bin:$PATH nohup ./iobio-backend/node/bin/node ./iobio-backend/src/index.js > log.out 2> log.err < /dev/null &'
+    ssh $SSH_OPTIONS ubuntu@$worker 'PATH=$PWD/iobio-backend/tool_bin:$PATH nohup $PWD/iobio-backend/node/bin/node $PWD/iobio-backend/src/index.js > log.out 2> log.err < /dev/null &'
     #ssh $SSH_OPTIONS ubuntu@$worker "ln -s -f /mnt/data/data iobio-backend/"
     #ssh $SSH_OPTIONS ubuntu@$worker "ln -s -f /mnt/data/vep-cache iobio-backend/"
 

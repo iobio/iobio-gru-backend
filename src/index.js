@@ -13,6 +13,12 @@ const app = new Koa();
 const router = new Router();
 
 
+const dataDir = './data';
+function dataPath(name) {
+  const absPath = path.resolve(path.join(dataDir, name));
+  return absPath;
+}
+
 router.get('/', async (ctx) => {
   ctx.body = "<h1>I be healthful</h1>";
 });
@@ -112,7 +118,7 @@ router.get('/normalizeVariants', async (ctx) => {
   const refName = ctx.query.refName;
   const regions = JSON.parse(ctx.query.regions);
   const contigStr = decodeURIComponent(ctx.query.contigStr);
-  const refFastaFile = './data/' + decodeURIComponent(ctx.query.refFastaFile);
+  const refFastaFile = dataPath(decodeURIComponent(ctx.query.refFastaFile));
 
   let regionParm = "";
   regions.forEach(function(region) {
@@ -131,17 +137,24 @@ router.get('/annotateVariants', async (ctx) => {
 
   const q = ctx.query;
 
+  const tbiUrl = q.tbiUrl ? q.tbiUrl : '';
   const contigStr = genContigFileStr(JSON.parse(q.refNames));
   const regionStr = genRegionsStr(JSON.parse(q.regions));
   const vcfSampleNamesStr = JSON.parse(q.vcfSampleNames).join("\n");
-  const vepREVELFile = './data/' + q.vepREVELFile;
-  const refFastaFile = './data/' + q.refFastaFile;
-  const vepPluginDir = './data/vep-cache/Plugins';
+  const refFastaFile = dataPath(q.refFastaFile);
+  const vepCacheDir = dataPath('vep-cache');
+  const vepREVELFile = dataPath(q.vepREVELFile);
+  const vepPluginDir = dataPath('vep-cache/Plugins');
+
+  const gnomadUrl = q.gnomadUrl ? q.gnomadUrl : '';
+  const gnomadRegionStr = q.gnomadRegionStr ? q.gnomadRegionStr : '';
+  const gnomadHeaderFile = path.resolve('./gnomad_header.txt');
 
   const args = [
-    q.vcfUrl, q.tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-    refFastaFile, q.genomeBuildName, vepREVELFile, q.vepAF, vepPluginDir,
-    q.isRefSeq, q.hgvsNotation, q.getRsId,
+    q.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+    refFastaFile, q.genomeBuildName, vepCacheDir, vepREVELFile, q.vepAF,
+    vepPluginDir, q.isRefSeq, q.hgvsNotation, q.getRsId, gnomadUrl,
+    gnomadRegionStr, gnomadHeaderFile,
   ];
 
   //await handle(ctx, 'annotateVariants.sh', args);
@@ -156,8 +169,8 @@ router.post('/freebayesJointCall', async (ctx) => {
   const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
   const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
   const region = genRegionStr(params.region);
-  const vepREVELFile = './data/' + params.vepREVELFile;
-  const refFastaFile = './data/' + params.refFastaFile;
+  const vepREVELFile = dataPath(params.vepREVELFile);
+  const refFastaFile = dataPath(params.refFastaFile);
   const contigStr = genContigFileStr(params.refNames);
 
 
