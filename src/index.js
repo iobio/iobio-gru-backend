@@ -136,6 +136,7 @@ router.get('/normalizeVariants', async (ctx) => {
 router.get('/annotateVariants', async (ctx) => {
 
   const q = ctx.query;
+  console.log(JSON.stringify(q, null, 2));
 
   const tbiUrl = q.tbiUrl ? q.tbiUrl : '';
   const contigStr = genContigFileStr(JSON.parse(q.refNames));
