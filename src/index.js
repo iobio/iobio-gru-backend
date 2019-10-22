@@ -149,7 +149,7 @@ router.get('/annotateVariants', async (ctx) => {
 
   const gnomadUrl = q.gnomadUrl ? q.gnomadUrl : '';
   const gnomadRegionStr = q.gnomadRegionStr ? q.gnomadRegionStr : '';
-  const gnomadHeaderFile = path.resolve(path.join(__dirname, '../gnomad_header.txt'));
+  const gnomadHeaderFile = dataPath('gnomad_header.txt');
 
   const args = [
     q.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,

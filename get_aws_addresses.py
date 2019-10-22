@@ -7,5 +7,5 @@ response = client.describe_instances()
 for reservation in response['Reservations']:
     for instance in reservation['Instances']:
         for tag in instance['Tags']:
-            if instance['State']['Name'] == 'running' and tag['Key'] == 'Name' and tag['Value'] == 'gru-backend-worker-0.2.0':
+            if instance['State']['Name'] == 'running' and tag['Key'] == 'Name' and tag['Value'] == 'gru-backend-worker-0.5.0':
                 print(instance['PublicDnsName'])
