@@ -15,7 +15,12 @@ echo "SSH options:"
 echo ${SSH_OPTIONS}
 
 
-workers=$(./get_aws_addresses.py)
+if [ -n "${NODES}" ]
+then
+    workers=${NODES}
+else
+    workers=$(./get_aws_addresses.py)
+fi
 
 for worker in ${workers}
 do
