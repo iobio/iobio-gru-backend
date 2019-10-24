@@ -53,7 +53,7 @@ anders/iobio-gru-backend/run_local.sh
 You should be able to curl from your local machine now:
 
 ```
-curl dev.backend.iobio.io:9001/getAlignmentHeader?http://s3.amazonaws.com/iobio/NA12878/NA12878.autsome.bam
+curl dev.backend.iobio.io:9001/alignmentHeader?url=http://s3.amazonaws.com/iobio/NA12878/NA12878.autsome.bam
 ```
 
 You can also specify a port (default is 9001, 9001-9010 are open to the internet):
