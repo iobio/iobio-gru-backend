@@ -8,6 +8,10 @@ const { run } = require('./process.js');
 const spawn = require('child_process').spawn;
 const process = require('process');
 
+let port = 9001;
+if (process.argv[2]) {
+  port = process.argv[2];
+}
 
 const app = new Koa();
 const router = new Router();
@@ -298,4 +302,4 @@ app
   }))
   .use(router.routes())
   .use(router.allowedMethods())
-  .listen(9001);
+  .listen(port);
