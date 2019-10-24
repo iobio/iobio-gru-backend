@@ -29,16 +29,29 @@ router.get('/', async (ctx) => {
 
 // bam.iobio endpoints
 //
+// TODO: remove get in favor of post
 router.get('/alignmentHeader', async (ctx) => {
   await handle(ctx, 'alignmentHeader.sh', [ctx.query.url]);
+});
+router.post('/alignmentHeader', async (ctx) => {
+  const params = JSON.parse(ctx.request.body);
+  await handle(ctx, 'alignmentHeader.sh', [params.url]);
 });
 
 router.get('/baiReadDepth', async (ctx) => {
   await handle(ctx, 'baiReadDepth.sh', [ctx.query.url]);
 });
+router.post('/baiReadDepth', async (ctx) => {
+  const params = JSON.parse(ctx.request.body);
+  await handle(ctx, 'baiReadDepth.sh', [params.url]);
+});
 
 router.get('/craiReadDepth', async (ctx) => {
   await handle(ctx, 'craiReadDepth.sh', [ctx.query.url]);
+});
+router.post('/craiReadDepth', async (ctx) => {
+  const params = JSON.parse(ctx.request.body);
+  await handle(ctx, 'craiReadDepth.sh', [params.url]);
 });
 
 router.get('/alignmentStatsStream', async (ctx) => {
@@ -49,6 +62,15 @@ router.get('/alignmentStatsStream', async (ctx) => {
   const bamstatsRegions = JSON.stringify(regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
 
   await handle(ctx, 'alignmentStatsStream.sh', [ctx.query.url, samtoolsRegions, ctx.query.indexUrl, bamstatsRegions]);
+});
+router.post('/alignmentStatsStream', async (ctx) => {
+
+  const params = JSON.parse(ctx.request.body);
+
+  const samtoolsRegions = genRegionsStr(params.regions);
+  const bamstatsRegions = JSON.stringify(params.regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
+
+  await handle(ctx, 'alignmentStatsStream.sh', [params.url, samtoolsRegions, params.indexUrl, bamstatsRegions]);
 });
 
 
