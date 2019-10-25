@@ -78,7 +78,7 @@ router.post('/alignmentStatsStream', async (ctx) => {
 
 
 
-// gene.iobio endpoints
+// gene.iobio & oncogene & cohort-gene endpoints
 //
 router.get('/variantHeader', async (ctx) => {
   await handle(ctx, 'variantHeader.sh', [ctx.query.url, ctx.query.indexUrl]);
@@ -276,6 +276,25 @@ router.get('/clinphen', async (ctx) => {
   await handle(ctx, 'clinphen.sh', args);
 });
 
+
+
+
+
+
+// oncogene endpoints
+//
+router.post('/getIdColumns', async (ctx) => {
+
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const regionStr = genRegionsStr(params.regions);
+    const args = [
+        params.vcfUrl, regionStr,
+    ];
+
+    await handle(ctx, 'getIdColumns.sh', args, { ignoreStderr: true });
+});
 
 
 
