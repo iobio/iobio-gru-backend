@@ -9,6 +9,7 @@ const spawn = require('child_process').spawn;
 const process = require('process');
 const gene2PhenoRouter = require('./gene2pheno.js');
 const geneInfoRouter = require('./geneinfo.js');
+const genomeBuildRouter = require('./genomebuild.js');
 const { dataPath } = require('./utils.js');
 
 let port = 9001;
@@ -19,9 +20,9 @@ if (process.argv[2]) {
 const app = new Koa();
 const router = new Router();
 
+router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
 router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
-router.use('/geneinfo', geneInfoRouter.routes(), gene2PhenoRouter.allowedMethods());
-
+router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
 
 
 router.get('/', async (ctx) => {
