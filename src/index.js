@@ -8,6 +8,7 @@ const { run } = require('./process.js');
 const spawn = require('child_process').spawn;
 const process = require('process');
 const gene2PhenoRouter = require('./gene2pheno.js');
+const geneInfoRouter = require('./geneinfo.js');
 const { dataPath } = require('./utils.js');
 
 let port = 9001;
@@ -19,6 +20,7 @@ const app = new Koa();
 const router = new Router();
 
 router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
+router.use('/geneinfo', geneInfoRouter.routes(), gene2PhenoRouter.allowedMethods());
 
 
 
