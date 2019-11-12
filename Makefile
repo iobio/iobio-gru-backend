@@ -1,4 +1,4 @@
-node_version = v10.16.0
+node_version = v12.13.0
 node = node/bin/node
 npm = node/bin/npm
 tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep clinphen freebayes knownVariants

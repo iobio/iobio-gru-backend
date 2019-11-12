@@ -7,6 +7,8 @@ const path = require('path');
 const { run } = require('./process.js');
 const spawn = require('child_process').spawn;
 const process = require('process');
+const gene2PhenoRouter = require('./gene2pheno.js');
+const { dataPath } = require('./utils.js');
 
 let port = 9001;
 if (process.argv[2]) {
@@ -16,12 +18,9 @@ if (process.argv[2]) {
 const app = new Koa();
 const router = new Router();
 
+router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
 
-const dataDir = './data';
-function dataPath(name) {
-  const absPath = path.resolve(path.join(dataDir, name));
-  return absPath;
-}
+
 
 router.get('/', async (ctx) => {
   ctx.body = "<h1>I be healthful</h1>";
