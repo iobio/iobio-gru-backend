@@ -3,6 +3,8 @@ const Router = require('koa-router');
 const cors = require('@koa/cors');
 const logger = require('koa-logger');
 const bodyParser = require('koa-bodyparser');
+const mount = require('koa-mount');
+const serve = require('koa-static');
 const path = require('path');
 const { run } = require('./process.js');
 const spawn = require('child_process').spawn;
@@ -15,6 +17,9 @@ if (process.argv[2]) {
 
 const app = new Koa();
 const router = new Router();
+
+const staticServer = new Koa();
+staticServer.use(serve('./static'));
 
 
 const dataDir = './data';
@@ -315,6 +320,7 @@ function genRegionsStr(regions) {
 }
 
 app
+  .use(mount('/static', staticServer))
   .use(logger())
   .use(cors({
     maxAge: 86400,
