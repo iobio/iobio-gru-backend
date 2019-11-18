@@ -12,7 +12,7 @@ run: local_install
 deploy_aws: local_install
 	./deploy_aws.sh
 
-local_install: node npm node_modules tool_bin $(tools)
+local_install: node npm node_modules tool_bin $(tools) static
 
 npm: node
 
@@ -27,6 +27,9 @@ tool_bin:
 
 tool_bin/%:
 	tools/download_tool.sh $*
+
+static:
+	./populate_static.sh
 
 node_modules:
 	$(node) $(npm) install
