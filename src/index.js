@@ -3,6 +3,8 @@ const Router = require('koa-router');
 const cors = require('@koa/cors');
 const logger = require('koa-logger');
 const bodyParser = require('koa-bodyparser');
+const mount = require('koa-mount');
+const serve = require('koa-static');
 const path = require('path');
 const { run } = require('./process.js');
 const spawn = require('child_process').spawn;
@@ -15,6 +17,9 @@ if (process.argv[2]) {
 
 const app = new Koa();
 const router = new Router();
+
+const staticServer = new Koa();
+staticServer.use(serve('./static'));
 
 
 const dataDir = './data';
@@ -78,15 +83,28 @@ router.post('/alignmentStatsStream', async (ctx) => {
 
 
 
-// gene.iobio endpoints
+// gene.iobio & oncogene & cohort-gene endpoints
 //
+// TODO: need to change these to POSTs!
 router.get('/variantHeader', async (ctx) => {
   await handle(ctx, 'variantHeader.sh', [ctx.query.url, ctx.query.indexUrl]);
 });
+// TODO: SJG TEST
+router.post('/variantHeader', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    await handle(ctx, 'variantHeader.sh', [params.url, params.indexUrl]);
+});
+
 
 router.get('/vcfReadDepth', async (ctx) => {
   await handle(ctx, 'vcfReadDepth.sh', [ctx.query.url]);
 });
+// TODO: SJG TEST
+router.post('/vcfReadDepth', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    await handle(ctx, 'vcfReadDepth.sh', [params.url]);
+});
+
 
 router.post('/alignmentCoverage', async (ctx) => {
 
@@ -106,7 +124,9 @@ router.post('/alignmentCoverage', async (ctx) => {
     "-p " + coverageRegions
       .filter(d => d.name && d.start && d.end)
       .map(d => d.name + ":" + d.start + ':' + d.end)
-      .join(' ');
+      .join(',');
+  console.log('REGION ARG GOING INTO ALIGNMENTCOVERAGE.SH');
+  console.log(JSON.stringify(coverageRegionsArg));
 
   const maxPointsArg = "-m " + maxPoints;
 
@@ -136,9 +156,32 @@ router.get('/geneCoverage', async (ctx) => {
 
   await handle(ctx, 'geneCoverage.sh', args);
 });
+// TODO: SJG TEST
+router.post('/geneCoverage', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+
+    // Pull from passed params
+    const url = params.url;
+    const indexUrl = params.indexUrl ? params.indexUrl : '';
+    const refName = params.refName;
+    const geneName = params.geneName;
+    const regionStart = params.regionStart;
+    const regionEnd = params.regionEnd;
+    const regions = params.regions;
+
+    // Format params
+    let regionStr = "#" + geneName + "\n";
+    regions.forEach(function(region) {
+        regionStr += refName + ":" + region.start + "-" + region.end + "\n";
+    });
+    const samtoolsRegionArg = refName + ':' + regionStart + '-' + regionEnd;
+    const args = [url, indexUrl, samtoolsRegionArg, regionStr];
+
+    await handle(ctx, 'geneCoverage.sh', args);
+});
+
 
 router.get('/normalizeVariants', async (ctx) => {
-
   const vcfUrl = ctx.query.vcfUrl;
   const tbiUrl = ctx.query.tbiUrl;
   const refName = ctx.query.refName;
@@ -157,6 +200,30 @@ router.get('/normalizeVariants', async (ctx) => {
   const args = [vcfUrl, tbiUrl, refName, regionParm, contigStr, refFastaFile];
 
   await handle(ctx, 'normalizeVariants.sh', args);
+});
+// TODO: SJG TEST
+router.post('/normalizeVariants', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+
+    // Pull from passed params
+    const vcfUrl = params.vcfUrl;
+    const tbiUrl = params.tbiUrl;
+    const refName = params.refName;
+    const regions = params.regions;
+    const contigStr = decodeURIComponent(params.contigStr);
+    const refFastaFile = dataPath(decodeURIComponent(params.refFastaFile));
+
+    // Format params
+    let regionParm = "";
+    regions.forEach(function(region) {
+        if (regionParm.length > 0) {
+            regionParm += " ";
+        }
+        regionParm += region.refName + ":" + region.start + "-" + region.end;
+    });
+    const args = [vcfUrl, tbiUrl, refName, regionParm, contigStr, refFastaFile];
+
+    await handle(ctx, 'normalizeVariants.sh', args);
 });
 
 router.get('/annotateVariants', async (ctx) => {
@@ -186,6 +253,34 @@ router.get('/annotateVariants', async (ctx) => {
 
   //await handle(ctx, 'annotateVariants.sh', args);
   await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
+});
+// TODO: SJG do I only need to json parse once?
+router.post('/annotateVariants', async (ctx) => {
+
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+    const contigStr = genContigFileStr(params.refNames);
+    const regionStr = genRegionsStr(params.regions);
+    const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+    const refFastaFile = dataPath(params.refFastaFile);
+    const vepCacheDir = dataPath('vep-cache');
+    const vepREVELFile = dataPath(params.vepREVELFile);
+    const vepPluginDir = dataPath('vep-cache/Plugins');
+
+    const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+    const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+    const gnomadHeaderFile = dataPath('gnomad_header.txt');
+
+    const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
+        vepPluginDir, params.isRefSeq, params.hgvsNotation, params.getRsId, gnomadUrl,
+        gnomadRegionStr, gnomadHeaderFile,
+    ];
+
+    await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
 
 router.post('/freebayesJointCall', async (ctx) => {
@@ -254,9 +349,12 @@ router.post('/clinvarCountsForGene', async (ctx) => {
   }
 
   const binLength = params.binLength ? params.binLength : '';
+  const annotationMode = params.annotationMode ? params.annotationMode : '';
+  const requiresVepService = params.requiresVepService ? params.requiresVepService : false;
+  const vepArgs = params.vepArgs ? params.vepArgs : '';
 
   const args = [
-    params.clinvarUrl, region, binLength, regionParts,
+    params.clinvarUrl, region, binLength, regionParts, annotationMode, requiresVepService, vepArgs
   ];
 
   await handle(ctx, 'clinvarCountsForGene.sh', args);
@@ -276,6 +374,25 @@ router.get('/clinphen', async (ctx) => {
   await handle(ctx, 'clinphen.sh', args);
 });
 
+
+
+
+
+
+// oncogene endpoints
+//
+router.post('/getIdColumns', async (ctx) => {
+
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const regionStr = genRegionsStr(params.regions);
+    const args = [
+        params.vcfUrl, regionStr
+    ];
+
+    await handle(ctx, 'getIdColumns.sh', args, { ignoreStderr: true });
+});
 
 
 
@@ -315,6 +432,7 @@ function genRegionsStr(regions) {
 }
 
 app
+  .use(mount('/static', staticServer))
   .use(logger())
   .use(cors({
     maxAge: 86400,
