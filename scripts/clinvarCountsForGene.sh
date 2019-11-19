@@ -12,4 +12,4 @@ elif [ "$regionParts" ]; then
 fi
 
 tabix_od -h $clinvarUrl $region | \
-    knownVariants -r $region $binLengthArg $regionPartsArg
+    knownVariants_2 -r $region $binLengthArg $regionPartsArg

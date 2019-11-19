@@ -1,7 +1,7 @@
 node_version = v10.16.0
 node = node/bin/node
 npm = node/bin/npm
-tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep clinphen freebayes knownVariants
+tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep clinphen freebayes knownVariants_2
 tools = $(patsubst %, tool_bin/%, $(tool_names))
 
 export PATH := ./tools:$(PATH)
