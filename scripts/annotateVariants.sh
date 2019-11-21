@@ -17,10 +17,12 @@ getRsId=${14}
 gnomadUrl=${15}
 gnomadRegionFileStr=${16}
 gnomadHeaderFile=${17}
+decompose=${18}
 
 # default optional stages to no-op
 subsetStage=cat
 gnomadAnnotStage=cat
+decomposeStage=cat
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -35,6 +37,17 @@ if [ "$vcfSampleNamesStr" ]; then
 
     subsetStage=subsetFunc
 fi
+
+
+if [ "$decompose" == "true" ]; then
+    function decomposeFunc {
+        vt decompose -s  -
+    }
+
+    decomposeStage=decomposeFunc
+fi
+
+
 
 if [ "$gnomadUrl" ]; then
     printf "$gnomadRegionFileStr" > gnomad_regions.txt
@@ -93,6 +106,7 @@ fi
 tabix_od -h $vcfUrl $region $tbiUrl | \
     bcftools annotate -h contigs.txt - | \
     $subsetStage | \
+    $decomposeStage | \
     vt normalize -n -r $refFastaFile - | \
     vep $vepArgs | \
     $gnomadAnnotStage

@@ -248,7 +248,7 @@ router.get('/annotateVariants', async (ctx) => {
     q.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
     refFastaFile, q.genomeBuildName, vepCacheDir, vepREVELFile, q.vepAF,
     vepPluginDir, q.isRefSeq, q.hgvsNotation, q.getRsId, gnomadUrl,
-    gnomadRegionStr, gnomadHeaderFile,
+    gnomadRegionStr, gnomadHeaderFile, q.decompose
   ];
 
   //await handle(ctx, 'annotateVariants.sh', args);
@@ -277,7 +277,7 @@ router.post('/annotateVariants', async (ctx) => {
         params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
         refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
         vepPluginDir, params.isRefSeq, params.hgvsNotation, params.getRsId, gnomadUrl,
-        gnomadRegionStr, gnomadHeaderFile,
+        gnomadRegionStr, gnomadHeaderFile, params.decompose
     ];
 
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
