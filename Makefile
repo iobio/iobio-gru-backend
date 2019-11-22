@@ -1,13 +1,16 @@
 node_version = v12.13.0
-node = node/bin/node
-npm = node/bin/npm
 tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep clinphen freebayes knownVariants_2
 tools = $(patsubst %, tool_bin/%, $(tool_names))
 
-export PATH := ./tools:$(PATH)
+# This forces the use of the local node. This is necessary because sqlite3 (and
+# possibly other dependencies appears to be using the node in $PATH, even when
+# calling
+# `node/bin/node node/bin/npm install`
+# directly. This lead to a version mismatch.
+export PATH := ./node/bin:./tools:$(PATH)
 
 run: local_install
-	$(node) src/index.js
+	node src/index.js
 
 deploy_aws: local_install
 	./deploy_aws.sh
@@ -32,7 +35,7 @@ static:
 	./populate_static.sh
 
 node_modules:
-	$(node) $(npm) install
+	npm install
 
 .PHONY: clean
 clean:
