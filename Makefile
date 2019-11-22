@@ -1,7 +1,7 @@
 node_version = v12.13.0
 node = node/bin/node
 npm = node/bin/npm
-tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep clinphen freebayes knownVariants
+tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep clinphen freebayes knownVariants_2
 tools = $(patsubst %, tool_bin/%, $(tool_names))
 
 export PATH := ./tools:$(PATH)
@@ -12,7 +12,7 @@ run: local_install
 deploy_aws: local_install
 	./deploy_aws.sh
 
-local_install: node npm node_modules tool_bin $(tools)
+local_install: node npm node_modules tool_bin $(tools) static
 
 npm: node
 
@@ -28,6 +28,9 @@ tool_bin:
 tool_bin/%:
 	tools/download_tool.sh $*
 
+static:
+	./populate_static.sh
+
 node_modules:
 	$(node) $(npm) install
 
@@ -36,3 +39,4 @@ clean:
 	rm -rf node
 	rm -rf node_modules
 	rm -rf tool_bin
+	rm -rf static 
