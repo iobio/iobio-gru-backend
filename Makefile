@@ -39,3 +39,4 @@ clean:
 	rm -rf node
 	rm -rf node_modules
 	rm -rf tool_bin
+	rm -rf static 
