@@ -7,7 +7,7 @@ target = sys.argv[1]
 
 target_name = 'gru-backend-worker-0.6.0'
 if target == 'prod':
-    target_name = 'gru-backend-worker-0.5.0'
+    target_name = 'gru-backend-worker-0.6.0'
 
 client = boto3.client('ec2')
 response = client.describe_instances()

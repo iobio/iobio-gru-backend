@@ -27,7 +27,7 @@ router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMet
 router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
 
 const staticServer = new Koa();
-staticServer.use(serve('./static'));
+staticServer.use(serve(path.join(__dirname, '../static')));
 
 router.get('/', async (ctx) => {
   ctx.body = "<h1>I be healthful</h1>";
