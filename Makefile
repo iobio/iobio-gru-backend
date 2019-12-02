@@ -24,7 +24,7 @@ static:
 # calling
 # `node/bin/node node/bin/npm install`
 # directly. This lead to a version mismatch.
-node_modules: export PATH := ./node/bin:$(PATH)
+node_modules: export PATH := $(PWD)/node/bin:$(PATH)
 node_modules: node
 	npm install
 
