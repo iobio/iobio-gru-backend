@@ -1,5 +1,5 @@
 node_version = v12.13.0
-tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep clinphen freebayes knownVariants_2
+tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep clinphen freebayes knownVariants_2 vcfStatsAlive
 tools = $(patsubst %, tool_bin/%, $(tool_names))
 
 local_install: node node_modules tool_bin $(tools) static
@@ -24,7 +24,7 @@ static:
 # calling
 # `node/bin/node node/bin/npm install`
 # directly. This lead to a version mismatch.
-node_modules: export PATH := ./node/bin:$(PATH)
+node_modules: export PATH := $(PWD)/node/bin:$(PATH)
 node_modules: node
 	npm install
 

@@ -396,6 +396,20 @@ router.post('/getIdColumns', async (ctx) => {
 });
 
 
+// vcf.iobio endpoints
+router.post('/vcfStatsStream', async (ctx) => {
+
+  const params = JSON.parse(ctx.request.body);
+  console.log(params);
+
+  const regionStr = genRegionsStr(params.regions);
+  const contigStr = genContigFileStr(params.refNames);
+
+  const args = [params.url, params.indexUrl, regionStr, contigStr];
+  console.log(args);
+
+  await handle(ctx, 'vcfStatsStream.sh', args);
+});
 
 
 
