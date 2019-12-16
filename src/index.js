@@ -297,6 +297,13 @@ router.post('/freebayesJointCall', async (ctx) => {
   const contigStr = genContigFileStr(params.refNames);
   const samplesFileStr = params.sampleNames.join('\n');
 
+
+  const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+  const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+  const gnomadHeaderFile = dataPath('gnomad_header.txt');
+  const decompose = params.decompose ? params.decompose : '';
+
+
   const fbArgs = params.fbArgs;
   const freebayesArgs = [];
   if (fbArgs) {
@@ -327,6 +334,7 @@ router.post('/freebayesJointCall', async (ctx) => {
     alignments, indices, region, refFastaFile, useSuggestedVariants,
     params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
     params.isRefSeq, samplesFileStr, extraArgs,
+    gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose
   ];
 
   await handle(ctx, 'freebayesJointCall.sh', args, { ignoreStderr: true });
