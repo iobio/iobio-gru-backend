@@ -297,6 +297,9 @@ router.post('/freebayesJointCall', async (ctx) => {
   const contigStr = genContigFileStr(params.refNames);
   const samplesFileStr = params.sampleNames.join('\n');
 
+  const vepCacheDir = dataPath('vep-cache');
+  const vepPluginDir = dataPath('vep-cache/Plugins');
+
 
   const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
   const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
@@ -333,7 +336,7 @@ router.post('/freebayesJointCall', async (ctx) => {
   const args = [
     alignments, indices, region, refFastaFile, useSuggestedVariants,
     params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
-    params.isRefSeq, samplesFileStr, extraArgs,
+    params.isRefSeq, samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
     gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose
   ];
 

@@ -14,15 +14,21 @@ vepAF=$9
 isRefSeq=${10}
 samplesFileStr=${11}
 extraArgs=${12}
-gnomadUrl=${13}
-gnomadRegionFileStr=${14}
-gnomadHeaderFile=${15}
-decompose=${16}
+vepCacheDir=${13}
+vepPluginDir=${14}
+gnomadUrl=${15}
+gnomadRegionFileStr=${16}
+gnomadHeaderFile=${17}
+decompose=${18}
 
-contigFile=$(mktemp)
+runDir=$PWD
+tempDir=$(mktemp -d)
+cd $tempDir
+
+contigFile="contig.txt"
 echo -e "$contigStr" > $contigFile
 
-samplesFile=$(mktemp)
+samplesFile="samples.txt"
 echo -e "$samplesFileStr" > $samplesFile
 
 
@@ -46,7 +52,7 @@ IFS=' '
 
 tabixCommand=''
 if [ "$useSuggestedVariants" == "true" ]; then
-    suggFile=$(mktemp)
+    suggFile="sugg.vcf"
     tabix_od -h $clinvarUrl $region | vt view -f "INFO.CLNSIG=~'5|4'" - > $suggFile
     freebayesArgs="$freebayesArgs -@ $suggFile"
 fi
@@ -84,10 +90,10 @@ fi
 
 freebayesArgs="$freebayesArgs $extraArgs"
 
-vepArgs="--assembly $genomeBuildName --format vcf --allele_number --hgvs --check_existing --fasta $refFastaFile"
+vepArgs="--assembly $genomeBuildName --format vcf --dir_cache $vepCacheDir --allele_number --hgvs --check_existing --fasta $refFastaFile"
 
 if [ "$vepREVELFile" ]; then
-    vepArgs="$vepArgs --dir_plugins ./data/vep-cache/Plugins --plugin REVEL,$vepREVELFile"
+    vepArgs="$vepArgs --dir_plugins $vepPluginDir --plugin REVEL,$vepREVELFile"
 fi
 
 if [ "$vepAF" == "true" ]; then
@@ -113,4 +119,5 @@ freebayes -f $refFastaFile $freebayesArgs | \
     $gnomadAnnotStage
 
 
-rm $suggFile
+rm -rf $tempDir
+cd $runDir
