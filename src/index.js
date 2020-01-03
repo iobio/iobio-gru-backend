@@ -439,8 +439,8 @@ async function handle(ctx, scriptName, args, options) {
   }
   catch (e) {
     console.error(e);
-    ctx.status = 500;
-    ctx.body = e;
+    ctx.status = 400;
+    ctx.body = e.toString();
   }
 }
 
