@@ -278,6 +278,16 @@ router.post('/annotateVariants', async (ctx) => {
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
 
+router.post('/getSomaticVariants', async (ctx) => {
+  
+  const params = JSON.parse(ctx.request.body);
+  console.log(JSON.stringify(params, null, 2));
+
+  const args = [params.vcfUrl, params.totalReadCutoff];
+  
+  await handle(ctx, 'getSomaticVariants.sh', args, { ignoreStderr: false });
+});
+
 router.post('/freebayesJointCall', async (ctx) => {
 
   const params = JSON.parse(ctx.request.body);
