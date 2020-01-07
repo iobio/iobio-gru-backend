@@ -1,15 +1,42 @@
 #!/bin/bash
 
 vcfUrl=$1
-totalReadCutoff=$2
+qualCutoff=$2
+totalReadCutoff=$3
+normalCountCutoff=$4
+tumorCountCutoff=$5
+normalAfCutoff=$6
+tumorAfCutoff=$7
+normalSampleIdx=$8
+totalSampleNum=$9
 
-#$qualCutoff
-#$normalCountCutoff
-#$tumorCountCutoff
-#$normalAfCutoff
-#$tumorAfCutoff
-#$normalSampleIdx
+# have to translate to 1 based indexing
+$normalSampleIdx = int($normalSampleIdx) + 1
 
+qualPhrase="QUAL>${qualCutoff}"
+depthPhrase="AN>${totalReadCutoff}"
+normalCountPhrase="AC[${normalSampleIdx}]<=${normalCountCutoff}"
+normalAfPhrase="AF[${normalSampleIdx}]<=${normalAfCutoff}||(AC[${normalSampleIdx}]/AN)<=${normalAfCutoff}"
+
+tumorCountPhrase="("
+tumorAfPhrase=""(
+for i in $totalSampleNum
+do
+	if ($i != $normalSampleIdx)
+		j=i+1
+		$tumorCountPhrase="${tumorCountPhrase}AC[${j}]>=${tumorCountCutoff}"
+		$tumorAfPhrase="${tumorAfPhrase}((AF[${j}]>=${tumorAfCutoff})||((AC[${j}]/AN)<=${tumorAfCutoff}))"
+		if ($i < ($totalSampleNum-1))
+			$tumorCountPhrase="${tumorCountPhrase}||"
+			$tumorAfPhrase="$tumorAfPhrase||"
+done
+$tumorCountPhrase="${tumorCountPhrase})"
+$tumorAfPhrase="${tumorAfPhrase})"
+echo $tumorCountPhrase
+echo $tumorAfPhrase
+
+queryPhrase="${qualPhrase}&&${depthPhrase}&&${normalCountPhrase}&&${normalAfPhrase}&&${tumorCountPhrase}&&${tumorAfPhrase}"
+echo $queryPhrase
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -17,14 +44,9 @@ cd $tempDir
 
 #bcftools query -f '%CHROM %POS %REF %ALT %QUAL %INFO %FILTER' | awk '{ if (int($5) >= int($qualCutoff) print $1 $2 $3 $4 $5 $6 $7 }'
 
-echo Calling bcftools query...
-echo $vcfUrl
-bcftools query -f'%QUAL\n' -i'QUAL>0.01' $vcfUrl
-echo Done calling bcftools query
-
+bcftools query -f '%LINE\n' -i $queryPhrase $vcfUrl
 
 #awk '{ if (int($6) > int($qualCutoff)) print $6 }'
-
 
 #echo $tempDir
 rm -rf $tempDir
