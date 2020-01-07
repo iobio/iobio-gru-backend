@@ -11,7 +11,7 @@ normalSampleIdx=$8
 totalSampleNum=$9
 
 # have to translate to 1 based indexing
-$normalSampleIdx = int($normalSampleIdx) + 1
+$normalSampleIdx = $normalSampleIdx + 1
 
 qualPhrase="QUAL>${qualCutoff}"
 depthPhrase="AN>${totalReadCutoff}"
@@ -19,16 +19,17 @@ normalCountPhrase="AC[${normalSampleIdx}]<=${normalCountCutoff}"
 normalAfPhrase="AF[${normalSampleIdx}]<=${normalAfCutoff}||(AC[${normalSampleIdx}]/AN)<=${normalAfCutoff}"
 
 tumorCountPhrase="("
-tumorAfPhrase=""(
-for i in $totalSampleNum
-do
+tumorAfPhrase="("
+for i in $totalSampleNum; do
 	if ($i != $normalSampleIdx)
 		j=i+1
 		$tumorCountPhrase="${tumorCountPhrase}AC[${j}]>=${tumorCountCutoff}"
 		$tumorAfPhrase="${tumorAfPhrase}((AF[${j}]>=${tumorAfCutoff})||((AC[${j}]/AN)<=${tumorAfCutoff}))"
-		if ($i < ($totalSampleNum-1))
+		if ($i < $totalSampleNum-1)
 			$tumorCountPhrase="${tumorCountPhrase}||"
 			$tumorAfPhrase="$tumorAfPhrase||"
+		fi
+	fi
 done
 $tumorCountPhrase="${tumorCountPhrase})"
 $tumorAfPhrase="${tumorAfPhrase})"
@@ -42,7 +43,7 @@ runDir=$PWD
 tempDir=$(mktemp -d)
 cd $tempDir
 
-#bcftools query -f '%CHROM %POS %REF %ALT %QUAL %INFO %FILTER' | awk '{ if (int($5) >= int($qualCutoff) print $1 $2 $3 $4 $5 $6 $7 }'
+#bcftools query -f '%CHROM %POS %REF %ALT %QUAL %INFO %FILTER' | awk '{ if ($5 >= int($qualCutoff) print $1 $2 $3 $4 $5 $6 $7 }'
 
 bcftools query -f '%LINE\n' -i $queryPhrase $vcfUrl
 
