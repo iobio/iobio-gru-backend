@@ -1,8 +1,9 @@
 #!/bin/bash
+#SJG Jan2020
 
 vcfUrl=$1
 qualCutoff=$2
-totalReadCutoff=$3
+depthCutoff=$3 #Note: not using for now - doing this on front end
 normalCountCutoff=$4
 tumorCountCutoff=$5
 normalAfCutoff=$6
@@ -11,14 +12,10 @@ normalSampleIdx=$8
 totalSampleNum=$9
 
 qualPhrase="QUAL>${qualCutoff}"
-
-# TODO: this needs to be AO cumulative of all genotypes
-# if we have an alt in sample we're looking at, must pass quality threshold (
-depthPhrase="AN>${totalReadCutoff}"
-
 normalCountPhrase="AC[${normalSampleIdx}]<=${normalCountCutoff}"
 normalAfPhrase="(AF[${normalSampleIdx}]<=${normalAfCutoff}||(AC[${normalSampleIdx}]/AN)<=${normalAfCutoff})"
 
+#format tumor query pieces
 tumorCountPhrase="("
 tumorAfPhrase="("
 for ((i=0; i<totalSampleNum; i++)); do
@@ -34,14 +31,14 @@ done
 tumorCountPhrase="${tumorCountPhrase})"
 tumorAfPhrase="${tumorAfPhrase})"
 
+#format final query
 queryPhrase="${qualPhrase}&&${normalCountPhrase}&&${normalAfPhrase}&&${tumorCountPhrase}&&${tumorAfPhrase}"
-echo $queryPhrase
 
 runDir=$PWD
 tempDir=$(mktemp -d)
 cd $tempDir
 
-bcftools query -f '%LINE\n' -i $queryPhrase $vcfUrl | head -10
+bcftools query -f '%LINE\n' -i $queryPhrase $vcfUrl
 
 #echo $tempDir
 rm -rf $tempDir
