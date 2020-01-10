@@ -375,7 +375,7 @@ router.get('/clinphen', async (ctx) => {
 });
 
 
-router.get('/phenotype-extractor', async (ctx) => { 
+router.get('/phenotypeExtractor', async (ctx) => { 
 
   const args = [ctx.query.notes];
 
