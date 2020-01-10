@@ -379,7 +379,7 @@ router.get('/phenotype-extractor', async (ctx) => {
 
   const args = [ctx.query.notes];
 
-  await handle(ctx, 'phenotype-extractor.sh', args);
+  await handle(ctx, 'phenotypeExtractor.sh', args);
 });
 
 
