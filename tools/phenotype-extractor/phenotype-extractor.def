@@ -1,0 +1,30 @@
+Bootstrap: library
+From: alpine:3.9
+
+%post
+
+    apk update
+
+    #apk add build-base git zlib-dev bzip2-dev xz-dev xz-libs curl-dev
+
+    apk add git nodejs npm
+
+    apk add python python-dev build-base
+
+    apk add py-pip
+
+    pip install nltk
+
+    python -m nltk.downloader -d /usr/share/nltk_data wordnet
+
+    git clone https://github.com/adityaekawade/Phenotype-extractor.git
+
+    cd Phenotype-extractor
+
+    npm install
+
+    npm link
+
+%runscript
+    /Phenotype-extractor/cli.js $@
+
