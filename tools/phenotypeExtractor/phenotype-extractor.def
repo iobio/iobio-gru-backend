@@ -5,7 +5,6 @@ From: alpine:3.9
 
     apk update
 
-    #apk add build-base git zlib-dev bzip2-dev xz-dev xz-libs curl-dev
 
     apk add git nodejs npm
 
@@ -27,4 +26,3 @@ From: alpine:3.9
 
 %runscript
     /Phenotype-extractor/cli.js $@
-
