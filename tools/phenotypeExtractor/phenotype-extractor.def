@@ -22,7 +22,6 @@ From: alpine:3.9
 
     npm install
 
-    npm link
 
 %runscript
     /Phenotype-extractor/cli.js $@
