@@ -1,9 +1,17 @@
 #!/bin/bash
 
 # Example usage:
-# SSH_KEY_FILE=iobioServers.cer ./deploy_aws.sh
+# SSH_KEY_FILE=iobioServers.cer ./deploy_aws.sh stage
+
+target=$1
 
 SSH_OPTIONS="-oStrictHostKeyChecking=no"
+
+if [ "$target" != "stage" ] && [ "$target" != "prod" ]
+then
+  echo "Usage: deploy_aws.sh [stage|prod]"
+  exit 1
+fi
 
 if [ -n "${SSH_KEY_FILE}" ]
 then
@@ -19,7 +27,7 @@ if [ -n "${NODES}" ]
 then
     workers=${NODES}
 else
-    workers=$(./get_aws_addresses.py)
+    workers=$(./get_aws_addresses.py ${target})
 fi
 
 for worker in ${workers}

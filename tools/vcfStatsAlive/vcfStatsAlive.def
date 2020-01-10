@@ -1,0 +1,26 @@
+Bootstrap: library
+From: ubuntu:16.04
+
+%post
+    apt-get update
+    apt-get install -y git build-essential zlib1g-dev libbz2-dev liblzma-dev libcurl4-openssl-dev libssl-dev
+    #apk add build-base bash curl curl-dev bzip2-dev xz-dev xz-libs
+
+    mkdir -p /build
+    #apk add bzip2-dev xz-dev curl-dev autoconf
+    cd /build
+    git clone --recursive https://github.com/yiq/vcfstatsalive.git
+    cd vcfstatsalive/lib/htslib
+    make
+    mv libhts.a ../
+    cd ../../
+    HTSLIB_HOME=. make
+    strip vcfstatsalive
+    cp vcfstatsalive /usr/bin
+
+    #apk del build-base zlib-dev bzip2-dev xz-dev curl-dev
+    #apk add libbz2 xz libcurl
+    #rm -rf /var/cache/apk/*
+
+%runscript
+    /usr/bin/vcfstatsalive $@

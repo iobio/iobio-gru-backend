@@ -9,6 +9,10 @@ const path = require('path');
 const { run } = require('./process.js');
 const spawn = require('child_process').spawn;
 const process = require('process');
+const gene2PhenoRouter = require('./gene2pheno.js');
+const geneInfoRouter = require('./geneinfo.js');
+const genomeBuildRouter = require('./genomebuild.js');
+const { dataPath } = require('./utils.js');
 
 let port = 9001;
 if (process.argv[2]) {
@@ -18,15 +22,12 @@ if (process.argv[2]) {
 const app = new Koa();
 const router = new Router();
 
+router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
+router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
+router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
+
 const staticServer = new Koa();
-staticServer.use(serve('./static'));
-
-
-const dataDir = './data';
-function dataPath(name) {
-  const absPath = path.resolve(path.join(dataDir, name));
-  return absPath;
-}
+staticServer.use(serve(path.join(__dirname, '../static')));
 
 router.get('/', async (ctx) => {
   ctx.body = "<h1>I be healthful</h1>";
@@ -296,6 +297,16 @@ router.post('/freebayesJointCall', async (ctx) => {
   const contigStr = genContigFileStr(params.refNames);
   const samplesFileStr = params.sampleNames.join('\n');
 
+  const vepCacheDir = dataPath('vep-cache');
+  const vepPluginDir = dataPath('vep-cache/Plugins');
+
+
+  const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+  const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+  const gnomadHeaderFile = dataPath('gnomad_header.txt');
+  const decompose = params.decompose ? params.decompose : '';
+
+
   const fbArgs = params.fbArgs;
   const freebayesArgs = [];
   if (fbArgs) {
@@ -325,7 +336,8 @@ router.post('/freebayesJointCall', async (ctx) => {
   const args = [
     alignments, indices, region, refFastaFile, useSuggestedVariants,
     params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
-    params.isRefSeq, samplesFileStr, extraArgs,
+    params.isRefSeq, samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+    gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose
   ];
 
   await handle(ctx, 'freebayesJointCall.sh', args, { ignoreStderr: true });
@@ -403,6 +415,20 @@ router.post('/getIdColumns', async (ctx) => {
 });
 
 
+// vcf.iobio endpoints
+router.post('/vcfStatsStream', async (ctx) => {
+
+  const params = JSON.parse(ctx.request.body);
+  console.log(params);
+
+  const regionStr = genRegionsStr(params.regions);
+  const contigStr = genContigFileStr(params.refNames);
+
+  const args = [params.url, params.indexUrl, regionStr, contigStr];
+  console.log(args);
+
+  await handle(ctx, 'vcfStatsStream.sh', args);
+});
 
 
 
