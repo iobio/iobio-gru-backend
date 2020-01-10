@@ -6,4 +6,4 @@ file=$(mktemp)
 
 echo "$notes" > $file
 
-phenotype-extractor $file
+phenotypeExtractor $file
