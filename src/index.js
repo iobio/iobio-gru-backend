@@ -424,10 +424,17 @@ router.post('/vcfStatsStream', async (ctx) => {
   const regionStr = genRegionsStr(params.regions);
   const contigStr = genContigFileStr(params.refNames);
 
-  const args = [params.url, params.indexUrl, regionStr, contigStr];
+  let sampleNamesStr = "";
+  if (params.sampleNames) {
+    sampleNamesStr = params.sampleNames.join('\n');
+  }
+
+  const args = [
+    params.url, params.indexUrl, regionStr, contigStr, sampleNamesStr
+  ];
   console.log(args);
 
-  await handle(ctx, 'vcfStatsStream.sh', args);
+  await handle(ctx, 'vcfStatsStream.sh', args, { ignoreStderr: true });
 });
 
 
@@ -440,8 +447,8 @@ async function handle(ctx, scriptName, args, options) {
   }
   catch (e) {
     console.error(e);
-    ctx.status = 500;
-    ctx.body = e;
+    ctx.status = 400;
+    ctx.body = e.toString();
   }
 }
 
