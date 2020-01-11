@@ -380,10 +380,18 @@ router.post('/clinvarCountsForGene', async (ctx) => {
 // genepanel endpoints
 //
 router.get('/clinphen', async (ctx) => {
-
+ 
   const args = [ctx.query.notes];
 
   await handle(ctx, 'clinphen.sh', args);
+});
+
+
+router.get('/phenotypeExtractor', async (ctx) => { 
+
+  const args = [ctx.query.notes];
+
+  await handle(ctx, 'phenotypeExtractor.sh', args);
 });
 
 
