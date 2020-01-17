@@ -396,6 +396,12 @@ router.get('/phenotypeExtractor', async (ctx) => {
 
 
 
+router.post('/clinReport', async (ctx) => { 	 
+    const args = [ctx.request.body];
+    await handle(ctx, 'clinReport.sh', args); 	
+});
+
+
 
 
 
