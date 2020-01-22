@@ -1,10 +1,5 @@
 #!/bin/bash
 
-analysis=$1
+analysisFilePath=$1
 
-file=$(mktemp)
-
-echo "$analysis" > $file
-
-clinReport $file
-
+clinReport $analysisFilePath

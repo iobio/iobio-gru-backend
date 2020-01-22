@@ -7,12 +7,14 @@ const mount = require('koa-mount');
 const serve = require('koa-static');
 const path = require('path');
 const { run } = require('./process.js');
+const { mktemp } = require('./mktemp.js');
 const spawn = require('child_process').spawn;
 const process = require('process');
 const gene2PhenoRouter = require('./gene2pheno.js');
 const geneInfoRouter = require('./geneinfo.js');
 const genomeBuildRouter = require('./genomebuild.js');
 const { dataPath } = require('./utils.js');
+const fs = require('fs');
 
 let port = 9001;
 if (process.argv[2]) {
@@ -374,9 +376,6 @@ router.post('/clinvarCountsForGene', async (ctx) => {
 
 
 
-
-
-
 // genepanel endpoints
 //
 router.get('/clinphen', async (ctx) => {
@@ -386,7 +385,6 @@ router.get('/clinphen', async (ctx) => {
   await handle(ctx, 'clinphen.sh', args);
 });
 
-
 router.get('/phenotypeExtractor', async (ctx) => { 
 
   const args = [ctx.query.notes];
@@ -394,14 +392,15 @@ router.get('/phenotypeExtractor', async (ctx) => {
   await handle(ctx, 'phenotypeExtractor.sh', args);
 });
 
-
-
 router.post('/clinReport', async (ctx) => { 	 
-    const args = [ctx.request.body];
-    await handle(ctx, 'clinReport.sh', args); 	
+  // Copy the data into a temporary file and then pass the path. It was failing
+  // before, I'm pretty sure because the file was too large (~3MB) to pass
+  // through the child spawing interface.
+  const tmpFilePath = await mktemp();
+  await fs.promises.writeFile(tmpFilePath, ctx.request.body);
+  const args = [tmpFilePath];
+  await handle(ctx, 'clinReport.sh', args); 	
 });
-
-
 
 
 
@@ -486,6 +485,8 @@ app
   }))
   .use(bodyParser({
     enableTypes: ['json', 'text'],
+    jsonLimit: '10mb',
+    textLimit: '10mb',
   }))
   .use(router.routes())
   .use(router.allowedMethods())
