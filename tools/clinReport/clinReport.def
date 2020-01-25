@@ -19,6 +19,8 @@ From: ubuntu:18.04
 
     cd clin-report
 
+    git checkout 1c67fcf
+
     npm install 
          
     apt-get purge -y --auto-remove git wget xz-utils bzip2
