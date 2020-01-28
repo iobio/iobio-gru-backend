@@ -1,5 +1,5 @@
 node_version = v12.13.0
-tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep clinphen freebayes knownVariants_2 vcfStatsAlive phenotypeExtractor clinReport
+tool_names = baiReadDepther bamstatsAlive craiReadDepther samtools samtools_od bgzip tabix tabix_od vcfReadDepther coverage geneCoverage bcftools vt vep_2 clinphen freebayes knownVariants_2 vcfStatsAlive phenotypeExtractor clinReport
 tools = $(patsubst %, tool_bin/%, $(tool_names))
 
 local_install: node node_modules tool_bin $(tools) static

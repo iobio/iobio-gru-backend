@@ -105,7 +105,7 @@ tabix_od -h $vcfUrl $region $tbiUrl | \
     $subsetStage | \
     $decomposeStage | \
     vt normalize -n -r $refFastaFile - | \
-    vep $vepArgs | \
+    vep_2 $vepArgs | \
     $gnomadAnnotStage
 
 #echo $tempDir

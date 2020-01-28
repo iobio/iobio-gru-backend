@@ -116,7 +116,7 @@ freebayes -f $refFastaFile $freebayesArgs | \
     vt normalize -r $refFastaFile - | \
     vt filter -f 'QUAL>1' -t 'PASS' -d 'iobio' - | \
     bcftools annotate -h $contigFile | \
-    vep $vepArgs | \
+    vep_2 $vepArgs | \
     $gnomadAnnotStage
 
 
