@@ -366,9 +366,10 @@ router.post('/clinvarCountsForGene', async (ctx) => {
   const annotationMode = params.annotationMode ? params.annotationMode : '';
   const requiresVepService = params.requiresVepService ? params.requiresVepService : false;
   const vepArgs = params.vepArgs ? params.vepArgs : '';
+  const vepCacheDir = dataPath('vep-cache');
 
   const args = [
-    params.clinvarUrl, region, binLength, regionParts, annotationMode, requiresVepService, vepArgs
+    params.clinvarUrl, region, binLength, regionParts, annotationMode, requiresVepService, vepArgs, vepCacheDir
   ];
 
   await handle(ctx, 'clinvarCountsForGene.sh', args);

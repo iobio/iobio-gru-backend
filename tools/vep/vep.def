@@ -1,0 +1,5 @@
+Bootstrap: docker
+From: ensemblorg/ensembl-vep:release_97.0
+
+%runscript
+    vep $@

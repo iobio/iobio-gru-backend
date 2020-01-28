@@ -6,7 +6,11 @@ binLength=$3
 regionParts=$4
 annotationMode=$5
 requiresVepService=$6
-vepArgs=$7
+vepExtraArgs=$7
+vepCacheDir=$8
+
+vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4"
+vepArgs="$vepBaseArgs $vepExtraArgs"
 
 if [ "$binLength" ]; then
     binLengthArg="-b $binLength"
