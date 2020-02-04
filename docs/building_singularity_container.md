@@ -1,6 +1,6 @@
 This document will outline the steps to build a singularity container, add routes, create .sh file, and to make requests. 
 
-**Building a singularity container requires the following: **
+**Building a singularity container requires the following:**
 
 * A Definition File 
 * Singularity build command 
