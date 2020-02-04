@@ -52,3 +52,19 @@ More about definition file: [https://sylabs.io/guides/3.0/user-guide/definition_
 7. Move the newly created .sif file in `tool_bin` directory: `cp clinService.sif ../../tool_bin/clinService`
 
 
+Once a singularity container is built, create new routes so the front-end can make requests to your service. You will also need to create a .sh file so that your request can invoke the tool. 
+
+**Adding routes** 
+
+1. Go to src directory:  `cd adit/iobio-gru-backend/src`
+2. Open index.js: `vi index.js` 
+3.  Add new endpoints for your service. Example 
+```javascript
+// GET request 
+router.get('/clinService', async (ctx) => {
+  const args = [ctx.query.urlParamterName];
+  //Add or update code.. 
+  await handle(ctx, 'clinService.sh', args);
+});
+```  
+You can look at other routes in the same file for the POST requests. 
