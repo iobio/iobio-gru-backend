@@ -7,6 +7,7 @@ This document will outline the steps to build a singularity container.
 
 
 **Creating a Definition file:** 
+
 A singularity definition file (.def) is a set of blueprints explaining how to build a custom container. Follow the procedure to create a .def file.
 1. Go to tools directory. example: `cd adit/iobio-gru-backend/tools` 
 2. Create a directory for your tool. Let us assume that the name of our tool is clin service: `mkdir clinService`
