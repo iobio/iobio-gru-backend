@@ -88,11 +88,7 @@ router.post('/alignmentStatsStream', async (ctx) => {
 
 // gene.iobio & oncogene & cohort-gene endpoints
 //
-// TODO: need to change these to POSTs!
-router.get('/variantHeader', async (ctx) => {
-  await handle(ctx, 'variantHeader.sh', [ctx.query.url, ctx.query.indexUrl]);
-});
-// TODO: SJG TEST
+// TODO: test post version and delete get above 
 router.post('/variantHeader', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     await handle(ctx, 'variantHeader.sh', [params.url, params.indexUrl]);
@@ -102,7 +98,7 @@ router.post('/variantHeader', async (ctx) => {
 router.get('/vcfReadDepth', async (ctx) => {
   await handle(ctx, 'vcfReadDepth.sh', [ctx.query.url]);
 });
-// TODO: SJG TEST
+// TODO: test post version and delete above
 router.post('/vcfReadDepth', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     await handle(ctx, 'vcfReadDepth.sh', [params.url]);
@@ -159,7 +155,7 @@ router.get('/geneCoverage', async (ctx) => {
 
   await handle(ctx, 'geneCoverage.sh', args);
 });
-// TODO: SJG TEST
+// TODO: test post version and delete above
 router.post('/geneCoverage', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
 
@@ -204,7 +200,7 @@ router.get('/normalizeVariants', async (ctx) => {
 
   await handle(ctx, 'normalizeVariants.sh', args);
 });
-// TODO: SJG TEST
+// TODO: test post version and delete above
 router.post('/normalizeVariants', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
 
@@ -257,7 +253,6 @@ router.get('/annotateVariants', async (ctx) => {
   //await handle(ctx, 'annotateVariants.sh', args);
   await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
-// TODO: SJG do I only need to json parse once?
 router.post('/annotateVariants', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
@@ -417,6 +412,14 @@ router.post('/getIdColumns', async (ctx) => {
     ];
 
     await handle(ctx, 'getIdColumns.sh', args, { ignoreStderr: true });
+});
+
+router.post('/checkBamBai', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const args = [ params.url, params.indexUrl, params.region ];
+    await handle(ctx, 'checkBamBai.sh', args, { ignoreStderr: true });
 });
 
 
