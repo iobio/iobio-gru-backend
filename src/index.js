@@ -422,6 +422,13 @@ router.post('/checkBamBai', async (ctx) => {
     await handle(ctx, 'checkBamBai.sh', args, { ignoreStderr: true });
 });
 
+router.post('/checkFacets', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const args = [ params.url, params.bamUrl ];
+    await handle(ctx, 'checkFacets.sh', args, { ignoreStderr: true });
+});
 
 // vcf.iobio endpoints
 router.post('/vcfStatsStream', async (ctx) => {
@@ -443,8 +450,7 @@ router.post('/vcfStatsStream', async (ctx) => {
   console.log(args);
 
   await handle(ctx, 'vcfStatsStream.sh', args, { ignoreStderr: true });
-});
-
+}); 
 
 
 async function handle(ctx, scriptName, args, options) {
