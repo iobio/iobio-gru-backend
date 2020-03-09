@@ -6,7 +6,7 @@ From: alpine:3.9
     tabixHelper.sh /usr/bin/tabixHelper
 
 %post
-    export HTSLIB_VERSION=1.9
+    export HTSLIB_VERSION=1.10.2
     apk update
     apk add build-base bash curl curl-dev bzip2-dev xz-dev xz-libs
     cd /build

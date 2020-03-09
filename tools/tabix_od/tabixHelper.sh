@@ -7,6 +7,8 @@ while true; do
     fi
 done
 
+rm -rf $uuid
+
 mkdir -p $uuid
 cd $uuid
 
@@ -17,12 +19,27 @@ tbi_url=""
 if [[ $last_arg == http*tbi* ]]; then
     tbi_url=$last_arg
     vcf_basename=""
+    args=()
+    idx=0
     for i in $@; do
         if [[ $i == *.vcf.gz* && $i != *.vcf.gz.tbi* ]]; then
             # strip down to the base filename without any extension
             vcf_basename=${i##*/}
             vcf_basename=${vcf_basename%%.vcf*}
-        fi
+            # for tabix to work with a presigned URL that has 'content-disposition'
+            # (contains '.'), we need to tell tabix the name of the local
+            # index file that has been downloaded.  We do this by appending
+            # ##idx##[csi file name goes here].
+            args[$idx]="${i}##idx##${vcf_basename}.vcf.gz.csi"
+    	else
+            # Since we are appending ##idx## to the end of the presigned vcf
+            # url, we can keep all other args, but drop the tbi URL as
+            # it will not be used
+            if [[ $i != *.vcf.gz.tbi* ]]; then
+                args[$idx]=${i}
+            fi
+    	fi
+        idx=$((idx+1))
     done
     # download the .tbi to basename.vcf.tbi
     curl -o ${vcf_basename}.vcf.tbi -sL $tbi_url
@@ -33,12 +50,10 @@ if [[ $last_arg == http*tbi* ]]; then
     # for DNANexus, we need the csi have the filename basename.vcf.gz.csi
     cp ${vcf_basename}.vcf.csi ${vcf_basename}.vcf.gz.csi
 
-    len=$(expr $# - 1)
-    tabix_args=${@:1:$len}
+    tabix_args=${args[@]}
 else
     tabix_args=$@
 fi
-
 tabix $tabix_args
 tabixRetCode=$?
 cd ..
