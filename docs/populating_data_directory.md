@@ -48,7 +48,7 @@ filename. See [here][2] for more details.
 If your reference sequence is named `human_g1k_v38_decoy_phix.fasta`, you
 would generate the MD5 cache for GRCh38 like this:
 
-`./seq_cache_populate.pl human_g1k_v37_decoy_phix.fasta -root md5_reference_cache`
+`./seq_cache_populate.pl human_g1k_v38_decoy_phix.fasta -root md5_reference_cache`
 
 Since everything is based off hashes, you can use the same output directory
 (-root) for builds 37 and 38). Move that directory under your data directory
