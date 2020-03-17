@@ -45,7 +45,6 @@ router.post('/viewAlignments', async (ctx) => {
     args.push(samtoolsRegions);
   }
 
-  console.log(args);
   await handle(ctx, 'viewAlignments.sh', args);
 });
 
