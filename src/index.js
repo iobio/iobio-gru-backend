@@ -35,6 +35,19 @@ router.get('/', async (ctx) => {
   ctx.body = "<h1>I be healthful</h1>";
 });
 
+router.post('/viewAlignments', async (ctx) => {
+  const params = JSON.parse(ctx.request.body);
+
+  const args = [params.url];
+
+  if (params.regions) {
+    const samtoolsRegions = genRegionsStr(params.regions);
+    args.push(samtoolsRegions);
+  }
+
+  await handle(ctx, 'viewAlignments.sh', args);
+});
+
 // bam.iobio endpoints
 //
 // TODO: remove get in favor of post
@@ -472,7 +485,16 @@ function genRegionStr(region) {
 function genRegionsStr(regions) {
   let regionStr = "";
   for (const region of regions) {
-    regionStr += region.name + ':' + region.start + '-' + region.end + " ";
+
+    regionStr += region.name;
+
+    if (region.start) {
+      regionStr += ':' + region.start;
+
+      if (region.end) {
+        regionStr += '-' + region.end + " ";
+      }
+    }
   }
   return regionStr;
 }
