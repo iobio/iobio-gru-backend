@@ -6,6 +6,12 @@ All required data is assumed to be under a `data` directory, relative to the
 current working directory where gru is started from (usually with
 `run_local.sh`).
 
+**Note:** There is some legacy cruft in the way the data volume is structured,
+which can make it confusing. For example, there is `/data/data`, and also
+`/data/data/references` and `/data/references`. These are all related but used
+in different ways. We plan to clean this up eventually but for now you'll need
+to be careful to make sure everything ends up in it's proper place.
+
 
 # VEP cache
 
@@ -31,6 +37,9 @@ data/
       97_GRCh37/
       97_GRCh38/
 ```
+
+**Note:** The files don't unzip to the proper directory names. You'll need to
+rename them to match the names above.
 
 
 # MD5 Reference Cache
@@ -71,6 +80,7 @@ should look like this:
 
 ```
 data/
+  data/
   gene2pheno/
   geneinfo/
   genomebuild/
