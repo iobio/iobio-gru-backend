@@ -261,7 +261,6 @@ router.get('/annotateVariants', async (ctx) => {
   //await handle(ctx, 'annotateVariants.sh', args);
   await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
-// TODO: SJG do I only need to json parse once?
 router.post('/annotateVariants', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
@@ -289,6 +288,33 @@ router.post('/annotateVariants', async (ctx) => {
 
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
+
+router.post('/annotateEnrichment', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+    const contigStr = genContigFileStr(params.refNames);
+    const regionStr = genRegionsStr(params.regions);
+	# const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+    const refFastaFile = dataPath(params.refFastaFile);
+	#const vepCacheDir = dataPath('vep-cache');
+	#const vepREVELFile = dataPath(params.vepREVELFile);
+	#const vepPluginDir = dataPath('vep-cache/Plugins');
+
+	#const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+	#const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+	#const gnomadHeaderFile = dataPath('gnomad_header.txt');
+
+    const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr,
+        refFastaFile, params.genomeBuildName, params.filterArgs,
+        vepPluginDir, params.isRefSeq, params.hgvsNotation, params.getRsId, gnomadUrl,
+        gnomadRegionStr, gnomadHeaderFile, params.decompose
+    ];
+
+    await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
+}
 
 router.post('/freebayesJointCall', async (ctx) => {
 
