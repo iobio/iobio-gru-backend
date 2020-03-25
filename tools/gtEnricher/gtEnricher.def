@@ -21,13 +21,13 @@ From: ubuntu:16.04
     make
  
     # build
-    cd ../..
-    ./configure --with-htslib=./contrib/htslib-${HTSLIB_VERSION}
-    make
+#    cd ../..
+#    ./configure --with-htslib=./contrib/htslib-${HTSLIB_VERSION}
+#    make
 
     # put tool in path & slim down
-    strip gtenricher
-    cp gtenricher /usr/bin/
+#    strip gtenricher
+#    cp gtenricher /usr/bin/
     
 %runscript
     /usr/bin/gtEnricher $@
