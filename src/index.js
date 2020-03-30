@@ -296,15 +296,15 @@ router.post('/annotateEnrichment', async (ctx) => {
     const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const contigStr = genContigFileStr(params.refNames);
     const regionStr = genRegionsStr(params.regions);
-	# const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+	// const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
     const refFastaFile = dataPath(params.refFastaFile);
-	#const vepCacheDir = dataPath('vep-cache');
-	#const vepREVELFile = dataPath(params.vepREVELFile);
-	#const vepPluginDir = dataPath('vep-cache/Plugins');
+	// const vepCacheDir = dataPath('vep-cache');
+	// const vepREVELFile = dataPath(params.vepREVELFile);
+	// const vepPluginDir = dataPath('vep-cache/Plugins');
 
-	#const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
-	#const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
-	#const gnomadHeaderFile = dataPath('gnomad_header.txt');
+	// const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+	// const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+	// const gnomadHeaderFile = dataPath('gnomad_header.txt');
 
     const args = [
         params.vcfUrl, tbiUrl, regionStr, contigStr,
@@ -314,7 +314,7 @@ router.post('/annotateEnrichment', async (ctx) => {
     ];
 
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
-}
+});
 
 router.post('/freebayesJointCall', async (ctx) => {
 
