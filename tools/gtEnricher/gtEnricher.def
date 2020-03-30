@@ -11,7 +11,7 @@ From: ubuntu:16.04
     # get tool & YQ htslib wrapper
     mkdir -p /build
     cd /build
-    git clone --recursive https://github.com/stefinfection/gtenricher.git
+    git clone --recursive https://github.com/yiq/gtenricher.git
     cd gtenricher/contrib 
     
     # get htslib & build
@@ -19,16 +19,19 @@ From: ubuntu:16.04
     tar -xjf htslib-${HTSLIB_VERSION}.tar.bz2 
     mv ./htslib-${HTSLIB_VERSION} ./htslib
     cd htslib
+    ./configure --prefix=/usr/local
     make
+    make install
  
     # build
     cd ../..
-    ./configure --with-htslib=./contrib/htslib
+    ./configure --with-htslib=/usr/local
     make
+    make install
 
     # put tool in path & slim down
-    strip gtenricher
-    cp gtenricher /usr/bin/
+    strip /usr/local/bin/gtenricher
+    cp /usr/local/bin/gtenricher /usr/bin/
    
 %runscript
-    /usr/bin/gtEnricher $@
+    /usr/bin/gtenricher $@

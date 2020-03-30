@@ -30,7 +30,7 @@ tabix_od -h $vcfUrl $regionStr $tbiUrl | \
     bcftools view -s controlIdString | \
     # todo: get rid of this line if above works - vt subset -s $controlNamesFile - | \
     filterCmd | \
-    gtenricher $experIdString
+    gtEnricher $experIdString
 
 rm -rf $tempDir
 cd $runDir
