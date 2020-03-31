@@ -111,6 +111,11 @@ router.post('/variantHeader', async (ctx) => {
     await handle(ctx, 'variantHeader.sh', [params.url, params.indexUrl]);
 });
 
+router.post('/getChromosomes', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+    await handle(ctx, 'getChromosomes.sh', [params.url, params.indexUrl]);
+});
 
 router.get('/vcfReadDepth', async (ctx) => {
   await handle(ctx, 'vcfReadDepth.sh', [ctx.query.url]);
