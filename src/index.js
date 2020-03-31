@@ -100,6 +100,7 @@ router.post('/variantHeader', async (ctx) => {
 
 router.post('/getChromosomes', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
     await handle(ctx, 'getChromosomes.sh', [params.url, params.indexUrl]);
 });
 
