@@ -1,13 +1,16 @@
 Bootstrap: library
 From: ubuntu:16.04 
 
+%environment
+    LD_LIBRARY_PATH=/usr/local/lib
+
 %post
     HTSLIB_VERSION=1.9
 
     # update & build environ
     apt-get update
     apt-get install -y git wget build-essential zlib1g-dev libbz2-dev liblzma-dev libcurl4-openssl-dev libssl-dev libgsl-dev
-    
+  
     # get tool & YQ htslib wrapper
     mkdir -p /build
     cd /build
@@ -25,13 +28,16 @@ From: ubuntu:16.04
  
     # build
     cd ../..
-    ./configure --with-htslib=/usr/local
+    ./configure --with-htslib=/build/gtenricher/contrib/htslib
     make
     make install
 
     # put tool in path & slim down
     strip /usr/local/bin/gtenricher
-    cp /usr/local/bin/gtenricher /usr/bin/
-   
+    # cp /usr/local/bin/gtenricher /usr/bin/
+
+    # where to find htslib
+    # echo 'export LD_LIBRARY_PATH=/usr/local/lib' >>$singularity_environment 
+
 %runscript
-    /usr/bin/gtenricher $@
+    /usr/local/bin/gtenricher $@
