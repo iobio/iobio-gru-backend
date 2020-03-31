@@ -11,4 +11,4 @@ then
 	exit 1;
 fi
 
-samtools_od view -b $url $samtools_region $index_url | head -n 1
+samtools_od view -H $url $samtools_region $index_url | head -n 1
