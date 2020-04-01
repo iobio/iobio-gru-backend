@@ -5,7 +5,7 @@ From: ubuntu:16.04
     LD_LIBRARY_PATH=/usr/local/lib
 
 %post
-    HTSLIB_VERSION=1.9
+    HTSLIB_VERSION=1.8
 
     # update & build environ
     apt-get update
@@ -35,9 +35,6 @@ From: ubuntu:16.04
     # put tool in path & slim down
     strip /usr/local/bin/gtenricher
     # cp /usr/local/bin/gtenricher /usr/bin/
-
-    # where to find htslib
-    # echo 'export LD_LIBRARY_PATH=/usr/local/lib' >>$singularity_environment 
 
 %runscript
     /usr/local/bin/gtenricher $@
