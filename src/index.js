@@ -318,6 +318,7 @@ router.post('/annotateEnrichmentCounts', async (ctx) => {
     ];
 
     await handle(ctx, 'annotateEnrichmentCounts.sh', args, { ignoreStderr: true });
+});
 
 router.post('/getSomaticVariants', async (ctx) => {
   
