@@ -314,13 +314,6 @@ router.post('/annotateEnrichmentCounts', async (ctx) => {
     const experStr = params.expIdString ? params.expIdString : '';
     const controlStr = params.controlIdString ? params.controlIdString : '';
 
-
-    console.log("processed params for enrichment call: ");
-    console.log("contigStr: " + contigStr);
-    console.log("regionStr: " + regionStr);
-    console.log("control IDS: " + controlStr);
-    console.log("exper IDs: " + experStr);
-
     const args = [
         params.vcfUrl, tbiUrl, regionStr, contigStr,
         refFastaFile, params.filterArgs,
