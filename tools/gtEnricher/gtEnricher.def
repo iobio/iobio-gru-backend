@@ -1,0 +1,40 @@
+Bootstrap: library
+From: ubuntu:16.04 
+
+%environment
+    LD_LIBRARY_PATH=/usr/local/lib
+
+%post
+    HTSLIB_VERSION=1.8
+
+    # update & build environ
+    apt-get update
+    apt-get install -y git wget build-essential zlib1g-dev libbz2-dev liblzma-dev libcurl4-openssl-dev libssl-dev libgsl-dev
+  
+    # get tool & YQ htslib wrapper
+    mkdir -p /build
+    cd /build
+    git clone --recursive https://github.com/yiq/gtenricher.git
+    cd gtenricher/contrib 
+    
+    # get htslib & build
+    wget -q https://github.com/samtools/htslib/releases/download/${HTSLIB_VERSION}/htslib-${HTSLIB_VERSION}.tar.bz2
+    tar -xjf htslib-${HTSLIB_VERSION}.tar.bz2 
+    mv ./htslib-${HTSLIB_VERSION} ./htslib
+    cd htslib
+    ./configure --prefix=/usr/local
+    make
+    make install
+ 
+    # build
+    cd ../..
+    ./configure --with-htslib=/build/gtenricher/contrib/htslib
+    make
+    make install
+
+    # put tool in path & slim down
+    strip /usr/local/bin/gtenricher
+    # cp /usr/local/bin/gtenricher /usr/bin/
+
+%runscript
+    /usr/local/bin/gtenricher $@

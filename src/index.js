@@ -299,6 +299,27 @@ router.post('/annotateVariants', async (ctx) => {
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
 
+router.post('/annotateEnrichmentCounts', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+    const contigStr = genContigFileStr(params.refNames);
+    const regionStr = genRegionsStr(params.regions);
+    const refFastaFile = dataPath(params.refFastaFile);
+    const filterArgs = params.filterArgs ? params.filterArgs : '';
+    const experStr = params.expIdString ? params.expIdString : '';
+    const controlStr = params.controlIdString ? params.controlIdString : '';
+
+    const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr,
+        refFastaFile, params.filterArgs,
+        experStr, controlStr
+    ];
+
+    await handle(ctx, 'annotateEnrichmentCounts.sh', args, { ignoreStderr: true });
+});
+
 router.post('/getSomaticVariants', async (ctx) => {
   
   const params = JSON.parse(ctx.request.body);
