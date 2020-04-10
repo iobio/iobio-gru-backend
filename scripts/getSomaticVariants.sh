@@ -3,14 +3,17 @@
 
 vcfUrl=$1
 selectedSamples=$2
-qualCutoff=$3
-depthCutoff=$4 #Note: not using for now - doing this on front end
-normalCountCutoff=$5
-tumorCountCutoff=$6
-normalAfCutoff=$7
-tumorAfCutoff=$8
-normalSampleIdx=$9
-totalSampleNum=$10
+regions=$3
+qualCutoff=$4
+depthCutoff=$5 #Note: not using for now - doing this on front end
+normalCountCutoff=$6
+tumorCountCutoff=$7
+normalAfCutoff=$8
+tumorAfCutoff=$9
+normalSampleIdx=$10
+totalSampleNum=$11
+
+echo -e "$regions" > regions.txt
 
 qualPhrase="QUAL>${qualCutoff}"
 normalCountPhrase="AC[${normalSampleIdx}]<=${normalCountCutoff}"
@@ -18,6 +21,7 @@ normalAfPhrase="(AF[${normalSampleIdx}]<=${normalAfCutoff}||(AC[${normalSampleId
 
 #filter for selected samples if provided
 #todo: this phrase needs to be tested
+#todo: regions param also needs to be tested
 samplePhrase=""
 if (! -n "$selectedSamples"); then
    samplePhrase="-s $selectedSamples"
@@ -46,7 +50,7 @@ runDir=$PWD
 tempDir=$(mktemp -d)
 cd $tempDir
 
-bcftools query -f '%LINE\n' $samplePhrase -i $queryPhrase $vcfUrl
+bcftools query -f '%LINE\n' $samplePhrase -i $queryPhrase $vcfUrl -R regions.txt
 
 #echo $tempDir
 rm -rf $tempDir
