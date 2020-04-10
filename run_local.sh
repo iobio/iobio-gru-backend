@@ -1,5 +1,7 @@
 #!/bin/bash
 
+trap 'kill $(jobs -p)' EXIT
+
 PORT=$1
 
 # Incantation taken from https://stackoverflow.com/a/246128/943814

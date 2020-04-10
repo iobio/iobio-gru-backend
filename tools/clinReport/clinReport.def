@@ -1,0 +1,34 @@
+Bootstrap: library
+From: ubuntu:18.04
+  
+%post
+
+    apt-get update
+    apt-get install -y git wget xz-utils bzip2 libfontconfig1
+
+    export node_version=v12.13.0
+
+    wget https://nodejs.org/dist/${node_version}/node-${node_version}-linux-x64.tar.xz
+    tar xf node-${node_version}-linux-x64.tar.xz
+    rm node-${node_version}-linux-x64.tar.xz
+    mv node-${node_version}-linux-x64 node
+
+    export PATH=$PATH:/node/bin
+
+    git clone https://github.com/adityaekawade/clin-report.git
+
+    cd clin-report
+
+    git checkout 5eb85a2702ddc8d19c8ae521d130739dfb26ef1c
+
+    npm install 
+         
+    apt-get purge -y --auto-remove git wget xz-utils bzip2
+    rm -rf /var/lib/apt/lists/*
+        
+%environment
+    export PATH=$PATH:/node/bin
+      
+%runscript
+    node /clin-report/index.js $@
+

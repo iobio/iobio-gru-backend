@@ -22,8 +22,8 @@ fi
 if [ "$requiresVepService" = true ]; then
     tabix_od -h $clinvarUrl $region | \
         vep $vepArgs | \
-            knownVariants -r $region $binLengthArg $regionPartsArg $annotationModeArg
+            knownVariants_2 -r $region $binLengthArg $regionPartsArg $annotationModeArg
 else
     tabix_od -h $clinvarUrl $region | \
-        knownVariants -r $region $binLengthArg $regionPartsArg $annotationModeArg
+        knownVariants_2 -r $region $binLengthArg $regionPartsArg $annotationModeArg
 fi

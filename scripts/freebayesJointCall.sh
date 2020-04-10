@@ -14,11 +14,21 @@ vepAF=$9
 isRefSeq=${10}
 samplesFileStr=${11}
 extraArgs=${12}
+vepCacheDir=${13}
+vepPluginDir=${14}
+gnomadUrl=${15}
+gnomadRegionFileStr=${16}
+gnomadHeaderFile=${17}
+decompose=${18}
 
-contigFile=$(mktemp)
+runDir=$PWD
+tempDir=$(mktemp -d)
+cd $tempDir
+
+contigFile="contig.txt"
 echo -e "$contigStr" > $contigFile
 
-samplesFile=$(mktemp)
+samplesFile="samples.txt"
 echo -e "$samplesFileStr" > $samplesFile
 
 
@@ -42,17 +52,48 @@ IFS=' '
 
 tabixCommand=''
 if [ "$useSuggestedVariants" == "true" ]; then
-    suggFile=$(mktemp)
+    suggFile="sugg.vcf"
     tabix_od -h $clinvarUrl $region | vt view -f "INFO.CLNSIG=~'5|4'" - > $suggFile
     freebayesArgs="$freebayesArgs -@ $suggFile"
 fi
 
+decomposeStage=''
+if [ "$decompose" == "true" ]; then
+    function decomposeFunc {
+        vt decompose -s  -
+    }
+    decomposeStage=decomposeFunc
+fi
+
+
+gnomadAnnotStage=''
+if [ "$gnomadUrl" ]; then
+    printf "$gnomadRegionFileStr" > gnomad_regions.txt
+    
+    # These are the INFO fields to clear out
+    annotsToRemove=AF,AN,AC
+    
+    # These are the gnomAD INFO fields to add to the input vcf
+    annotsToAdd=CHROM,POS,REF,ALT,INFO/AF,INFO/AN,INFO/AC,INFO/nhomalt_raw,INFO/AF_popmax,INFO/AF_fin,INFO/AF_nfe,INFO/AF_oth,INFO/AF_amr,INFO/AF_afr,INFO/AF_asj,INFO/AF_eas,INFO/AF_sas
+    
+
+    function gnomadAnnotFunc {
+        vt rminfo -t $annotsToRemove - | bgzip -c > gnomad.vcf.gz
+        tabix gnomad.vcf.gz
+        
+        # Add the gnomAD INFO fields to the input vcf
+        bcftools annotate -a $gnomadUrl -h $gnomadHeaderFile -c $annotsToAdd -R gnomad_regions.txt gnomad.vcf.gz
+    }
+
+    gnomadAnnotStage=gnomadAnnotFunc
+fi
+
 freebayesArgs="$freebayesArgs $extraArgs"
 
-vepArgs="--assembly $genomeBuildName --format vcf --allele_number --hgvs --check_existing --fasta $refFastaFile"
+vepArgs="--assembly $genomeBuildName --format vcf --dir_cache $vepCacheDir --allele_number --hgvs --check_existing --fasta $refFastaFile"
 
 if [ "$vepREVELFile" ]; then
-    vepArgs="$vepArgs --dir_plugins ./data/vep-cache/Plugins --plugin REVEL,$vepREVELFile"
+    vepArgs="$vepArgs --dir_plugins $vepPluginDir --plugin REVEL,$vepREVELFile"
 fi
 
 if [ "$vepAF" == "true" ]; then
@@ -70,10 +111,13 @@ wait
 # minion, but for some reason I can't get it to accept more than a single word
 # directly in the bash script
 freebayes -f $refFastaFile $freebayesArgs | \
+    $decomposeStage | \
     vt normalize -r $refFastaFile - | \
     vt filter -f 'QUAL>1' -t 'PASS' -d 'iobio' - | \
     bcftools annotate -h $contigFile | \
-    vep $vepArgs
+    vep $vepArgs | \
+    $gnomadAnnotStage
 
 
-rm $suggFile
+rm -rf $tempDir
+cd $runDir
