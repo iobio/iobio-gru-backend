@@ -2,18 +2,26 @@
 #SJG Jan2020
 
 vcfUrl=$1
-qualCutoff=$2
-depthCutoff=$3 #Note: not using for now - doing this on front end
-normalCountCutoff=$4
-tumorCountCutoff=$5
-normalAfCutoff=$6
-tumorAfCutoff=$7
-normalSampleIdx=$8
-totalSampleNum=$9
+selectedSamples=$2
+qualCutoff=$3
+depthCutoff=$4 #Note: not using for now - doing this on front end
+normalCountCutoff=$5
+tumorCountCutoff=$6
+normalAfCutoff=$7
+tumorAfCutoff=$8
+normalSampleIdx=$9
+totalSampleNum=$10
 
 qualPhrase="QUAL>${qualCutoff}"
 normalCountPhrase="AC[${normalSampleIdx}]<=${normalCountCutoff}"
 normalAfPhrase="(AF[${normalSampleIdx}]<=${normalAfCutoff}||(AC[${normalSampleIdx}]/AN)<=${normalAfCutoff})"
+
+#filter for selected samples if provided
+#todo: this phrase needs to be tested
+samplePhrase=""
+if (! -n "$selectedSamples"); then
+   samplePhrase="-s $selectedSamples"
+fi
 
 #format tumor query pieces
 tumorCountPhrase="("
@@ -38,7 +46,7 @@ runDir=$PWD
 tempDir=$(mktemp -d)
 cd $tempDir
 
-bcftools query -f '%LINE\n' -i $queryPhrase $vcfUrl
+bcftools query -f '%LINE\n' $samplePhrase -i $queryPhrase $vcfUrl
 
 #echo $tempDir
 rm -rf $tempDir

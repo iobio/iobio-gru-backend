@@ -283,7 +283,7 @@ router.post('/getSomaticVariants', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
   console.log(JSON.stringify(params, null, 2));
 
-  const args = [params.vcfUrl, params.qualCutoff, params.totalReadCutoff, params.normalCountCutoff, params.tumorCountCutoff, params.normalAfCutoff, params.tumorAfCutoff, params.normalSampleIdx, params.totalSampleNum];
+  const args = [params.vcfUrl,params.selectedSamplesStr, params.qualCutoff, params.totalReadCutoff, params.normalCountCutoff, params.tumorCountCutoff, params.normalAfCutoff, params.tumorAfCutoff, params.normalSampleIdx, params.totalSampleNum];
   
   await handle(ctx, 'getSomaticVariants.sh', args, { ignoreStderr: false });
 });
