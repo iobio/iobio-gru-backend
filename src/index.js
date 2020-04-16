@@ -323,7 +323,9 @@ router.post('/annotateEnrichmentCounts', async (ctx) => {
 router.post('/annotateSomaticVariants', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
 
-  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.qualCutoff, params.totalReadCutoff, params.normalCountCutoff, params.tumorCountCutoff, params.normalAfCutoff, params.tumorAfCutoff, params.normalSampleIdx, params.totalSampleNum];
+  const vepCacheDir = dataPath('vep-cache');
+
+  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.qualCutoff, params.totalReadCutoff, params.normalCountCutoff, params.tumorCountCutoff, params.normalAfCutoff, params.tumorAfCutoff, params.normalSampleIdx, params.totalSampleNum, params.genomeBuildName, vepCacheDir];
   
   await handle(ctx, 'annotateSomaticVariants.sh', args, { ignoreStderr: false });
 });
