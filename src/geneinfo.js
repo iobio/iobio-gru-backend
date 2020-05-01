@@ -177,7 +177,7 @@ router.get('/api/genes/', async (ctx) => {
 
         ctx.set('Content-Type', 'application/json');
         ctx.set('Charset', 'utf-8')
-        ctx.body = ctx.query.callback + '(' + JSON.stringify([gene_data]) +');';
+	ctx.body = JSON.stringify([gene_data]);
         resolve();
       });
     });
@@ -191,12 +191,28 @@ router.get('/api/region/:region', async (ctx) => {
   var source = ctx.query.source; 
   var species = ctx.query.species;
   var build = ctx.query.build;
+  
+  // bound
+  // 'outer'   (default) means start and end specified represent the outer-bounds.  i
+  //           find all genes in the specified start and end region
+  // 'inner'   means start and end specified represent a coordinate inside.
+  //           in other words, find the gene that contains this start and end coordinate  
+  var bound = ctx.query.bound;
+  if (bound == null || bound == '') {
+    bound = 'outer';
+  }
+
   if (source == null || source == '') {
     source = 'gencode';
   } 
-  var sqlString = "SELECT distinct * from genes where chr = '" + chr 
-    + "' and  (start between " + start + " and " + end 
-    + "        or end between " + start + " and " + end + ")";
+  var sqlString = "SELECT distinct * from genes where chr = '" + chr + "";
+  if (bound == 'outer') {
+    sqlString += "' and  (start between  " + start + " and " + end 
+               + "        or end between " + start + " and " + end + ")";
+  } else {
+    sqlString += "' and  (start   <= " + start   
+               + "        and end >= " + end + ")";
+  }
   if (species != null && species != "") {
     sqlString  += " AND species = \""+species+"\"";
   }
