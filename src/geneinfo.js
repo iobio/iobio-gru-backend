@@ -278,5 +278,91 @@ router.get('/api/region/:region', async (ctx) => {
   });
 });
 
+
+
+// v2 (cacheable) endpoints
+router.get('/:gene', async (ctx) => {  
+  var source = ctx.query.source;
+  var species = ctx.query.species;
+  var build = ctx.query.build;
+  if (source == null || source == '') {
+    source = 'gencode';
+  } 
+  var geneSqlString = "SELECT * from genes where gene_name like \""+ctx.params.gene+"\" ";
+  geneSqlString    += " AND source = \""+source+"\"";
+  if (species != null && species != "") {
+    geneSqlString  += " AND species = \""+species+"\"";
+  }
+  if (build != null && build != "") {
+    geneSqlString  += " AND build = \""+build+"\"";
+  }
+
+  return new Promise((resolve, reject) => {
+    db.all(geneSqlString,function(err,rows){ 
+      var gene_data = {};
+      var transcript_ids = [];
+      if (rows != null && rows.length > 0) {
+        for (var i = 0; i < rows.length; i++) {
+          gene_data = rows[i];    
+          if (gene_data.hasOwnProperty("transcripts") && gene_data.transcripts != null && gene_data.transcripts != "") {
+            transcript_ids = transcript_ids.concat(JSON.parse(gene_data['transcripts']));
+          }       
+        }
+      } 
+          
+      async.map(transcript_ids,      
+        function(id, done){      
+          var source = ctx.query.source; 
+          if (source == null || source == '') {
+            source = 'gencode';
+          } 
+          var sqlString = "";
+          if (source == 'gencode') {
+            sqlString =  "SELECT t.*, x.refseq_id as 'xref' from transcripts t ";
+            sqlString += "LEFT OUTER JOIN xref_transcript x on x.gencode_id = t.transcript_id ";
+          } else if (source == 'refseq') {
+            sqlString =  "SELECT t.*, x.gencode_id as 'xref' from transcripts t ";
+            sqlString += "LEFT OUTER JOIN xref_transcript x on x.refseq_id = t.transcript_id ";
+          }
+          sqlString +=    "WHERE t.transcript_id=\""+id+"\" "
+          sqlString +=    "AND t.source = \""+source+"\"";
+          if (species != null && species != "") {
+            sqlString  += " AND t.species = \""+species+"\"";
+          }
+          if (build != null && build != "") {
+            sqlString  += " AND t.build = \""+build+"\"";
+          }        
+          db.all(sqlString,function(err,rows){    
+
+            if (err) reject(err);
+
+            if (rows != null && rows.length > 0) {
+              rows[0]['features'] = JSON.parse(rows[0]['features']);
+            } else {
+              rows[0]['features'] = [];
+            }   
+            done(null,rows[0]);
+          });
+
+        },      
+        function(err, results){        
+
+          if (err) reject(err);
+
+          gene_data['transcripts'] = results;
+          //res.json([gene_data]);
+
+          ctx.set('Content-Type', 'application/json');
+          ctx.set('Charset', 'utf-8')
+          ctx.set('Cache-Control', 'public,max-age=84600')
+          ctx.body = JSON.stringify([gene_data]);
+          resolve();
+        }
+      );
+    });
+  });
+});
+
+
 module.exports = router;
 
