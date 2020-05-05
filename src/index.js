@@ -540,6 +540,7 @@ app
   .use(mount('/static', staticServer))
   .use(logger())
   .use(cors({
+    origin: '*',
     maxAge: 86400,
   }))
   .use(bodyParser({
