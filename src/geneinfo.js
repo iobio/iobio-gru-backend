@@ -222,8 +222,9 @@ router.get('/api/region/:region', async (ctx) => {
   if (source != null && source != "") {
     sqlString +=    " AND source = \""+source+"\"";         
   }
+  
   return new Promise((resolve, reject) => {
-    db.all(sqlString, function(err, genes) { 
+    db.all(sqlString, function(err, genes) {
       async.map(genes, 
         function(gene_data, outterDone) {                   
           var transcript_ids = JSON.parse(gene_data['transcripts']);
@@ -246,7 +247,6 @@ router.get('/api/region/:region', async (ctx) => {
               if (build != null && build != "") {
                 sqlString  += " AND t.build = \""+build+"\"";
               }  
-              console.log(sqlString);
               db.all(sqlString,function(err,rows){          
 
                 if (err) {
