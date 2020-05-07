@@ -441,7 +441,7 @@ router.get('/phenotypeExtractor', async (ctx) => {
 
 // clin.iobio endpoints 
 //
-router.get('/geneToDrugs', async (ctx) => {
+router.get('/geneToDrugs', async ctx => {
   const gene = ctx.query.gene;
   let url = `http://dgidb.org/api/v2/interactions.json?genes=${gene}`;
   await fetch(url)
@@ -449,8 +449,23 @@ router.get('/geneToDrugs', async (ctx) => {
   .then(res => {
     ctx.body = res
   })
+  .catch(err => {
+    ctx.body = err 
+  })
 })
 
+router.get('/drugs', async ctx => {
+  const chembl_id = ctx.query.id;
+  let url = `http://dgidb.org/api/v2/drugs/${chembl_id}`;
+  await fetch(url)
+  .then(response => response.json())
+  .then(res => {
+    ctx.body = res
+  })
+  .catch(err => {
+    ctx.body = err 
+  })
+})
 
 router.post('/clinReport', async (ctx) => { 	 
   // Copy the data into a temporary file and then pass the path. It was failing
