@@ -15,6 +15,7 @@ const geneInfoRouter = require('./geneinfo.js');
 const genomeBuildRouter = require('./genomebuild.js');
 const { dataPath } = require('./utils.js');
 const fs = require('fs');
+const fetch = require('node-fetch');
 
 let port = 9001;
 if (process.argv[2]) {
@@ -435,6 +436,36 @@ router.get('/phenotypeExtractor', async (ctx) => {
 
   await handle(ctx, 'phenotypeExtractor.sh', args);
 });
+
+
+
+// clin.iobio endpoints 
+//
+router.get('/geneToDrugs', async ctx => {
+  const gene = ctx.query.gene;
+  let url = `http://dgidb.org/api/v2/interactions.json?genes=${gene}`;
+  await fetch(url)
+  .then(response => response.json())
+  .then(res => {
+    ctx.body = res
+  })
+  .catch(err => {
+    ctx.body = err 
+  })
+})
+
+router.get('/drugs', async ctx => {
+  const chembl_id = ctx.query.id;
+  let url = `http://dgidb.org/api/v2/drugs/${chembl_id}`;
+  await fetch(url)
+  .then(response => response.json())
+  .then(res => {
+    ctx.body = res
+  })
+  .catch(err => {
+    ctx.body = err 
+  })
+})
 
 router.post('/clinReport', async (ctx) => { 	 
   // Copy the data into a temporary file and then pass the path. It was failing
