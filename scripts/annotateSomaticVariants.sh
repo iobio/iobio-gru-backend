@@ -10,14 +10,51 @@ normalCountCutoff=$6
 tumorCountCutoff=$7
 normalAfCutoff=$8
 tumorAfCutoff=$9
-normalSampleIdx=${10}
+normalSampleIdxs=${10} #todo: these must be line-delim single string
+tumorSampleIdxs=${11} #todo: update point of call here
 totalSampleNum=${11}
 genomeBuildName=${12}
 vepCacheDir=${13}
 
 echo -e "$regions" >> regions.txt
+echo -e "$normalSampleIdxs" >> normals.txt
+echo -e "$tumorSampleIdxs" >> tumors.txt
 
 qualPhrase="QUAL>${qualCutoff}"
+depthPhrase="DP>${depthCutoff}"
+
+cmpdNormalPhrase="("
+for idx in normals.txt do
+	currPhrase=""
+	normalCountPhrase="FORMAT/AO[${idx}:0]<=${normalCountCutoff}"
+	normalFreqPhrase="FORMAT/AO[${idx}:0]/(FORMAT/AO[${idx}:0]+FORMAT/RO[${idx}:0])<=${normalAfCutoff}"
+	if (count > 0) then
+		currPhrase="|("
+	else
+		currPhrase="("
+	fi
+	currPhrase="${currPhrase}${normalCountPhrase}|${normalFreqPhrase})"
+	cmpdNormalPhrase="${cmpdNormalPhrase}${currPhrase}"
+done
+cmpdNormalPhrase="${cmpdNormalPhrase})"
+
+cmpdTumorPhrase="("
+for idx in tumors.txt do
+        currPhrase=""
+        tumorCountPhrase="FORMAT/AO[${idx}:0]>=${tumorCountCutoff}"
+        tumorFreqPhrase="FORMAT/AO[${idx}:0]/(FORMAT/AO[${idx}:0]+FORMAT/RO[${idx}:0])>=${tumorAfCutoff}"
+        if (count > 0) then
+                currPhrase="|("
+        else
+                currPhrase="("
+        fi
+        currPhrase="${currPhrase}${tumorCountPhrase}|${tumorFreqPhrase})"
+        cmpdTumorPhrase="${cmpdtumorPhrase}${currPhrase}"
+done
+cmpdTumorPhrase="${cmpdTumorPhrase})"
+
+
+<<'OLD'
 normalCountPhrase="AC[${normalSampleIdx}]<=${normalCountCutoff}"
 normalAfPhrase="(AF[${normalSampleIdx}]<=${normalAfCutoff}||(AC[${normalSampleIdx}]/AN)<=${normalAfCutoff})"
 
@@ -37,9 +74,13 @@ done
 tumorCountPhrase="${tumorCountPhrase})"
 tumorAfPhrase="${tumorAfPhrase})"
 
-#format final query
-queryPhrase="${qualPhrase}&&${normalCountPhrase}&&${normalAfPhrase}&&${tumorCountPhrase}&&${tumorAfPhrase}"
+OLD
 
+#format final query
+queryPhrase="${qualPhrase}&${depthPhrase}&${cmpdNormalPhrase}&${cmpdTumorPhrase}"
+
+#debugging
+echo "${queryPhrase}"
 
 vepArgs="--assembly $genomeBuildName --format vcf --allele_number --dir_cache $vepCacheDir"
 
@@ -48,12 +89,10 @@ tempDir=$(mktemp -d)
 cd $tempDir
 
 bcftools view -s $selectedSamples $vcfUrl | \
-    bcftools filter -i $queryPhrase -t $regions - | \
-    vep $vepArgs
+    #bcftools norm -N -m -
+    bcftools filter -i $queryPhrase -t $regions -
+    #vep $vepArgs
 
-#todo: need to do actual vep annotation call here dummy!
-
-#echo $tempDir
 rm -rf $tempDir
 cd $runDir
 

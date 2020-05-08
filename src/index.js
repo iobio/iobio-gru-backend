@@ -56,6 +56,7 @@ router.get('/alignmentHeader', async (ctx) => {
 });
 router.post('/alignmentHeader', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
+  console.log('url going into alignment header: ' + params.url);
   await handle(ctx, 'alignmentHeader.sh', [params.url]);
 });
 
