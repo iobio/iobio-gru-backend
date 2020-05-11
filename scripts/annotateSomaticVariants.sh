@@ -4,57 +4,54 @@
 vcfUrl=$1
 selectedSamples=$2
 regions=$3
-qualCutoff=$4
-depthCutoff=$5 #Note: not using for now - doing this on front end
-normalCountCutoff=$6
-tumorCountCutoff=$7
-normalAfCutoff=$8
-tumorAfCutoff=$9
-normalSampleIdxs=${10} #todo: these must be line-delim single string
-tumorSampleIdxs=${11} #todo: update point of call here
-totalSampleNum=${11}
-genomeBuildName=${12}
-vepCacheDir=${13}
+somaticFilterPhrase=$4
+genomeBuildName=$5
+vepCacheDir=$6
+
+runDir=$PWD
+tempDir=$(mktemp -d)
+cd $tempDir
 
 echo -e "$regions" >> regions.txt
+
+<<'OLD'
 echo -e "$normalSampleIdxs" >> normals.txt
 echo -e "$tumorSampleIdxs" >> tumors.txt
 
 qualPhrase="QUAL>${qualCutoff}"
-depthPhrase="DP>${depthCutoff}"
+depthPhrase="INFO/DP>${depthCutoff}"
 
 cmpdNormalPhrase="("
-for idx in normals.txt do
-	currPhrase=""
+n_count=0
+while read idx; do
+	currPhrase="("
 	normalCountPhrase="FORMAT/AO[${idx}:0]<=${normalCountCutoff}"
-	normalFreqPhrase="FORMAT/AO[${idx}:0]/(FORMAT/AO[${idx}:0]+FORMAT/RO[${idx}:0])<=${normalAfCutoff}"
-	if (count > 0) then
+	normalFreqPhrase="(FORMAT/AO[${idx}:0]/(FORMAT/AO[${idx}:0]+FORMAT/RO[${idx}:0]))<=${normalAfCutoff}"
+	if (("$n_count" > 0)); then
 		currPhrase="|("
-	else
-		currPhrase="("
 	fi
 	currPhrase="${currPhrase}${normalCountPhrase}|${normalFreqPhrase})"
 	cmpdNormalPhrase="${cmpdNormalPhrase}${currPhrase}"
-done
+	((n_count=n_count+1));
+done < normals.txt
 cmpdNormalPhrase="${cmpdNormalPhrase})"
 
 cmpdTumorPhrase="("
-for idx in tumors.txt do
-        currPhrase=""
+t_count=0
+while read idx; do
+        currPhrase="("
         tumorCountPhrase="FORMAT/AO[${idx}:0]>=${tumorCountCutoff}"
         tumorFreqPhrase="FORMAT/AO[${idx}:0]/(FORMAT/AO[${idx}:0]+FORMAT/RO[${idx}:0])>=${tumorAfCutoff}"
-        if (count > 0) then
+	if (("$t_count" > 0)); then
                 currPhrase="|("
-        else
-                currPhrase="("
         fi
         currPhrase="${currPhrase}${tumorCountPhrase}|${tumorFreqPhrase})"
         cmpdTumorPhrase="${cmpdtumorPhrase}${currPhrase}"
-done
+	((t_count=t_count+1))
+done < tumors.txt
 cmpdTumorPhrase="${cmpdTumorPhrase})"
 
 
-<<'OLD'
 normalCountPhrase="AC[${normalSampleIdx}]<=${normalCountCutoff}"
 normalAfPhrase="(AF[${normalSampleIdx}]<=${normalAfCutoff}||(AC[${normalSampleIdx}]/AN)<=${normalAfCutoff})"
 
@@ -66,7 +63,7 @@ for ((i=0; i<totalSampleNum; i++)); do
 		tumorCountPhrase="${tumorCountPhrase}AC[${i}]>=${tumorCountCutoff}"
 		tumorAfPhrase="${tumorAfPhrase}((AF[${i}]>=${tumorAfCutoff})||((AC[${i}]/AN)<=${tumorAfCutoff}))"
 		if ((i < totalSampleNum-1)); then
-			tumorCountPhrase="${tumorCountPhrase}||"
+4		tumorCountPhrase="${tumorCountPhrase}||"
 			tumorAfPhrase="$tumorAfPhrase||"
 		fi
 	fi
@@ -77,20 +74,23 @@ tumorAfPhrase="${tumorAfPhrase})"
 OLD
 
 #format final query
-queryPhrase="${qualPhrase}&${depthPhrase}&${cmpdNormalPhrase}&${cmpdTumorPhrase}"
+#queryPhrase="${qualFilterPhrase}&${normalFilterPhrase}&${tumorFilterPhrase}"
 
-#debugging
-echo "${queryPhrase}"
+somaticFilterPhrase="FORMAT/AO[0:0]<2&FORMAT/AO[1:0]>5|FORMAT/AO[2:0]>5|FORMAT/AO[3:0]>5"
+
+echo "${somaticFilterPhrase}"
+
+fastaPath="/home/ubuntu/data/references/GRCh37/human_g1k_v37_decoy_phix.fasta"
+if [ "${genomeBuildName}" = "GRCh38" ]; then
+	fastaPath="/home/ubuntu/data/references/GRCh38/human_g1k_v38_decoy_phix.fasta"
+fi
 
 vepArgs="--assembly $genomeBuildName --format vcf --allele_number --dir_cache $vepCacheDir"
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
-
 bcftools view -s $selectedSamples $vcfUrl | \
-    #bcftools norm -N -m -
-    bcftools filter -i $queryPhrase -t $regions -
+    bcftools filter -t $regions - | \
+    bcftools norm -m - -w 10000 -f $fastaPath - | \
+    bcftools filter -i $somaticFilterPhrase
     #vep $vepArgs
 
 rm -rf $tempDir
