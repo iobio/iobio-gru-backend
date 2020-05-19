@@ -470,6 +470,8 @@ router.post('/checkBamBai', async (ctx) => {
     await handle(ctx, 'checkBamBai.sh', args, { ignoreStderr: true });
 });
 
+
+
 // vcf.iobio endpoints
 router.post('/vcfStatsStream', async (ctx) => {
 

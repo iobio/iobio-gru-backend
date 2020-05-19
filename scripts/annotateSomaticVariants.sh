@@ -8,10 +8,21 @@ somaticFilterPhrase=$4
 genomeBuildName=$5
 vepCacheDir=$6
 
+#todo: fix tab spacing before pr
+
 #Make temp dir
 runDir=$PWD
 tempDir=$(mktemp -d)
 cd $tempDir
+
+#Add somatic filter stage if we have a filter
+somFilterStage=cat
+if [ "somaticFilterPhrase" ]; then
+	function somFilterFunc {
+		bcftools filter -i $somaticFilterPhrase -
+	}
+	somFilterStage=somFilterFunc
+fi
 
 #Get correct fasta file
 fastaPath="/home/ubuntu/data/references/GRCh37/human_g1k_v37_decoy_phix.fasta"
@@ -27,7 +38,7 @@ echo -e "$regions" >> regions.txt
 bcftools view -s $selectedSamples $vcfUrl | \
     bcftools filter -t $regions - | \
     bcftools norm -m - -w 10000 -f $fastaPath - | \
-    bcftools filter -i $somaticFilterPhrase - | \
+    $somFilterStage | \
     vep $vepArgs
 
 rm -rf $tempDir
