@@ -48,6 +48,22 @@ In the simplest case, all that's necessary for setting up gru is to clone the
 repo, then run `make`. If something goes wrong, it should be fairly easy to
 manually run the steps in the Makefile. There's not much going on in there.
 
+Note that a lot of bioinformatics CLI tools are required by gru at runtime.
+These tools must be in `tool_bin`.  By default, we pre-build these tools and
+store them on a public S3 bucket, and the Makefile downloads them.
+
+Recipes to build the tools from scratch are included in the `tools/`
+directory. Most of them are packaged as singularity containers. As an example,
+to build samtools you would run the following from `tools/samtools/`:
+
+```
+sudo singularity build samtools samtools.def
+```
+
+And then copy the samtools image to `tool_bin/`. It can mostly be treated as
+a static binary, but whatever system you run it on must have singularity
+installed.
+
 
 ## Data directory
 
