@@ -56,6 +56,7 @@ router.get('/alignmentHeader', async (ctx) => {
 });
 router.post('/alignmentHeader', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
+  console.log('url going into alignment header: ' + params.url);
   await handle(ctx, 'alignmentHeader.sh', [params.url]);
 });
 
@@ -332,14 +333,12 @@ router.post('/annotateEnrichmentCounts', async (ctx) => {
     await handle(ctx, 'annotateEnrichmentCounts.sh', args, { ignoreStderr: true });
 });
 
-router.post('/getSomaticVariants', async (ctx) => {
-  
+router.post('/annotateSomaticVariants', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
-  console.log(JSON.stringify(params, null, 2));
-
-  const args = [params.vcfUrl, params.qualCutoff, params.totalReadCutoff, params.normalCountCutoff, params.tumorCountCutoff, params.normalAfCutoff, params.tumorAfCutoff, params.normalSampleIdx, params.totalSampleNum];
+  const vepCacheDir = dataPath('vep-cache');
+  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, params.genomeBuildName, vepCacheDir];
   
-  await handle(ctx, 'getSomaticVariants.sh', args, { ignoreStderr: false });
+  await handle(ctx, 'annotateSomaticVariants.sh', args, { ignoreStderr: false });
 });
 
 router.post('/freebayesJointCall', async (ctx) => {
@@ -482,6 +481,8 @@ router.post('/checkBamBai', async (ctx) => {
     const args = [ params.url, params.indexUrl, params.region ];
     await handle(ctx, 'checkBamBai.sh', args, { ignoreStderr: true });
 });
+
+
 
 // vcf.iobio endpoints
 router.post('/vcfStatsStream', async (ctx) => {
