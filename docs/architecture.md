@@ -32,7 +32,7 @@ requested terms, in `./cache`.
 
 ## fibridge
 
-fibridge is a generic services that provides a way to proxy HTTP connections
+[fibridge][3] is a generic services that provides a way to proxy HTTP connections
 to a WebSocket source. iobio uses it for local file support. The way it works
 is the iobio app opens a file (for example a bam file) and also opens a 
 WebSocket channel to the fibridge server. The fibridge server provides a URL
@@ -63,13 +63,13 @@ functionality isn't. This section attempts to explain this.
 This first thing to note is that gru has evolved over time, so some things have
 been added and others will likely be removed/moved elsewhere.
 
-Other than that, there are a few major concerns for the iobio backend:
+Other than that, there are a coupld major concerns for the iobio backend:
 
 * Security (ie HIPAA compliance)
 * Nature of different requests (ie cacheable vs not, request/response vs RPC)
 
 
-# Security
+## Security
 
 This is the primary distinction. Some functionality provided by the iobio
 backend is public in nature. For example, converting a phenotype into a list
@@ -83,7 +83,7 @@ data itself has. This precludes for example running such tasks on AWS Lambda.
 gru's job is to handle all of these types of requests.
 
 
-# Request type
+## Request type
 
 Most of the pipeline requests are really remote procedure calls (RPCs). They
 even use/abuse HTTP POST requests with content type text/plain (event though
@@ -104,3 +104,5 @@ into a single cacheable service.
 [1]: https://github.com/iobio/multialign 
 
 [2]: https://github.com/anderspitman/stealthcheck
+
+[3]: https://github.com/anderspitman/fibridge-proxy-rs
