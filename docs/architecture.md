@@ -32,14 +32,14 @@ requested terms, in `./cache`.
 
 ## fibridge
 
-[fibridge][3] is a generic services that provides a way to proxy HTTP connections
-to a WebSocket source. iobio uses it for local file support. The way it works
-is the iobio app opens a file (for example a bam file) and also opens a 
-WebSocket channel to the fibridge server. The fibridge server provides a URL
-for the file. The app then invokes the gru backend, giving it the fibridge URL.
-From gru's perspective, it's just an HTTP request, but in reality the app is
-on the other end, serving the file over the WebSocket, proxied through the
-fibridge server.
+[fibridge][3] is a generic service which provides a way to proxy HTTP
+connections to a WebSocket source. iobio uses it for local file support. The
+way it works is the iobio app opens a file on the user's machine (for example a
+bam file) and also opens a WebSocket channel to the fibridge server. The
+fibridge server provides a URL for the file. The app then invokes the gru
+backend, giving it the fibridge URL.  From gru's perspective, it's just an HTTP
+request, but in reality the app is on the other end, serving the file over the
+WebSocket, proxied through the fibridge server.
 
 
 ## Multialign
