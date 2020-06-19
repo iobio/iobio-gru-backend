@@ -127,7 +127,7 @@ router.post('/vcfReadDepth', async (ctx) => {
 router.post('/alignmentCoverage', async (ctx) => {
 
   const params = JSON.parse(ctx.request.body);
-  // console.log(JSON.stringify(params, null, 2));
+   console.log(JSON.stringify(params, null, 2));
 
   const url = params.url;
   const indexUrl = params.indexUrl;
@@ -135,14 +135,7 @@ router.post('/alignmentCoverage', async (ctx) => {
   const maxPoints = params.maxPoints;
   const coverageRegions = params.coverageRegions;
   const qualityCutoff = params.qualityCutoff;
-  const countsOnly = params.countsOnly ? params.countsOnly : false;
-
-  // this can either be an array of regions, or single region object
-  let samtoolsRegionArg = samtoolsRegion; 
-  if (samtoolsRegion.refName) {
-      samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
-  console.log("single region mode");
-  }
+  const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
   const spanningRegionArg = "-r " + samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
 
   const coverageRegionsArg = coverageRegions.length === 0 ? '' :
@@ -153,7 +146,7 @@ router.post('/alignmentCoverage', async (ctx) => {
 
   const maxPointsArg = "-m " + maxPoints;
 
-  const args = [url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg, coverageRegionsArg, qualityCutoff, countsOnly];
+  const args = [url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg, coverageRegionsArg, qualityCutoff];
 
   await handle(ctx, 'alignmentCoverage.sh', args, { ignoreStderr: true });
 });
