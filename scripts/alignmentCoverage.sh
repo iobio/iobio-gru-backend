@@ -10,15 +10,16 @@ quality_threshold=$7
 counts_only=$8
 
 #default optional stages to no-op
+view_stage=cat
 pileup_stage=cat
 coverage_stage=cat
 
 #default view_option to coordinate with no-ops
 #note: -c and -b are mutually exclusive
-view_option="-c"
+view_option=""
 
 #if counts_only is false, adjust optional stages & view_option
-if [ "counts_only" == "false" ]; then
+if [ "$counts_only" = false ] ; then
     view_option="-b"
 
     function pileup_func {
@@ -38,7 +39,7 @@ if [ "quality_threshold" ]; then
     function filt_view_func {
         samtools_od view -q $quality_threshold $view_option $url $samtools_region $index_url 
     }
-    view_stage=filter_view_func
+    view_stage=filt_view_func
 else
     function view_func {
         samtools_od view $view_option $url $samtools_region $index_url
@@ -46,7 +47,6 @@ else
     view_stage=view_func
 fi
 
-
 $view_stage | \
-    $mpileup_stage | \
+    $pileup_stage | \
     $coverage_stage
