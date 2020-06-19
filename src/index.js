@@ -134,12 +134,7 @@ router.post('/alignmentCoverage', async (ctx) => {
   const maxPoints = params.maxPoints;
   const coverageRegions = params.coverageRegions;
   const qualityCutoff = params.qualityCutoff;
-  const countsOnly = params.countsOnly ? params.countsOnly : false;
-
-  // this can either be an array of regions, or single region object
-  const samtoolsRegionArg = samtoolsRegion; 
-  if (samtoolsRegion.refName)
-      samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
+  const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
   const spanningRegionArg = "-r " + samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
 
   const coverageRegionsArg = coverageRegions.length === 0 ? '' :
@@ -152,7 +147,7 @@ router.post('/alignmentCoverage', async (ctx) => {
 
   const maxPointsArg = "-m " + maxPoints;
 
-  const args = [url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg, coverageRegionsArg, qualityCutoff, countsOnly];
+  const args = [url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg, coverageRegionsArg, qualityCutoff];
 
   await handle(ctx, 'alignmentCoverage.sh', args, { ignoreStderr: true });
 });
