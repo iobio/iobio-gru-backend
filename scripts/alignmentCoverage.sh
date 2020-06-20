@@ -9,9 +9,9 @@ coverage_regions=$6
 quality_threshold=$7
 
 #if quality value provided, filter reads by mapq
-quality_opt=""
+quality_opt="-b"
 if [ "quality_threshold" ]; then
-    quality_opt="-q $quality_threshold"
+    quality_opt="-b -q $quality_threshold"
 fi
 
 samtools_od view $quality_opt $url $samtools_region $index_url | \
