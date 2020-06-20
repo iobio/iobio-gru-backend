@@ -13,6 +13,7 @@ const process = require('process');
 const gene2PhenoRouter = require('./gene2pheno.js');
 const geneInfoRouter = require('./geneinfo.js');
 const genomeBuildRouter = require('./genomebuild.js');
+const hpoRouter = require('./hpo.js');
 const { dataPath } = require('./utils.js');
 const fs = require('fs');
 
@@ -27,6 +28,7 @@ const router = new Router();
 router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
 router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
 router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
+router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
 
 const staticServer = new Koa();
 staticServer.use(serve(path.join(__dirname, '../static')));
