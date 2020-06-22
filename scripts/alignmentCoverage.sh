@@ -9,11 +9,12 @@ coverage_regions=$6
 quality_threshold=$7
 
 #if quality value provided, filter reads by mapq
-quality_opt="-b"
+# otherwise just add binary flag
+view_opt="-b"
 if [ "quality_threshold" ]; then
-    quality_opt="-b -q $quality_threshold"
+    view_opt="-b -q $quality_threshold"
 fi
 
-samtools_od view $quality_opt $url $samtools_region $index_url | \
+samtools_od view $view_opt $url $samtools_region $index_url | \
     samtools mpileup - | \
     coverage $max_points $spanning_region $coverage_regions
