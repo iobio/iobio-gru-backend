@@ -1,0 +1,14 @@
+Description=iobio gru backend
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=ubuntu
+WorkingDirectory=/home/ubuntu
+ExecStart=/bin/bash -c 'PATH=/home/ubuntu/iobio-gru-backend/tool_bin:$PATH /home/ubuntu/iobio-gru-backend/node/bin/node /home/ubuntu/iobio-gru-backend/src/index.js'
+
+[Install]
+WantedBy=multi-user.target
