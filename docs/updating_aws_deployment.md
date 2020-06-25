@@ -22,9 +22,7 @@ So the steps are:
 
 2. Update the launch template to use the new AMI
 
-3. Tell AWS to use the new launch template
-
-4. Kill the old nodes a few at a time so the autoscaling replaces them with the
+3. Kill the old nodes a few at a time so the autoscaling replaces them with the
    new ones.
 
 
@@ -50,9 +48,9 @@ git pull origin master
 ```
 
 Now save a new version of the AMI from the AWS console by doing
-Actions>Image>Create Image. Name it using the following pattern, but increment
-the gru version number (and the golang and/or singularity versions if you
-also update those):
+`Actions>Image>Create Image`. Name it using the following pattern, but
+increment the gru version number (and the golang and/or singularity versions if
+you also update those):
 
 ```
 gru-backend-0.11.0_ubuntu-18.04_golang-1.13_singularity-3.5.3
@@ -63,13 +61,18 @@ gru-backend-0.11.0_ubuntu-18.04_golang-1.13_singularity-3.5.3
 
 Once the AMI is finished being created, use the AWS console to navigate to
 the launch templates page. The launch template is named `gru-node`. Open it
-and go to `Actions>Modify Template (Create new version)`. Scroll down to the
-AMI dropdown and select the new AMI you created above. Save the template
-version.
+and go to `Actions>Modify Template (Create new version)`.
 
-Also scroll down to the resource tags section and change the `Name` tag to
-match the new version. This shouldn't affect it working but does make it
-easier to keep track of which versions we have running.
+Perform the following steps:
+
+1. Select the `Source template version` dropdown and choose the latest version.
+
+2. Scroll down to the AMI dropdown and select the new AMI you created above.
+   Save the template version.
+
+3. Scroll down to the resource tags section and change the `Name` tag to match
+   the new version. This shouldn't affect it working but does make it easier to
+   keep track of which versions we have running.
 
 The ALB is configured to use the latest version of the launch template, so
 any new nodes created after this point should use the correct AMI.
