@@ -1,5 +1,5 @@
 #!/bin/bash
-#SJG Jan2020
+#SJG updated Jun2020
 
 vcfUrl=$1
 selectedSamples=$2
@@ -8,9 +8,6 @@ somaticFilterPhrase=$4
 genomeBuildName=$5
 vepCacheDir=$6
 
-#todo: fix tab spacing before pr
-
-#Make temp dir
 runDir=$PWD
 tempDir=$(mktemp -d)
 cd $tempDir
@@ -18,16 +15,16 @@ cd $tempDir
 #Add somatic filter stage if we have a filter
 somFilterStage=cat
 if [ "somaticFilterPhrase" ]; then
-	function somFilterFunc {
-		bcftools filter -i $somaticFilterPhrase -
-	}
-	somFilterStage=somFilterFunc
+    function somFilterFunc {
+        bcftools filter -i $somaticFilterPhrase -
+    }
+    somFilterStage=somFilterFunc
 fi
 
 #Get correct fasta file
 fastaPath="/home/ubuntu/data/references/GRCh37/human_g1k_v37_decoy_phix.fasta"
 if [ "${genomeBuildName}" = "GRCh38" ]; then
-	fastaPath="/home/ubuntu/data/references/GRCh38/human_g1k_v38_decoy_phix.fasta"
+    fastaPath="/home/ubuntu/data/references/GRCh38/human_g1k_v38_decoy_phix.fasta"
 fi
 
 #Compose args
