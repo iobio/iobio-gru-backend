@@ -135,7 +135,7 @@ router.post('/alignmentCoverage', async (ctx) => {
   const samtoolsRegion = params.samtoolsRegion;
   const maxPoints = params.maxPoints;
   const coverageRegions = params.coverageRegions;
-
+  const qualityCutoff = params.qualityCutoff;
   const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
   const spanningRegionArg = "-r " + samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
 
@@ -149,7 +149,7 @@ router.post('/alignmentCoverage', async (ctx) => {
 
   const maxPointsArg = "-m " + maxPoints;
 
-  const args = [url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg, coverageRegionsArg];
+  const args = [url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg, coverageRegionsArg, qualityCutoff];
 
   await handle(ctx, 'alignmentCoverage.sh', args, { ignoreStderr: true });
 });
@@ -199,6 +199,18 @@ router.post('/geneCoverage', async (ctx) => {
     await handle(ctx, 'geneCoverage.sh', args);
 });
 
+router.post('/filteredReadsCount', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+   
+    const url = params.url;
+    const indexUrl = params.indexUrl;
+    const samtoolsRegion = params.regionStr;
+    const qualityCutoff = params.qualityCutoff;
+    const args = [url, indexUrl, samtoolsRegion, qualityCutoff];
+
+    await handle(ctx, 'filteredReadsCount.sh', args, { ignoreStderr: true });
+});
 
 router.get('/normalizeVariants', async (ctx) => {
   const vcfUrl = ctx.query.vcfUrl;
