@@ -9,20 +9,16 @@
   },
   "author": "",
   "license": "ISC",
-  "devDependencies": {
-    "chai": "^4.2.0",
-    "mocha": "^6.1.4",
-    "nodemon": "^1.19.0"
-  },
+  "devDependencies": {},
   "dependencies": {
-    "@koa/cors": "^2.2.3",
-    "async": "^3.1.0",
-    "koa": "^2.7.0",
-    "koa-bodyparser": "^4.2.1",
+    "@koa/cors": "^3.0.0",
+    "async": "^3.2.0",
+    "koa": "^2.11.0",
+    "koa-bodyparser": "^4.3.0",
     "koa-logger": "^3.2.1",
-    "koa-router": "^7.4.0",
-    "sqlite3": "^4.1.0",
     "koa-mount": "^4.0.0",
-    "koa-static": "^5.0.0"
+    "koa-router": "^8.0.0",
+    "koa-static": "^5.0.0",
+    "sqlite3": "^4.1.0"
   }
 }
