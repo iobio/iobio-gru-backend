@@ -198,18 +198,6 @@ router.post('/geneCoverage', async (ctx) => {
     await handle(ctx, 'geneCoverage.sh', args);
 });
 
-router.post('/filteredReadsCount', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
-   
-    const url = params.url;
-    const indexUrl = params.indexUrl;
-    const samtoolsRegion = params.regionStr;
-    const qualityCutoff = params.qualityCutoff;
-    const args = [url, indexUrl, samtoolsRegion, qualityCutoff];
-
-    await handle(ctx, 'filteredReadsCount.sh', args, { ignoreStderr: true });
-});
 
 router.get('/normalizeVariants', async (ctx) => {
   const vcfUrl = ctx.query.vcfUrl;
