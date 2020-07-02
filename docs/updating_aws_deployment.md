@@ -31,7 +31,7 @@ So the steps are:
 The easiest way to get a running copy of the current version of the AMI is to
 simply SSH into one of the active nodes. This also ensures that you don't
 pick the wrong image. Go to the EC2 instances page and pick one from there.
-They are named similar to `gru-backend-worker-0.11.0`.
+They are named similar to `gru-backend-worker-0.14.0`.
 
 You'll need a copy of the `gru-backend-servers.pem` key to ssh. The command
 will look something like this:
@@ -47,13 +47,22 @@ cd iobio-gru-backend
 git pull origin master
 ```
 
+Also run the following unless you're sure you don't need to:
+
+```bash
+make clean
+make
+```
+
+Scroll through the output and make sure everything downloaded correctly.
+
 Now save a new version of the AMI from the AWS console by doing
 `Actions>Image>Create Image`. Name it using the following pattern, but
 increment the gru version number (and the golang and/or singularity versions if
 you also update those):
 
 ```
-gru-backend-0.11.0_ubuntu-18.04_golang-1.13_singularity-3.5.3
+gru-backend-0.14.0_ubuntu-18.04_golang-1.13_singularity-3.5.3
 ```
 
 
