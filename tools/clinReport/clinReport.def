@@ -19,7 +19,7 @@ From: ubuntu:18.04
 
     cd clin-report
 
-    git checkout 5eb85a2702ddc8d19c8ae521d130739dfb26ef1c
+    git checkout 22bfb126f26559c4f204b9a2bc4f084bddc9540e
 
     npm install 
          
