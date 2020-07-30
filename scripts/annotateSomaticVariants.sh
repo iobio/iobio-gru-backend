@@ -14,7 +14,7 @@ cd $tempDir
 
 #Add somatic filter stage if we have a filter
 somFilterStage=cat
-if [ "somaticFilterPhrase" ]; then
+if [ ! -z "$somaticFilterPhrase" ]; then
     function somFilterFunc {
         bcftools filter -i $somaticFilterPhrase -
     }
