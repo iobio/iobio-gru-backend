@@ -13,6 +13,12 @@ async function serveStatic(ctx, fsPath) {
     return;
   }
 
+  if (stats.isDirectory()) {
+    ctx.status = 404;
+    ctx.body = "Not Found";
+    return;
+  }
+
   const rangeHeader = ctx.headers['range'];
 
   // TODO: parse byte range specs properly according to
