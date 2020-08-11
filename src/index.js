@@ -3,8 +3,6 @@ const Router = require('koa-router');
 const cors = require('@koa/cors');
 const logger = require('koa-logger');
 const bodyParser = require('koa-bodyparser');
-const mount = require('koa-mount');
-const serve = require('koa-static');
 const path = require('path');
 const { run } = require('./process.js');
 const { mktemp } = require('./mktemp.js');
@@ -16,6 +14,7 @@ const genomeBuildRouter = require('./genomebuild.js');
 const hpoRouter = require('./hpo.js');
 const { dataPath } = require('./utils.js');
 const fs = require('fs');
+const { serveStatic } = require('./static.js');
 
 let port = 9001;
 if (process.argv[2]) {
@@ -30,11 +29,13 @@ router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMet
 router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
 router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
 
-const staticServer = new Koa();
-staticServer.use(serve(path.join(__dirname, '../static')));
-
 router.get('/', async (ctx) => {
   ctx.body = "<h1>I be healthful</h1>";
+});
+
+router.get('/static/*', async (ctx) => {
+  const fsPath = path.join(__dirname, '..', ctx.path);
+  await serveStatic(ctx, fsPath);
 });
 
 router.post('/viewAlignments', async (ctx) => {
@@ -538,7 +539,6 @@ function genRegionsStr(regions) {
 }
 
 app
-  .use(mount('/static', staticServer))
   .use(logger())
   .use(cors({
     origin: '*',

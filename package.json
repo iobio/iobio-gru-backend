@@ -16,9 +16,7 @@
     "koa": "^2.11.0",
     "koa-bodyparser": "^4.3.0",
     "koa-logger": "^3.2.1",
-    "koa-mount": "^4.0.0",
     "koa-router": "^8.0.0",
-    "koa-static": "^5.0.0",
     "sqlite3": "^4.1.0"
   }
 }
