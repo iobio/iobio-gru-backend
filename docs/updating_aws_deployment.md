@@ -74,7 +74,8 @@ and go to `Actions>Modify Template (Create new version)`.
 
 Perform the following steps:
 
-1. Select the `Source template version` dropdown and choose the latest version.
+1. Select the `Source template version` dropdown and choose the latest version
+   (highest number).
 
 2. Scroll down to the AMI dropdown and select the new AMI you created above.
    Save the template version.
