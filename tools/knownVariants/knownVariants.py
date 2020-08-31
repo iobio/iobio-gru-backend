@@ -3,7 +3,6 @@
 """
 Created on Mon Jun 12 16:51:04 2017
 @author: tonyd
-
 Updated 30Sept2019 by stephg
 """
 
@@ -28,6 +27,8 @@ CLINVAR_BENIGN = ['Likely_benign', 'Benign', 'Benign/Likely_benign']
 CLINVAR_UNKNOWN = ['Uncertain_significance', 'not_provided']
 CLINVAR_OTHER = ['Conflicting_interpretations_of_pathogenicity', 'drug_response']
 IMPACT_FIELDS = ['LOW', 'MODIFIER', 'MODERATE', 'HIGH']
+
+phenotypeCounts = {}
 
 def getArgs(argv):
     try:
@@ -137,6 +138,19 @@ def incrementBinIndex(record, regionBins, index):
     return binInfo
 
 
+def getPhenotype(phenotype):
+  phenotypeObj = phenotypeCounts.get(phenotype, createCounts('phenotype'));
+  phenotypeCounts[phenotype] = phenotypeObj
+  return phenotypeObj
+  
+def parsePhenotypeTokens(record):
+  phenotypeTokens = []
+  for phenotypeTerm in record.INFO['CLNDN']:
+    for token in phenotypeTerm.split('|'):
+      phenotypeTokens.append(token);
+  return phenotypeTokens
+
+
 # Mode determines if we're categorizing by clinvar annotations or VEP annotations
 def summarizeVariants(regionBins, annotationMode):
     binIndex = 0
@@ -183,40 +197,81 @@ def summarizeVariants(regionBins, annotationMode):
             counts[designation] += 1
             regionBins['counts'][designation] += 1
 
-    return regionBins
+
+        for phenotypeTerm in parsePhenotypeTokens(record):  
+
+          phenotypeCountObj = getPhenotype(phenotypeTerm)
+          phenotypeCountObj['TOTAL'] += 1
+          designation = 'OTHER'
+          for clinSig in record.INFO['CLNSIG']:
+            if clinSig in CLINVAR_PATH:
+                designation = 'PATH'
+            elif clinSig in CLINVAR_BENIGN:
+                designation = 'BENIGN'
+            elif clinSig in CLINVAR_OTHER:
+                designation = 'OTHER'
+            elif clinSig in CLINVAR_UNKNOWN:
+                designation = 'UNKNOWN'
+            else:
+                print("warning: unknown clinsign encountered", clinSig, file=sys.stderr)
+
+          phenotypeCountObj[designation] += 1
 
 
-def printResults(regionBins, annotationMode):
+
+    return [regionBins, phenotypeCounts]
+
+
+
+def printResults(data, annotationMode):
     cols = []
+    regionBins      = data[0];
+    phenotypeCounts = data[1];
+
     if annotationMode == 'vep':
         cols = ['start', 'end', 'high', 'moderate', 'modifier', 'low', 'other', 'total']
+    elif annotationMode == 'phenotype':
+        cols = ['phenotype', 'benign', 'unknown', 'other', 'path', 'total']
     else:
         cols = ['start', 'end', 'benign', 'unknown', 'other', 'path', 'total']
     print(*cols, sep='\t')
-    for bin in regionBins['bins']:
-        fields = []
-        if annotationMode == 'vep':
-            fields = [
-                bin['start'],
-                bin['end'],
-                bin['counts']['HIGH'],
-                bin['counts']['MODERATE'],
-                bin['counts']['MODIFIER'],
-                bin['counts']['LOW'],
-                bin['counts']['OTHER'],
-                bin['counts']['TOTAL']
-            ]
-        else:
-            fields = [
-                bin['start'],
-                bin['end'],
-                bin['counts']['BENIGN'],
-                bin['counts']['UNKNOWN'],
-                bin['counts']['OTHER'],
-                bin['counts']['PATH'],
-                bin['counts']['TOTAL']
-            ]
-        print(*fields, sep='\t')
+    if (annotationMode == 'phenotype'):
+        for phenotypeTerm in phenotypeCounts:
+              phenotypeCountObj = phenotypeCounts[phenotypeTerm]
+              fields = [
+                phenotypeTerm,
+                phenotypeCountObj['BENIGN'], 
+                phenotypeCountObj['UNKNOWN'], 
+                phenotypeCountObj['OTHER'], 
+                phenotypeCountObj['PATH'],
+                phenotypeCountObj['TOTAL']
+              ];
+              print(*fields, sep='\t')
+    else: 
+        for bin in regionBins['bins']:
+            fields = []
+            if annotationMode == 'vep':
+                fields = [
+                    bin['start'],
+                    bin['end'],
+                    bin['counts']['HIGH'],
+                    bin['counts']['MODERATE'],
+                    bin['counts']['MODIFIER'],
+                    bin['counts']['LOW'],
+                    bin['counts']['OTHER'],
+                    bin['counts']['TOTAL']
+                ]
+            else:
+                fields = [
+                    bin['start'],
+                    bin['end'],
+                    bin['counts']['BENIGN'],
+                    bin['counts']['UNKNOWN'],
+                    bin['counts']['OTHER'],
+                    bin['counts']['PATH'],
+                    bin['counts']['TOTAL']
+                ]
+            print(*fields, sep='\t')
 
 
 # Get the command line arguments
@@ -225,6 +280,8 @@ if __name__ == "__main__":
 
     if 'annotationMode' in theArgs and theArgs['annotationMode'] == 'vep':
         annotationMode = 'vep'
+    elif 'annotationMode' in theArgs and theArgs['annotationMode'] == 'phenotype':
+        annotationMode = 'phenotype'
     else:
         annotationMode = 'clinvar'
 
@@ -234,6 +291,6 @@ if __name__ == "__main__":
         regionBins = parseRegionPartsIntoBins(theArgs['region'], theArgs['regionParts'], annotationMode)
 
     binIndex = +0
-    regionBins = summarizeVariants(regionBins, annotationMode)
+    data = summarizeVariants(regionBins, annotationMode)
 
-    printResults(regionBins, annotationMode)
+    printResults(data, annotationMode)
