@@ -4,7 +4,7 @@
 Created on Mon Jun 12 16:51:04 2017
 @author: tonyd
 
-Updated 30Sept2019 by stephg
+Updated 02Oct2020 by stephg
 """
 
 import vcf
@@ -150,12 +150,9 @@ def summarizeVariants(regionBins, annotationMode):
         if binInfo['foundBin']:
             binIndex = binInfo['index']
             counts = regionBins['bins'][binIndex]['counts']
-
-            counts['TOTAL'] += 1
-            regionBins['counts']['TOTAL'] += 1
             designation = 'OTHER'
-
-            if annotationMode == 'clinvar':
+            
+            if annotationMode == 'clinvar' and 'CLNSIG' in record.INFO:
                 for clinSig in record.INFO['CLNSIG']:
                     # for clinSig in cs.split('|'):
                     if clinSig in CLINVAR_PATH:
@@ -166,8 +163,9 @@ def summarizeVariants(regionBins, annotationMode):
                         designation = 'OTHER'
                     elif clinSig in CLINVAR_UNKNOWN:
                         designation = 'UNKNOWN'
-                    else:
-                        print("warning: unknown clinsign encountered", clinSig, file=sys.stderr)
+                    #else:
+                        #print("warning: unknown clinsign encountered: ", clinSig, file=sys.stder)
+
             elif annotationMode == 'vep':
                 for cs in record.INFO['CSQ']:
                     csqArr = cs.split('|')
@@ -179,7 +177,13 @@ def summarizeVariants(regionBins, annotationMode):
                             break
                     if not foundField:
                         print('knownvariants.sh ERROR: Problem in accessing impact keyword in CSQ INFO field', file=sys.stderr)
+            else:
+                # it's possible we have a clinvar 'included' variant that does not haev clinical significance - skip these
+                continue
 
+            # only increment counts for valid records
+            counts['TOTAL'] += 1
+            regionBins['counts']['TOTAL'] += 1
             counts[designation] += 1
             regionBins['counts'][designation] += 1
 
