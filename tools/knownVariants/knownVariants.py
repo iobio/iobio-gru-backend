@@ -143,9 +143,11 @@ def getPhenotype(phenotype):
   
 def parsePhenotypeTokens(record):
   phenotypeTokens = []
-  for phenotypeTerm in record.INFO['CLNDN']:
-    for token in phenotypeTerm.split('|'):
-      phenotypeTokens.append(token);
+  # 'included' clinvar variants don't always contain CLNDN field
+  if 'CLNDN' in record.INFO:
+    for phenotypeTerm in record.INFO['CLNDN']:
+        for token in phenotypeTerm.split('|'):
+            phenotypeTokens.append(token);
   return phenotypeTokens
 
 
@@ -163,7 +165,8 @@ def summarizeVariants(regionBins, annotationMode):
             binIndex = binInfo['index']
             counts = regionBins['bins'][binIndex]['counts']
             designation = 'OTHER'
-            
+           
+            # 'included' clinvar variants don't always contain CLNSIG field
             if annotationMode == 'clinvar' and 'CLNSIG' in record.INFO:
                 for clinSig in record.INFO['CLNSIG']:
                     # for clinSig in cs.split('|'):
