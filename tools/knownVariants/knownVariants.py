@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+"""
 Created on Mon Jun 12 16:51:04 2017
 @author: tonyd
+
 Updated 05Oct2020 by stephg
+"""
 
 import vcf
 import sys
@@ -193,7 +197,7 @@ def summarizeVariants(regionBins, annotationMode):
                     if not foundField:
                         print('knownvariants.sh ERROR: Problem in accessing impact keyword in CSQ INFO field', file=sys.stderr)
             else:
-                # it's possible we have a clinvar 'included' variant that does not haev clinical significance - skip these
+                # it's possible we have a clinvar 'included' variant that does not have clinical significance - skip these
                 continue
 
             # only increment counts for valid records
@@ -204,22 +208,27 @@ def summarizeVariants(regionBins, annotationMode):
 
 
         for phenotypeTerm in parsePhenotypeTokens(record):  
+          designation = 'OTHER'
 
+          if 'CLNSIG' in record.INFO:
+            for clinSig in record.INFO['CLNSIG']:
+                if clinSig in CLINVAR_PATH:
+                    designation = 'PATH'
+                elif clinSig in CLINVAR_BENIGN:
+                    designation = 'BENIGN'
+                elif clinSig in CLINVAR_OTHER:
+                    designation = 'OTHER'
+                elif clinSig in CLINVAR_UNKNOWN:
+                    designation = 'UNKNOWN'
+                #else:
+                    #print("warning: unknown clinsign encountered", clinSig, file=sys.stderr)
+          else:
+            # it's possible we have a clinvar 'included' variant that does not have clinical significance - skip these
+            continue
+
+          # only increment counts for valid records
           phenotypeCountObj = getPhenotype(phenotypeTerm)
           phenotypeCountObj['TOTAL'] += 1
-          designation = 'OTHER'
-          for clinSig in record.INFO['CLNSIG']:
-            if clinSig in CLINVAR_PATH:
-                designation = 'PATH'
-            elif clinSig in CLINVAR_BENIGN:
-                designation = 'BENIGN'
-            elif clinSig in CLINVAR_OTHER:
-                designation = 'OTHER'
-            elif clinSig in CLINVAR_UNKNOWN:
-                designation = 'UNKNOWN'
-            else:
-                print("warning: unknown clinsign encountered", clinSig, file=sys.stderr)
-
           phenotypeCountObj[designation] += 1
 
 
