@@ -327,7 +327,7 @@ router.post('/annotateSomaticVariants', async (ctx) => {
   const vepCacheDir = dataPath('vep-cache');
   const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, params.genomeBuildName, vepCacheDir];
   
-  await handle(ctx, 'annotateSomaticVariants.sh', args, { ignoreStderr: false });
+  await handle(ctx, 'annotateSomaticVariants.sh', args, { ignoreStderr: true });
 });
 
 router.post('/freebayesJointCall', async (ctx) => {
