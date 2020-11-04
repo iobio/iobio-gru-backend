@@ -12,13 +12,15 @@ const gene2PhenoRouter = require('./gene2pheno.js');
 const geneInfoRouter = require('./geneinfo.js');
 const genomeBuildRouter = require('./genomebuild.js');
 const hpoRouter = require('./hpo.js');
-const { dataPath } = require('./utils.js');
+const { parseArgs, dataPath } = require('./utils.js');
 const fs = require('fs');
 const { serveStatic } = require('./static.js');
 
+const args = parseArgs();
+
 let port = 9001;
-if (process.argv[2]) {
-  port = process.argv[2];
+if (args['--port']) {
+  port = Number(args['--port']);
 }
 
 const app = new Koa();
