@@ -20,6 +20,8 @@ const args = parseArgs();
 
 const toolDir = dataPath('tool_bin');
 process.env.PATH = toolDir + ':' + process.env.PATH;
+// This gives singularity images access to the data directory
+process.env.SINGULARITY_BIND = dataPath('');
 
 let port = 9001;
 if (args['--port']) {
