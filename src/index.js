@@ -18,6 +18,9 @@ const { serveStatic } = require('./static.js');
 
 const args = parseArgs();
 
+const toolDir = dataPath('tool_bin');
+process.env.PATH = toolDir + ':' + process.env.PATH;
+
 let port = 9001;
 if (args['--port']) {
   port = Number(args['--port']);
