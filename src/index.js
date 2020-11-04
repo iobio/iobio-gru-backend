@@ -332,7 +332,13 @@ router.post('/annotateEnrichmentCounts', async (ctx) => {
 router.post('/annotateSomaticVariants', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
   const vepCacheDir = dataPath('vep-cache');
-  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, params.genomeBuildName, vepCacheDir];
+
+  let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
+  if (params.genomeBuildName === 'GRCh38') {
+    refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
+  }
+  
+  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, params.genomeBuildName, vepCacheDir, refFastaFile];
   
   await handle(ctx, 'annotateSomaticVariants.sh', args, { ignoreStderr: true });
 });

@@ -7,6 +7,7 @@ regions=$3
 somaticFilterPhrase=$4
 genomeBuildName=$5
 vepCacheDir=$6
+fastaPath=$7
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -19,12 +20,6 @@ if [ ! -z "$somaticFilterPhrase" ]; then
         bcftools filter -i $somaticFilterPhrase -
     }
     somFilterStage=somFilterFunc
-fi
-
-#Get correct fasta file
-fastaPath="/home/ubuntu/data/references/GRCh37/human_g1k_v37_decoy_phix.fasta"
-if [ "${genomeBuildName}" = "GRCh38" ]; then
-    fastaPath="/home/ubuntu/data/references/GRCh38/human_g1k_v38_decoy_phix.fasta"
 fi
 
 #Compose args
