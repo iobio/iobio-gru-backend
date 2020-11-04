@@ -24,6 +24,9 @@ function dataPath(name) {
   return absPath;
 }
 
+const toolDir = dataPath('tool_bin');
+process.env.PATH = toolDir + ':' + process.env.PATH;
+
 module.exports = {
   parseArgs,
   dataPath,
