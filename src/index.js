@@ -39,7 +39,7 @@ router.get('/', async (ctx) => {
 });
 
 router.get('/static/*', async (ctx) => {
-  const fsPath = path.join(__dirname, '..', ctx.path);
+  const fsPath = dataPath(ctx.path);
   await serveStatic(ctx, fsPath);
 });
 
