@@ -1,16 +1,8 @@
 #!/bin/bash
 
-while true; do
-    uuid=$(cat /proc/sys/kernel/random/uuid)
-    if [ ! -d $uuid ]; then
-        break;
-    fi
-done
-
-rm -rf $uuid
-
-mkdir -p $uuid
-cd $uuid
+runDir=$PWD
+tempDir=$(mktemp -d)
+cd $tempDir
 
 last_arg=${@: -1}
 tbi_url=""
@@ -56,6 +48,8 @@ else
 fi
 tabix $tabix_args
 tabixRetCode=$?
-cd ..
-rm -rf $uuid
+
+cd $runDir
+rm -rf $tempDir
+
 exit $tabixRetCode
