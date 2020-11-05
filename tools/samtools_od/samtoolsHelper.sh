@@ -1,16 +1,8 @@
 #!/bin/bash
 
-while true; do
-    uuid=$(cat /proc/sys/kernel/random/uuid)
-    if [ ! -d /tmp/$uuid ]; then
-        break;
-    fi
-done
-
-DIR=$PWD
-
-mkdir -p /tmp/$uuid
-cd /tmp/$uuid
+runDir=$PWD
+tempDir=$(mktemp -d)
+cd $tempDir
 
 last_arg=${@: -1}
 
@@ -61,12 +53,14 @@ else
     samtools_args=$@
 fi
 
-export REF_PATH=$DIR/data/md5_reference_cache/%2s/%2s/%s:http://www.ebi.ac.uk/ena/cram/md5/%s
-export REF_CACHE=$DIR/data/md5_reference_cache/%2s/%2s/%s
+# TODO: Shouldn't hard-code data directory path here
+export REF_PATH=$runDir/data/md5_reference_cache/%2s/%2s/%s:http://www.ebi.ac.uk/ena/cram/md5/%s
+export REF_CACHE=$runDir/data/md5_reference_cache/%2s/%2s/%s
 
 samtools $samtools_args
 samtoolsRetCode=$?
 
-cd ..
-rm -rf /tmp/$uuid
+cd $runDir
+rm -rf $tempDir
+
 exit $samtoolsRetCode 
