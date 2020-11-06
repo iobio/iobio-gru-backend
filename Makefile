@@ -9,7 +9,7 @@ node:
 	mv node-$(node_version)-linux-x64 node
 
 static:
-	./populate_static.sh
+	./dev_tools/populate_static.sh
 
 # This forces the use of the local node. This is necessary because sqlite3 (and
 # possibly other dependencies appears to be using the node in $PATH, even when
