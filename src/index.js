@@ -58,43 +58,25 @@ router.post('/viewAlignments', async (ctx) => {
   await handle(ctx, 'viewAlignments.sh', args);
 });
 
+
 // bam.iobio endpoints
 //
-// TODO: remove get in favor of post
-router.get('/alignmentHeader', async (ctx) => {
-  await handle(ctx, 'alignmentHeader.sh', [ctx.query.url]);
-});
 router.post('/alignmentHeader', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
   console.log('url going into alignment header: ' + params.url);
   await handle(ctx, 'alignmentHeader.sh', [params.url]);
 });
 
-router.get('/baiReadDepth', async (ctx) => {
-  await handle(ctx, 'baiReadDepth.sh', [ctx.query.url]);
-});
 router.post('/baiReadDepth', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
   await handle(ctx, 'baiReadDepth.sh', [params.url]);
 });
 
-router.get('/craiReadDepth', async (ctx) => {
-  await handle(ctx, 'craiReadDepth.sh', [ctx.query.url]);
-});
 router.post('/craiReadDepth', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
   await handle(ctx, 'craiReadDepth.sh', [params.url]);
 });
 
-router.get('/alignmentStatsStream', async (ctx) => {
-
-  const regions = JSON.parse(ctx.query.regions);
-
-  const samtoolsRegions = regions.map(function(d) { return d.name+ ":"+ d.start + '-' + d.end;}).join(' ');
-  const bamstatsRegions = JSON.stringify(regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
-
-  await handle(ctx, 'alignmentStatsStream.sh', [ctx.query.url, samtoolsRegions, ctx.query.indexUrl, bamstatsRegions]);
-});
 router.post('/alignmentStatsStream', async (ctx) => {
 
   const params = JSON.parse(ctx.request.body);
@@ -106,13 +88,8 @@ router.post('/alignmentStatsStream', async (ctx) => {
 });
 
 
-
-
-
-
 // gene.iobio & oncogene & cohort-gene endpoints
 //
-// TODO: test post version and delete get above 
 router.post('/variantHeader', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     await handle(ctx, 'variantHeader.sh', [params.url, params.indexUrl]);
@@ -124,15 +101,10 @@ router.post('/getChromosomes', async (ctx) => {
     await handle(ctx, 'getChromosomes.sh', [params.url, params.indexUrl]);
 });
 
-router.get('/vcfReadDepth', async (ctx) => {
-  await handle(ctx, 'vcfReadDepth.sh', [ctx.query.url]);
-});
-// TODO: test post version and delete above
 router.post('/vcfReadDepth', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     await handle(ctx, 'vcfReadDepth.sh', [params.url]);
 });
-
 
 router.post('/alignmentCoverage', async (ctx) => {
 
@@ -161,28 +133,6 @@ router.post('/alignmentCoverage', async (ctx) => {
   await handle(ctx, 'alignmentCoverage.sh', args, { ignoreStderr: true });
 });
 
-router.get('/geneCoverage', async (ctx) => {
-
-  const url = ctx.query.url;
-  const indexUrl = ctx.query.indexUrl;
-  const refName = ctx.query.refName;
-  const geneName = ctx.query.geneName;
-  const regionStart = ctx.query.regionStart;
-  const regionEnd = ctx.query.regionEnd;
-  const regions = JSON.parse(ctx.query.regions);
-
-  let regionStr = "#" + geneName + "\n";
-  regions.forEach(function(region) {
-    regionStr += refName + ":" + region.start + "-" + region.end + "\n";
-  });
-
-  const samtoolsRegionArg = refName + ':' + regionStart + '-' + regionEnd;
-
-  const args = [url, indexUrl, samtoolsRegionArg, regionStr];
-
-  await handle(ctx, 'geneCoverage.sh', args);
-});
-// TODO: test post version and delete above
 router.post('/geneCoverage', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
 
@@ -206,28 +156,6 @@ router.post('/geneCoverage', async (ctx) => {
     await handle(ctx, 'geneCoverage.sh', args);
 });
 
-
-router.get('/normalizeVariants', async (ctx) => {
-  const vcfUrl = ctx.query.vcfUrl;
-  const tbiUrl = ctx.query.tbiUrl;
-  const refName = ctx.query.refName;
-  const regions = JSON.parse(ctx.query.regions);
-  const contigStr = decodeURIComponent(ctx.query.contigStr);
-  const refFastaFile = dataPath(decodeURIComponent(ctx.query.refFastaFile));
-
-  let regionParm = "";
-  regions.forEach(function(region) {
-    if (regionParm.length > 0) {
-      regionParm += " ";
-    }
-    regionParm += region.refName + ":" + region.start + "-" + region.end;
-  });
-
-  const args = [vcfUrl, tbiUrl, refName, regionParm, contigStr, refFastaFile];
-
-  await handle(ctx, 'normalizeVariants.sh', args);
-});
-// TODO: test post version and delete above
 router.post('/normalizeVariants', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
 
@@ -252,34 +180,6 @@ router.post('/normalizeVariants', async (ctx) => {
     await handle(ctx, 'normalizeVariants.sh', args);
 });
 
-router.get('/annotateVariants', async (ctx) => {
-
-  const q = ctx.query;
-  console.log(JSON.stringify(q, null, 2));
-
-  const tbiUrl = q.tbiUrl ? q.tbiUrl : '';
-  const contigStr = genContigFileStr(JSON.parse(q.refNames));
-  const regionStr = genRegionsStr(JSON.parse(q.regions));
-  const vcfSampleNamesStr = JSON.parse(q.vcfSampleNames).join("\n");
-  const refFastaFile = dataPath(q.refFastaFile);
-  const vepCacheDir = dataPath('vep-cache');
-  const vepREVELFile = dataPath(q.vepREVELFile);
-  const vepPluginDir = dataPath('vep-cache/Plugins');
-
-  const gnomadUrl = q.gnomadUrl ? q.gnomadUrl : '';
-  const gnomadRegionStr = q.gnomadRegionStr ? q.gnomadRegionStr : '';
-  const gnomadHeaderFile = dataPath('gnomad_header.txt');
-
-  const args = [
-    q.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-    refFastaFile, q.genomeBuildName, vepCacheDir, vepREVELFile, q.vepAF,
-    vepPluginDir, q.isRefSeq, q.hgvsNotation, q.getRsId, gnomadUrl,
-    gnomadRegionStr, gnomadHeaderFile, q.decompose
-  ];
-
-  //await handle(ctx, 'annotateVariants.sh', args);
-  await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
-});
 router.post('/annotateVariants', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
