@@ -4,23 +4,11 @@ import os, argparse, threading, queue, json, math
 from urllib import request
 from datetime import datetime
 
-job_queue = queue.Queue()
+job_queue = queue.Queue(maxsize=8)
 
-def worker():
+def traverse(url, parent_dir):
 
-    while True:
-        url, parent_dir, gem_data = job_queue.get()
-
-        print(url)
-
-        if url.endswith('/'):
-            handle_dir(url, parent_dir)
-        else:
-            handle_file(url, parent_dir, gem_data)
-
-        job_queue.task_done()
-
-def handle_dir(url, parent_dir):
+    print(url)
 
     name = os.path.basename(url[:-1])
     path = os.path.join(parent_dir, name)
@@ -30,7 +18,7 @@ def handle_dir(url, parent_dir):
     except:
         pass
 
-    gem_url = url + '.gemdrive-ls.json'
+    gem_url = url + 'gemdrive/meta.json'
 
     res = request.urlopen(gem_url)
     body = res.read()
@@ -42,7 +30,22 @@ def handle_dir(url, parent_dir):
     for child_name in gem_dir['children']:
         child = gem_dir['children'][child_name]
         child_url = url + child_name
-        job_queue.put((child_url, path, child))
+        if child_url.endswith('/'):
+            traverse(child_url, path)
+        else:
+            job_queue.put((child_url, path, child))
+
+
+def downloader():
+    while True:
+        url, parent_dir, gem_data = job_queue.get()
+
+        print(url)
+
+        handle_file(url, parent_dir, gem_data)
+
+        job_queue.task_done()
+
 
 def handle_file(url, parent_dir, gem_data):
 
@@ -68,9 +71,16 @@ def handle_file(url, parent_dir, gem_data):
     if needs_update:
         res = request.urlopen(url)
         with open(path, 'wb') as f:
-            while chunk := res.read(4096):
+            while True:
+                chunk = res.read(4096)
+                if not chunk:
+                    break
                 f.write(chunk)
         stat = os.stat(path)
+
+        if stat.st_size != gem_data['size']:
+            print("Sizes don't match", url)
+
         os.utime(path, (stat.st_atime, mtime))
 
 
@@ -83,7 +93,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     for w in range(args.num_workers):
-        threading.Thread(target=worker, daemon=True).start()
+        threading.Thread(target=downloader, daemon=True).start()
 
-    job_queue.put((args.url, args.out_dir, {}))
+    traverse(args.url, args.out_dir)
+
     job_queue.join()
