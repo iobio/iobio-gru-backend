@@ -197,7 +197,7 @@ router.post('/annotateVariants', async (ctx) => {
     const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
     const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
     const gnomadHeaderFile = dataPath('gnomad_header.txt');
-    const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChrm : '';
+    const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
 
 
     const args = [
