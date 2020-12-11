@@ -18,6 +18,7 @@ gnomadUrl=${15}
 gnomadRegionFileStr=${16}
 gnomadHeaderFile=${17}
 decompose=${18}
+gnomadRenameChr=${19}
 
 # default optional stages to no-op
 subsetStage=cat
@@ -60,7 +61,13 @@ if [ "$gnomadUrl" ]; then
     
 
     function gnomadAnnotFunc {
-        vt rminfo -t $annotsToRemove - | bgzip -c > gnomad.vcf.gz
+        if [ "$gnomadRenameChr" ]; then
+                echo -e "$gnomadRenameChr" > gnomad_rename_chr.txt
+                vt rminfo -t $annotsToRemove - | bcftools annotate --rename-chrs gnomad_rename_chr.txt | bgzip -c > gnomad.vcf.gz
+        else
+                vt rminfo -t $annotsToRemove - | bgzip -c > gnomad.vcf.gz
+        fi        
+
         tabix gnomad.vcf.gz
         
         # Add the gnomAD INFO fields to the input vcf
@@ -102,6 +109,7 @@ fi
 if [ "$hgvsNotation" == "true" ] || [ "$getRsId" == "true" ] || [ "$isRefSeq" == "true" ]; then
     vepArgs="$vepArgs --fasta $refFastaFile"
 fi
+
 
 tabix_od -h $vcfUrl $region $tbiUrl | \
     bcftools annotate -h contigs.txt - | \

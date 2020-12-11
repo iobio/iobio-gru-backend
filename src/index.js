@@ -197,12 +197,15 @@ router.post('/annotateVariants', async (ctx) => {
     const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
     const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
     const gnomadHeaderFile = dataPath('gnomad_header.txt');
+    const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
+
 
     const args = [
         params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
         refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
         vepPluginDir, params.isRefSeq, params.hgvsNotation, params.getRsId, gnomadUrl,
-        gnomadRegionStr, gnomadHeaderFile, params.decompose
+        gnomadRegionStr, gnomadHeaderFile, params.decompose, gnomadRenameChr
+
     ];
 
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
