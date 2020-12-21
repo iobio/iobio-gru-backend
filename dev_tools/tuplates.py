@@ -1,4 +1,4 @@
-# tuplate_start(https://cdn.jsdelivr.net/gh/anderspitman/tuplates@v0.3.0/tuplates.py)
+# tuplate_star(https://cdn.jsdelivr.net/gh/anderspitman/tuplates@v0.3.0/tuplates.py)
 
 import os, json
 from urllib import request
@@ -85,4 +85,4 @@ if __name__ == '__main__':
 
             process_file(path)
 
-# tuplate_end
+# tuplate_en

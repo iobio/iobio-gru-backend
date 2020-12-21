@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# tuplate_start(https://cdn.jsdelivr.net/gh/gemdrive/gemdrive-cli-py@v0.2.0/client.py)
-import os, threading, queue, json, math, shutil
+# tuplate_start(https://cdn.jsdelivr.net/gh/gemdrive/gemdrive-cli-py@v0.3.0/client.py)
+import os, threading, queue, json, math, shutil, stat
 from urllib import request
 from datetime import datetime
 
@@ -100,20 +100,28 @@ class GemDriveClient():
         path = os.path.join(parent_dir, name)
 
         try:
-            stat = os.stat(path)
+            stats = os.stat(path)
         except:
-            stat = None
+            stats = None
 
         size = 0
         mod_time = ''
-        if stat:
-            size = stat.st_size
-            mod_time = datetime.utcfromtimestamp(stat.st_mtime).replace(microsecond=0).isoformat() + 'Z'
+        dest_is_exe = False
+        if stats:
+            size = stats.st_size
+            mod_time = datetime.utcfromtimestamp(stats.st_mtime).replace(microsecond=0).isoformat() + 'Z'
+            dest_is_exe = stats.st_mode & 0o111 != 0
+
 
         utc_dt = datetime.strptime(gem_data['modTime'], '%Y-%m-%dT%H:%M:%SZ')
         mtime = math.floor((utc_dt - datetime(1970, 1, 1)).total_seconds())
 
         needs_update = size != gem_data['size'] or mod_time != gem_data['modTime']
+
+        src_is_exe = 'isExecutable' in gem_data and gem_data['isExecutable']
+
+        if  src_is_exe != dest_is_exe:
+            needs_update = True
 
         if needs_update:
             print("Sync", url)
@@ -131,12 +139,15 @@ class GemDriveClient():
                         if not chunk:
                             break
                         f.write(chunk)
-                stat = os.stat(path)
+                stats = os.stat(path)
 
-                if stat.st_size != gem_data['size']:
+                if stats.st_size != gem_data['size']:
                     print("Sizes don't match", url)
 
-                os.utime(path, (stat.st_atime, mtime))
+                os.utime(path, (stats.st_atime, mtime))
+
+                if src_is_exe and not dest_is_exe:
+                    os.chmod(path, stats.st_mode | 0o111)
 # tuplate_end
 
 
@@ -151,13 +162,13 @@ if __name__ == '__main__':
     cwd = os.getcwd()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('gru_version', help='gru version to download')
+    parser.add_argument('--gru-version', help='gru version to download', default='0.27.0')
     parser.add_argument('--out-dir', help='Output directory', default=cwd)
     parser.add_argument('--dry-run', help='Enable dry run mode. No changes will be made to destination',
             default=False, action='store_true')
     args = parser.parse_args()
 
-    client = GemDriveClient(depth=0, token=None, verbose=False, dry_run=args.dry_run, delete=True,
+    client = GemDriveClient(depth=0, token=None, verbose=True, dry_run=args.dry_run, delete=True,
             num_workers=8)
 
     url = 'https://gemdrive.iobio.io/gru-' + args.gru_version + '/'
