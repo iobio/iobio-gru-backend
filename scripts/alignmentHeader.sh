@@ -1,3 +1,3 @@
 #!/bin/bash
 
-samtools view -H $1
+samtools-1.11 view -H $1

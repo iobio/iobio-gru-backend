@@ -7,6 +7,7 @@ max_points=$4
 spanning_region=$5
 coverage_regions=$6
 quality_threshold=$7
+data_dir=$8
 
 #if quality value provided, filter reads by mapq
 # otherwise just add binary flag
@@ -15,6 +16,13 @@ if [ "quality_threshold" ]; then
     view_opt="-b -q $quality_threshold"
 fi
 
-samtools_od view $view_opt $url $samtools_region $index_url | \
-    samtools mpileup - | \
+data_opts=$url
+if [ -n "${index_url}" ]; then
+    data_opts="-X $url $index_url"
+fi
+
+export REF_CACHE=$data_dir/md5_reference_cache/%2s/%2s/%s
+
+samtools-1.11 view $view_opt $data_opts $samtools_region | \
+    samtools-1.11 mpileup - | \
     coverage $max_points $spanning_region $coverage_regions

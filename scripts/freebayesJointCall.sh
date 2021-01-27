@@ -20,6 +20,7 @@ gnomadUrl=${15}
 gnomadRegionFileStr=${16}
 gnomadHeaderFile=${17}
 decompose=${18}
+dataDir=${19}
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -31,9 +32,9 @@ echo -e "$contigStr" > $contigFile
 samplesFile="samples.txt"
 echo -e "$samplesFileStr" > $samplesFile
 
+export REF_CACHE=$dataDir/md5_reference_cache/%2s/%2s/%s
 
-# TODO: using samtools and tabix instead of samtools_od and tabix_od would
-# likely be faster
+# TODO: using tabix instead of tabix_od would likely be faster
 
 freebayesArgs="-s $samplesFile"
 
@@ -45,7 +46,13 @@ for i in "${!urls[@]}"; do
     url=${urls[$i]}
     indexUrl=${indices[$i]}
     alignmentFile=$(mktemp)
-    samtools_od view -b $url $region $indexUrl > $alignmentFile &
+
+    if [ -n "${indexUrl}" ]; then
+        samtools-1.11 view -b -X $url $indexUrl $region > $alignmentFile &
+    else
+        samtools-1.11 view -b $url $region > $alignmentFile &
+    fi
+
     freebayesArgs="$freebayesArgs -b $alignmentFile"
 done
 IFS=' '
