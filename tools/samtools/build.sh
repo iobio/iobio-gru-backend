@@ -1,14 +1,26 @@
 #!/bin/bash
 
-SAMTOOLS_VERSION=1.11
+HTSLIB_VERSION=1.11
+SAMTOOLS_VERSION=${HTSLIB_VERSION}
+
 
 curl -LO https://github.com/samtools/samtools/releases/download/${SAMTOOLS_VERSION}/samtools-${SAMTOOLS_VERSION}.tar.bz2
 tar xvf samtools-${SAMTOOLS_VERSION}.tar.bz2
-pushd samtools-${SAMTOOLS_VERSION}
+cd samtools-${SAMTOOLS_VERSION}
+
+# build htslib (including tabix and bgzip)
+cd htslib-${HTSLIB_VERSION}
+./configure --without-curses
+make -j4
+cp tabix /build/tabix-${HTSLIB_VERSION}
+cp bgzip /build/bgzip-${HTSLIB_VERSION}
+
+# build samtools
+cd ..
 ./configure --without-curses
 make -j4
 cp samtools /build/samtools-${SAMTOOLS_VERSION}
-popd
+
 
 
 ## AppImage
