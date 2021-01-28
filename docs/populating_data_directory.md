@@ -33,11 +33,13 @@ protocol that allows for recursively downloading directories.
 
 You can explore the data from a web browser here:
 
-https://gemdrive.io/apps/delver/?drive=https://gemdrive.iobio.io&path=/gru-0.28.0/iobio-gru-backend/data
+https://gemdrive.io/apps/delver/?drive=https://gemdrive.iobio.io&path=/
 
-You can download the files from that interface, but it's not efficient for
-datasets this large. We have a python3 script in `dev_tools/download.py`
-that can download the data directory using the following command:
+You can download the files from that interface (for example navigate to
+`/gru-0.28.0/iobio-gru-backend/data` to see the data directory for the 0.28.0
+release), but it's not efficient for datasets this large. We have a python3
+script in `dev_tools/download.py` that can recursively download the data
+directory using the following command:
 
 ```bash
 python3 dev_tools/download.py
