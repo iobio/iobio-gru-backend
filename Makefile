@@ -8,14 +8,10 @@ node:
 	rm node-$(node_version)-linux-x64.tar.xz
 	mv node-$(node_version)-linux-x64 node
 
-static:
-	./dev_tools/populate_static.sh
-
 # This forces the use of the local node. This is necessary because sqlite3 (and
 # possibly other dependencies appears to be using the node in $PATH, even when
-# calling
-# `node/bin/node node/bin/npm install`
-# directly. This lead to a version mismatch.
+# calling `node/bin/node node/bin/npm install` directly. This leads to a
+# version mismatch.
 node_modules: export PATH := $(PWD)/node/bin:$(PATH)
 node_modules: node
 	npm install
