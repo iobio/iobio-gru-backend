@@ -84,7 +84,13 @@ router.post('/alignmentStatsStream', async (ctx) => {
   const samtoolsRegions = genRegionsStr(params.regions);
   const bamstatsRegions = JSON.stringify(params.regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
 
-  await handle(ctx, 'alignmentStatsStream.sh', [params.url, samtoolsRegions, params.indexUrl, bamstatsRegions]);
+  await handle(ctx, 'alignmentStatsStream.sh', [
+    params.url,
+    params.indexUrl,
+    samtoolsRegions,
+    bamstatsRegions,
+    dataPath(''),
+  ], { ignoreStderr: true });
 });
 
 
@@ -128,7 +134,10 @@ router.post('/alignmentCoverage', async (ctx) => {
 
   const maxPointsArg = "-m " + maxPoints;
 
-  const args = [url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg, coverageRegionsArg, qualityCutoff];
+  const args = [
+    url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg,
+    coverageRegionsArg, qualityCutoff, dataPath(''),
+  ];
 
   await handle(ctx, 'alignmentCoverage.sh', args, { ignoreStderr: true });
 });
@@ -145,15 +154,17 @@ router.post('/geneCoverage', async (ctx) => {
     const regionEnd = params.regionEnd;
     const regions = params.regions;
 
+    const dataDir = dataPath('');
+
     // Format params
     let regionStr = "#" + geneName + "\n";
     regions.forEach(function(region) {
         regionStr += refName + ":" + region.start + "-" + region.end + "\n";
     });
     const samtoolsRegionArg = refName + ':' + regionStart + '-' + regionEnd;
-    const args = [url, indexUrl, samtoolsRegionArg, regionStr];
+    const args = [url, indexUrl, samtoolsRegionArg, regionStr, dataDir];
 
-    await handle(ctx, 'geneCoverage.sh', args);
+    await handle(ctx, 'geneCoverage.sh', args, { ignoreStderr: true });
 });
 
 router.post('/normalizeVariants', async (ctx) => {
@@ -299,7 +310,7 @@ router.post('/freebayesJointCall', async (ctx) => {
     alignments, indices, region, refFastaFile, useSuggestedVariants,
     params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
     params.isRefSeq, samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
-    gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose
+    gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose, dataPath(''),
   ];
 
   await handle(ctx, 'freebayesJointCall.sh', args, { ignoreStderr: true });
@@ -383,7 +394,7 @@ router.post('/checkBamBai', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     console.log(JSON.stringify(params, null, 2));
 
-    const args = [ params.url, params.indexUrl, params.region ];
+    const args = [ params.url, params.indexUrl, params.region, dataPath('') ];
     await handle(ctx, 'checkBamBai.sh', args, { ignoreStderr: true });
 });
 
