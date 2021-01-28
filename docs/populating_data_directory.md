@@ -40,11 +40,15 @@ datasets this large. We have a python3 script in `dev_tools/download.py`
 that can download the data directory using the following command:
 
 ```bash
-python3 dev_tools/download.py https://gemdrive.iobio.io --out-dir out
+python3 dev_tools/download.py
 ```
 
-The default version is encoded in the script. You can override with
-`--gru-version 0.27.0`, etc.
+There are a few arguments to override defaults:
+
+
+```bash
+python3 dev_tools/download.py --gru-version 0.27.0 --out-dir out --dry-run
+```
 
 
 # Manual downloads
