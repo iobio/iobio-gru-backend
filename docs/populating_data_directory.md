@@ -7,6 +7,9 @@ complete reference sequences, and MD5 reference sequences.
 All required data is assumed to be under a `data` directory, relative to the
 current working directory where gru is started from (usually with
 `run_local.sh`). This can be overriden with the `--out-dir=<dir>` argument.
+(note that we only recently fixed some bugs with `--out-dir`, and it's not
+fully tested yet. Please let us know if you run into issues with this
+functionality).
 
 **Note:** There is some legacy cruft in the way the data volume is structured,
 which can make it confusing. For example, there is `/data/data`, and also
@@ -16,10 +19,12 @@ to be careful to make sure everything ends up in it's proper place.
 
 There are 2 simple ways to get a copy of the data directory:
 
+
 ## AWS snapshot
 
 If you're on AWS, you can create a volume from our public snapshot. The current
-gru version is 0.26.0, which is snapshot ID `snap-05623d6b51ec78958`.
+gru version is 0.28.0, which is snapshot ID `snap-02eb780cd49ee41fe`.
+
 
 ## GemDrive
 
@@ -28,23 +33,32 @@ protocol that allows for recursively downloading directories.
 
 You can explore the data from a web browser here:
 
-https://gemdrive.io/apps/delver/?drive=https://gemdrive.iobio.io&path=/gru_0.26.0/data
+https://gemdrive.io/apps/delver/?drive=https://gemdrive.iobio.io&path=/gru-0.28.0/iobio-gru-backend/data
 
 You can download the files from that interface, but it's not efficient for
-datasets this large. We have a python3 script in `dev_tools/gemdrive-dl.py`
+datasets this large. We have a python3 script in `dev_tools/download.py`
 that can download the data directory using the following command:
 
 ```bash
-dev_tools/gemdrive-dl.py https://gemdrive.iobio.io/gru_0.26.0/data/ --out-dir out
+python3 dev_tools/download.py https://gemdrive.iobio.io --out-dir out
 ```
+
+The default version is encoded in the script. You can override with
+`--gru-version 0.27.0`, etc.
+
+
+# Manual downloads
 
 Two of the biggest pieces of the data directory are the VEP cache and the
 MD5 reference cache, both of which are available publicly. If you can download
 them manually from their source locations, it reduces the load on our servers.
 Instructions are below.
 
+Note that you can populate these directories manually, then run the download.py
+script with the same output `data` directory. As long as the file modification
+times match, it will only overwrite missing data from the GemDrive.
 
-# VEP cache
+## VEP cache
 
 gru requires a vep cache installed under `data/vep-cache`. You can follow the
 instructions [here][0] to manually download the appropriate cache data. The
@@ -69,7 +83,7 @@ data/
       101_GRCh38/
 ```
 
-# MD5 Reference Cache
+## MD5 Reference Cache
 
 gru uses reference sequences (in several different formats) for many endpoints.
 The most obvious is that an MD5 reference cache is required to operate on CRAM
