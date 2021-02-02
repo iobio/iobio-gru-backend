@@ -1,9 +1,9 @@
 node_version = v12.16.3
 
-local_install: node node_modules static
+local_install: node node_modules
 
 node:
-	wget https://nodejs.org/dist/$(node_version)/node-$(node_version)-linux-x64.tar.xz
+	curl -LO https://nodejs.org/dist/$(node_version)/node-$(node_version)-linux-x64.tar.xz
 	tar xf node-$(node_version)-linux-x64.tar.xz
 	rm node-$(node_version)-linux-x64.tar.xz
 	mv node-$(node_version)-linux-x64 node
