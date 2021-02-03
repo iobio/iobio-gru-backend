@@ -118,9 +118,11 @@ router.post('/alignmentStatsStream', async (ctx) => {
   const samtoolsRegions = genRegionsStr(params.regions);
   const bamstatsRegions = JSON.stringify(params.regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
 
+  const indexUrl = params.indexUrl ? params.indexUrl : '';
+
   await handle(ctx, 'alignmentStatsStream.sh', [
     params.url,
-    params.indexUrl,
+    indexUrl,
     samtoolsRegions,
     bamstatsRegions,
     dataPath(''),
@@ -132,13 +134,15 @@ router.post('/alignmentStatsStream', async (ctx) => {
 //
 router.post('/variantHeader', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    await handle(ctx, 'variantHeader.sh', [params.url, params.indexUrl]);
+    const indexUrl = params.indexUrl ? params.indexUrl : '';
+    await handle(ctx, 'variantHeader.sh', [params.url, indexUrl]);
 });
 
 router.post('/getChromosomes', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     console.log(JSON.stringify(params, null, 2));
-    await handle(ctx, 'getChromosomes.sh', [params.url, params.indexUrl]);
+    const indexUrl = params.indexUrl ? params.indexUrl : '';
+    await handle(ctx, 'getChromosomes.sh', [params.url, indexUrl]);
 });
 
 router.post('/vcfReadDepth', async (ctx) => {
@@ -152,7 +156,7 @@ router.post('/alignmentCoverage', async (ctx) => {
    console.log(JSON.stringify(params, null, 2));
 
   const url = params.url;
-  const indexUrl = params.indexUrl;
+  const indexUrl = params.indexUrl ? params.indexUrl : '';
   const samtoolsRegion = params.samtoolsRegion;
   const maxPoints = params.maxPoints;
   const coverageRegions = params.coverageRegions;
@@ -428,7 +432,9 @@ router.post('/checkBamBai', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     console.log(JSON.stringify(params, null, 2));
 
-    const args = [ params.url, params.indexUrl, params.region, dataPath('') ];
+    const indexUrl = params.indexUrl ? params.indexUrl : '';
+
+    const args = [ params.url, indexUrl, params.region, dataPath('') ];
     await handle(ctx, 'checkBamBai.sh', args, { ignoreStderr: true });
 });
 
@@ -448,8 +454,10 @@ router.post('/vcfStatsStream', async (ctx) => {
     sampleNamesStr = params.sampleNames.join('\n');
   }
 
+  const indexUrl = params.indexUrl ? params.indexUrl : '';
+
   const args = [
-    params.url, params.indexUrl, regionStr, contigStr, sampleNamesStr
+    params.url, indexUrl, regionStr, contigStr, sampleNamesStr
   ];
   console.log(args);
 
