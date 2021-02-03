@@ -18,10 +18,14 @@ const { serveStatic } = require('./static.js');
 
 const args = parseArgs();
 
-const toolDir = dataPath('tool_bin');
-process.env.PATH = toolDir + ':' + process.env.PATH;
 // This gives singularity images access to the data directory
 process.env.SINGULARITY_BIND = dataPath('');
+
+let toolDir = dataPath('tool_bin');
+if (args['--tools-dir']) {
+  toolDir = args['--tools-dir'];
+}
+process.env.PATH = toolDir + ':' + process.env.PATH;
 
 let port = 9001;
 if (args['--port']) {
