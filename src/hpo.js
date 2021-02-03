@@ -1,8 +1,15 @@
 const Router = require('koa-router');
-const { dataPath } = require('./utils.js');
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database(dataPath('hpo/hpo.db'));
 var async = require('async');
+
+let _db;
+function getDb() {
+  if (!_db) {
+    const sqlite3 = require('sqlite3').verbose();
+    const { dataPath } = require('./utils.js');
+    _db = new sqlite3.Database(dataPath('hpo/hpo.db'));
+  }
+  return _db;
+}
 
 const router = new Router();
 
@@ -39,6 +46,8 @@ router.get('/hot/lookup', async (ctx) => {
     var searchterm = ctx.query.term;
 
     var sqlString = "SELECT distinct disease_term from hot_disease_term where disease_term like \""+searchterm+"%\"";
+
+    const db = getDb();
     
     db.all(sqlString,function(err,rows){
       var hot_data= {};

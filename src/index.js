@@ -18,17 +18,51 @@ const { serveStatic } = require('./static.js');
 
 const args = parseArgs();
 
-const toolDir = dataPath('tool_bin');
-process.env.PATH = toolDir + ':' + process.env.PATH;
 // This gives singularity images access to the data directory
 process.env.SINGULARITY_BIND = dataPath('');
+
+let toolDir = dataPath('tool_bin');
+if (args['--tools-dir']) {
+  toolDir = args['--tools-dir'];
+}
+process.env.PATH = toolDir + ':' + process.env.PATH;
 
 let port = 9001;
 if (args['--port']) {
   port = Number(args['--port']);
 }
 
-const app = new Koa();
+// Allows a frontend app to be hosted in the same process (but on a different
+// port). This is particularly useful if you want to run an entire app frontend
+// and backend in a single docker container.
+if (args['--app-dir']) {
+  const app = new Koa();
+  const appRouter = new Router();
+
+  appRouter.get('/*', async (ctx) => {
+    const fsPath = path.join(args['--app-dir'], ctx.path);
+    await serveStatic(ctx, fsPath);
+
+    // Bit of a hack. If previous attempt to serve didn't find the file,
+    // default to the root index.html.
+    if (ctx.status === 404) {
+      const fsPath = path.join(args['--app-dir'], 'index.html');
+      await serveStatic(ctx, fsPath);
+    }
+  });
+
+  let appPort = 8000;
+  if (args['--app-port']) {
+    appPort = Number(args['--app-port']);
+  }
+
+  app
+    .use(appRouter.routes())
+    .use(appRouter.allowedMethods())
+    .listen(appPort);
+}
+
+const server = new Koa();
 const router = new Router();
 
 router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
@@ -84,9 +118,11 @@ router.post('/alignmentStatsStream', async (ctx) => {
   const samtoolsRegions = genRegionsStr(params.regions);
   const bamstatsRegions = JSON.stringify(params.regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
 
+  const indexUrl = params.indexUrl ? params.indexUrl : '';
+
   await handle(ctx, 'alignmentStatsStream.sh', [
     params.url,
-    params.indexUrl,
+    indexUrl,
     samtoolsRegions,
     bamstatsRegions,
     dataPath(''),
@@ -98,13 +134,15 @@ router.post('/alignmentStatsStream', async (ctx) => {
 //
 router.post('/variantHeader', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    await handle(ctx, 'variantHeader.sh', [params.url, params.indexUrl]);
+    const indexUrl = params.indexUrl ? params.indexUrl : '';
+    await handle(ctx, 'variantHeader.sh', [params.url, indexUrl]);
 });
 
 router.post('/getChromosomes', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     console.log(JSON.stringify(params, null, 2));
-    await handle(ctx, 'getChromosomes.sh', [params.url, params.indexUrl]);
+    const indexUrl = params.indexUrl ? params.indexUrl : '';
+    await handle(ctx, 'getChromosomes.sh', [params.url, indexUrl]);
 });
 
 router.post('/vcfReadDepth', async (ctx) => {
@@ -118,7 +156,7 @@ router.post('/alignmentCoverage', async (ctx) => {
    console.log(JSON.stringify(params, null, 2));
 
   const url = params.url;
-  const indexUrl = params.indexUrl;
+  const indexUrl = params.indexUrl ? params.indexUrl : '';
   const samtoolsRegion = params.samtoolsRegion;
   const maxPoints = params.maxPoints;
   const coverageRegions = params.coverageRegions;
@@ -394,7 +432,9 @@ router.post('/checkBamBai', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     console.log(JSON.stringify(params, null, 2));
 
-    const args = [ params.url, params.indexUrl, params.region, dataPath('') ];
+    const indexUrl = params.indexUrl ? params.indexUrl : '';
+
+    const args = [ params.url, indexUrl, params.region, dataPath('') ];
     await handle(ctx, 'checkBamBai.sh', args, { ignoreStderr: true });
 });
 
@@ -414,8 +454,10 @@ router.post('/vcfStatsStream', async (ctx) => {
     sampleNamesStr = params.sampleNames.join('\n');
   }
 
+  const indexUrl = params.indexUrl ? params.indexUrl : '';
+
   const args = [
-    params.url, params.indexUrl, regionStr, contigStr, sampleNamesStr
+    params.url, indexUrl, regionStr, contigStr, sampleNamesStr
   ];
   console.log(args);
 
@@ -465,7 +507,7 @@ function genRegionsStr(regions) {
   return regionStr;
 }
 
-app
+server
   .use(logger())
   .use(cors({
     origin: '*',

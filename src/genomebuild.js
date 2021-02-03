@@ -1,8 +1,14 @@
 const Router = require('koa-router');
-const { dataPath } = require('./utils.js');
 
-var sqlite3 = require('sqlite3').verbose();
-var db = new sqlite3.Database(dataPath('genomebuild/genomebuild.db'));
+let _db;
+function getDb() {
+  if (!_db) {
+    const sqlite3 = require('sqlite3').verbose();
+    const { dataPath } = require('./utils.js');
+    _db = new sqlite3.Database(dataPath('genomebuild/genomebuild.db'));
+  }
+  return _db;
+}
 
 const router = new Router();
 
@@ -11,6 +17,8 @@ router.get('/', async (ctx) => {
   // Get all species
   var speciesSql = "SELECT * from species";
   var species = [];
+
+  db = getDb();
 
   return new Promise((resolve, reject) => {
     db.all(speciesSql,function(err,speciesRows){ 
