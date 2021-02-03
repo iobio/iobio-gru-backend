@@ -28,7 +28,37 @@ if (args['--port']) {
   port = Number(args['--port']);
 }
 
-const app = new Koa();
+// Allows a frontend app to be hosted in the same process (but on a different
+// port). This is particularly useful if you want to run an entire app frontend
+// and backend in a single docker container.
+if (args['--app-dir']) {
+  const app = new Koa();
+  const appRouter = new Router();
+
+  appRouter.get('/*', async (ctx) => {
+    const fsPath = path.join(args['--app-dir'], ctx.path);
+    await serveStatic(ctx, fsPath);
+
+    // Bit of a hack. If previous attempt to serve didn't find the file,
+    // default to the root index.html.
+    if (ctx.status === 404) {
+      const fsPath = path.join(args['--app-dir'], 'index.html');
+      await serveStatic(ctx, fsPath);
+    }
+  });
+
+  let appPort = 8000;
+  if (args['--app-port']) {
+    appPort = Number(args['--app-port']);
+  }
+
+  app
+    .use(appRouter.routes())
+    .use(appRouter.allowedMethods())
+    .listen(appPort);
+}
+
+const server = new Koa();
 const router = new Router();
 
 router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
@@ -465,7 +495,7 @@ function genRegionsStr(regions) {
   return regionStr;
 }
 
-app
+server
   .use(logger())
   .use(cors({
     origin: '*',
