@@ -1,4 +1,8 @@
-FROM ubuntu:18.04
+#FROM ubuntu:18.04
+FROM ensemblorg/ensembl-vep:release_102.0
+
+USER root
+WORKDIR /
 
 RUN apt-get update \
     && apt-get -y upgrade \
@@ -26,10 +30,14 @@ RUN ["npm", "install"]
 
 RUN ["mkdir", "tool_bin"]
 
+# TODO: see if we can just copy what we need from the vep image rather than
+# basing off it
+#COPY --from=ensemblorg/ensembl-vep:latest /opt/vep /vep
 COPY --from=anderspitman/htslib:1.11 /samtools-1.11/samtools tool_bin/samtools-1.11
 COPY --from=anderspitman/htslib:1.11 /samtools-1.11/htslib-1.11/tabix tool_bin/tabix-1.11
 COPY --from=anderspitman/htslib:1.11 /samtools-1.11/htslib-1.11/bgzip tool_bin/bgzip-1.11
 COPY --from=anderspitman/bai-read-depther:latest /bamReadDepther tool_bin/baiReadDepther
+COPY --from=anderspitman/crai-read-depther:latest /craiReadDepther tool_bin/craiReadDepther
 COPY --from=anderspitman/bam-stats-alive:latest /bamstatsAlive/bamstatsAlive tool_bin/bamstatsAlive
 
 EXPOSE 9001
