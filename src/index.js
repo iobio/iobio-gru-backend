@@ -491,7 +491,6 @@ if (args['--app-dir']) {
   });
 
   rootRouter.get('/*', async (ctx, next) => {
-    console.log("appRouter", ctx.path, next);
 
     const fsPath = path.join(args['--app-dir'], ctx.path);
     await serveStatic(ctx, fsPath);
