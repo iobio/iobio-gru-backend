@@ -47,6 +47,10 @@ COPY --from=anderspitman/bam-stats-alive:latest /bamstatsAlive/bamstatsAlive too
 COPY --from=anderspitman/iobio-clin-report:latest /clin-report tool_bin/lib/clin-report
 RUN cp tool_bin/lib/clin-report/clinReport.sh tool_bin/clinReport
 
+COPY --from=anderspitman/iobio-clinphen:latest /iobio-gru-backend/tool_bin/lib/clinphen/miniconda3 tool_bin/lib/clinphen/miniconda3
+COPY --from=anderspitman/iobio-clinphen:latest /iobio-gru-backend/tool_bin/lib/clinphen/nltk_data /usr/share/nltk_data
+COPY --from=anderspitman/iobio-clinphen:latest /clinphen.sh tool_bin/clinphen
+
 RUN ln -s $PWD/tool_bin/bcftools-1.11 $PWD/tool_bin/bcftools
 RUN ln -s $PWD/tool_bin/samtools-1.11 $PWD/tool_bin/samtools
 RUN ln -s $PWD/tool_bin/tabix-1.11 $PWD/tool_bin/tabix
