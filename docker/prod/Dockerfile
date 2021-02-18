@@ -41,6 +41,12 @@ COPY --from=anderspitman/bai-read-depther:latest /bamReadDepther tool_bin/baiRea
 COPY --from=anderspitman/crai-read-depther:latest /craiReadDepther tool_bin/craiReadDepther
 COPY --from=anderspitman/bam-stats-alive:latest /bamstatsAlive/bamstatsAlive tool_bin/bamstatsAlive
 
+RUN ln -s $PWD/tool_bin/bcftools-1.11 $PWD/tool_bin/bcftools
+RUN ln -s $PWD/tool_bin/samtools-1.11 $PWD/tool_bin/samtools
+RUN ln -s $PWD/tool_bin/tabix-1.11 $PWD/tool_bin/tabix
+RUN ln -s $PWD/tool_bin/bgzip-1.11 $PWD/tool_bin/bgzip
+
 EXPOSE 9001
 
 ENTRYPOINT ["node", "src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
+
