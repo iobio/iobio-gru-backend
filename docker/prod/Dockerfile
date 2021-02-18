@@ -36,6 +36,7 @@ RUN ["mkdir", "tool_bin"]
 COPY --from=anderspitman/htslib:1.11 /samtools-1.11/samtools tool_bin/samtools-1.11
 COPY --from=anderspitman/htslib:1.11 /samtools-1.11/htslib-1.11/tabix tool_bin/tabix-1.11
 COPY --from=anderspitman/htslib:1.11 /samtools-1.11/htslib-1.11/bgzip tool_bin/bgzip-1.11
+COPY --from=anderspitman/htslib:1.11 /bcftools-1.11/bcftools tool_bin/bcftools-1.11
 COPY --from=anderspitman/bai-read-depther:latest /bamReadDepther tool_bin/baiReadDepther
 COPY --from=anderspitman/crai-read-depther:latest /craiReadDepther tool_bin/craiReadDepther
 COPY --from=anderspitman/bam-stats-alive:latest /bamstatsAlive/bamstatsAlive tool_bin/bamstatsAlive
