@@ -16,63 +16,13 @@ const { parseArgs, dataPath } = require('./utils.js');
 const fs = require('fs');
 const { serveStatic } = require('./static.js');
 
-const args = parseArgs();
 
-// This gives singularity images access to the data directory
-process.env.SINGULARITY_BIND = dataPath('');
-
-let toolDir = dataPath('tool_bin');
-if (args['--tools-dir']) {
-  toolDir = args['--tools-dir'];
-}
-process.env.PATH = toolDir + ':' + process.env.PATH;
-
-let port = 9001;
-if (args['--port']) {
-  port = Number(args['--port']);
-}
-
-// Allows a frontend app to be hosted in the same process (but on a different
-// port). This is particularly useful if you want to run an entire app frontend
-// and backend in a single docker container.
-if (args['--app-dir']) {
-  const app = new Koa();
-  const appRouter = new Router();
-
-  appRouter.get('/*', async (ctx) => {
-    const fsPath = path.join(args['--app-dir'], ctx.path);
-    await serveStatic(ctx, fsPath);
-
-    // Bit of a hack. If previous attempt to serve didn't find the file,
-    // default to the root index.html.
-    if (ctx.status === 404) {
-      const fsPath = path.join(args['--app-dir'], 'index.html');
-      await serveStatic(ctx, fsPath);
-    }
-  });
-
-  let appPort = 8000;
-  if (args['--app-port']) {
-    appPort = Number(args['--app-port']);
-  }
-
-  app
-    .use(appRouter.routes())
-    .use(appRouter.allowedMethods())
-    .listen(appPort);
-}
-
-const server = new Koa();
 const router = new Router();
 
 router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
 router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
 router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
 router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
-
-router.get('/', async (ctx) => {
-  ctx.body = "<h1>I be healthful</h1>";
-});
 
 router.get('/static/*', async (ctx) => {
   const fsPath = dataPath(ctx.path);
@@ -507,6 +457,59 @@ function genRegionsStr(regions) {
   return regionStr;
 }
 
+
+
+
+const args = parseArgs();
+
+// This gives singularity images access to the data directory
+process.env.SINGULARITY_BIND = dataPath('');
+
+let toolDir = dataPath('tool_bin');
+if (args['--tools-dir']) {
+  toolDir = args['--tools-dir'];
+}
+process.env.PATH = toolDir + ':' + process.env.PATH;
+
+let port = 9001;
+if (args['--port']) {
+  port = Number(args['--port']);
+}
+
+
+let rootRouter = router;
+
+// Allows a frontend app to be hosted in the same process. This is particularly
+// useful if you want to run an entire app frontend and backend in a single
+// docker container.
+if (args['--app-dir']) {
+  rootRouter = new Router();
+  rootRouter.use('/gru', router.routes(), router.allowedMethods());
+
+  rootRouter.get('/gru', async (ctx) => {
+    ctx.body = "<h1>I be healthful</h1>";
+  });
+
+  rootRouter.get('/*', async (ctx, next) => {
+
+    const fsPath = path.join(args['--app-dir'], ctx.path);
+    await serveStatic(ctx, fsPath);
+
+    // Bit of a hack. If previous attempt to serve didn't find the file,
+    // default to the root index.html.
+    if (ctx.status === 404) {
+      const fsPath = path.join(args['--app-dir'], 'index.html');
+      await serveStatic(ctx, fsPath);
+    }
+  });
+}
+else {
+  rootRouter.get('/', async (ctx) => {
+    ctx.body = "<h1>I be healthful</h1>";
+  });
+}
+
+const server = new Koa();
 server
   .use(logger())
   .use(cors({
@@ -518,6 +521,6 @@ server
     jsonLimit: '10mb',
     textLimit: '10mb',
   }))
-  .use(router.routes())
-  .use(router.allowedMethods())
+  .use(rootRouter.routes())
+  .use(rootRouter.allowedMethods())
   .listen(port);
