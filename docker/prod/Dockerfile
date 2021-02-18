@@ -18,6 +18,9 @@ ARG node_version=12.x
 RUN curl -sL https://deb.nodesource.com/setup_${node_version} | bash - && \
     apt-get install -y nodejs
 
+# clinReport dependencies
+RUN apt-get -y install libfontconfig1
+
 # We expect node binary to be named "node", but Ubuntu names it "nodejs", so we create a symbolic link
 RUN ln -s /usr/bin/nodejs /usr/local/bin/node
 
@@ -41,6 +44,9 @@ COPY --from=anderspitman/bai-read-depther:latest /bamReadDepther tool_bin/baiRea
 COPY --from=anderspitman/crai-read-depther:latest /craiReadDepther tool_bin/craiReadDepther
 COPY --from=anderspitman/bam-stats-alive:latest /bamstatsAlive/bamstatsAlive tool_bin/bamstatsAlive
 
+COPY --from=anderspitman/iobio-clin-report:latest /clin-report tool_bin/lib/clin-report
+RUN cp tool_bin/lib/clin-report/clinReport.sh tool_bin/clinReport
+
 RUN ln -s $PWD/tool_bin/bcftools-1.11 $PWD/tool_bin/bcftools
 RUN ln -s $PWD/tool_bin/samtools-1.11 $PWD/tool_bin/samtools
 RUN ln -s $PWD/tool_bin/tabix-1.11 $PWD/tool_bin/tabix
@@ -49,4 +55,3 @@ RUN ln -s $PWD/tool_bin/bgzip-1.11 $PWD/tool_bin/bgzip
 EXPOSE 9001
 
 ENTRYPOINT ["node", "src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
-
