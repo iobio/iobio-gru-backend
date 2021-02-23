@@ -112,15 +112,15 @@ router.post('/alignmentCoverage', async (ctx) => {
   const coverageRegions = params.coverageRegions;
   const qualityCutoff = params.qualityCutoff;
   const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
-  const spanningRegionArg = "-r " + samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
+  const spanningRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
 
   const coverageRegionsArg = coverageRegions.length === 0 ? '' :
-    "-p " + coverageRegions
+    coverageRegions
       .filter(d => d.name && d.start && d.end)
       .map(d => d.name + ":" + d.start + ':' + d.end)
       .join(',');
 
-  const maxPointsArg = "-m " + maxPoints;
+  const maxPointsArg = maxPoints;
 
   const args = [
     url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg,

@@ -51,6 +51,8 @@ COPY --from=anderspitman/iobio-clinphen:latest /iobio-gru-backend/tool_bin/lib/c
 COPY --from=anderspitman/iobio-clinphen:latest /iobio-gru-backend/tool_bin/lib/clinphen/nltk_data /usr/share/nltk_data
 COPY --from=anderspitman/iobio-clinphen:latest /clinphen.sh tool_bin/clinphen
 
+COPY --from=anderspitman/iobio-coverage:latest /summarize_coverage.py tool_bin/summarize_coverage
+
 RUN ln -s $PWD/tool_bin/bcftools-1.11 $PWD/tool_bin/bcftools
 RUN ln -s $PWD/tool_bin/samtools-1.11 $PWD/tool_bin/samtools
 RUN ln -s $PWD/tool_bin/tabix-1.11 $PWD/tool_bin/tabix

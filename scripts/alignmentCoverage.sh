@@ -25,4 +25,4 @@ export REF_CACHE=$data_dir/md5_reference_cache/%2s/%2s/%s
 
 samtools-1.11 view $view_opt $data_opts $samtools_region | \
     samtools-1.11 mpileup - | \
-    coverage $max_points $spanning_region $coverage_regions
+    summarize_coverage $max_points $spanning_region $coverage_regions
