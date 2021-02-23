@@ -52,6 +52,7 @@ COPY --from=anderspitman/iobio-clinphen:latest /iobio-gru-backend/tool_bin/lib/c
 COPY --from=anderspitman/iobio-clinphen:latest /clinphen.sh tool_bin/clinphen
 
 COPY --from=anderspitman/iobio-coverage:latest /summarize_coverage.py tool_bin/summarize_coverage
+COPY --from=anderspitman/iobio-gene-coverage:latest /genecoverage tool_bin/genecoverage
 
 RUN ln -s $PWD/tool_bin/bcftools-1.11 $PWD/tool_bin/bcftools
 RUN ln -s $PWD/tool_bin/samtools-1.11 $PWD/tool_bin/samtools
