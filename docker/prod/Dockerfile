@@ -54,6 +54,14 @@ COPY --from=anderspitman/iobio-clinphen:latest /clinphen.sh tool_bin/clinphen
 COPY --from=anderspitman/iobio-coverage:latest /summarize_coverage.py tool_bin/summarize_coverage
 COPY --from=anderspitman/iobio-gene-coverage:latest /genecoverage tool_bin/genecoverage
 
+COPY --from=anderspitman/iobio-gt-enricher:latest /usr/local/bin/gtenricher tool_bin/lib/gtEnricher/
+COPY --from=anderspitman/iobio-gt-enricher:latest /usr/local/lib/libhts.so.1.11 tool_bin/lib/gtEnricher/libhts.so.3
+COPY --from=anderspitman/iobio-gt-enricher:latest /gtEnricher.sh tool_bin/gtEnricher
+
+COPY --from=anderspitman/iobio-known-variants:latest /iobio-gru-backend/tool_bin/lib/knownVariants/miniconda3 tool_bin/lib/knownVariants/miniconda3
+COPY --from=anderspitman/iobio-known-variants:latest /iobio-gru-backend/tool_bin/lib/knownVariants/knownVariants.py tool_bin/lib/knownVariants/knownVariants.py
+COPY --from=anderspitman/iobio-known-variants:latest /knownVariants tool_bin/knownVariants
+
 RUN ln -s $PWD/tool_bin/bcftools-1.11 $PWD/tool_bin/bcftools
 RUN ln -s $PWD/tool_bin/samtools-1.11 $PWD/tool_bin/samtools
 RUN ln -s $PWD/tool_bin/tabix-1.11 $PWD/tool_bin/tabix
@@ -63,6 +71,3 @@ EXPOSE 9001
 
 ENTRYPOINT ["node", "src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
 
-COPY --from=anderspitman/iobio-gt-enricher:latest /usr/local/bin/gtenricher tool_bin/lib/gtEnricher/
-COPY --from=anderspitman/iobio-gt-enricher:latest /usr/local/lib/libhts.so.1.11 tool_bin/lib/gtEnricher/libhts.so.3
-COPY --from=anderspitman/iobio-gt-enricher:latest /gtEnricher.sh tool_bin/gtEnricher
