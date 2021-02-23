@@ -62,3 +62,7 @@ RUN ln -s $PWD/tool_bin/bgzip-1.11 $PWD/tool_bin/bgzip
 EXPOSE 9001
 
 ENTRYPOINT ["node", "src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
+
+COPY --from=anderspitman/iobio-gt-enricher:latest /usr/local/bin/gtenricher tool_bin/lib/gtEnricher/
+COPY --from=anderspitman/iobio-gt-enricher:latest /usr/local/lib/libhts.so.1.11 tool_bin/lib/gtEnricher/libhts.so.3
+COPY --from=anderspitman/iobio-gt-enricher:latest /gtEnricher.sh tool_bin/gtEnricher
