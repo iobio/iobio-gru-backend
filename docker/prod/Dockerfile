@@ -64,6 +64,8 @@ COPY --from=anderspitman/iobio-known-variants:latest /knownVariants tool_bin/kno
 
 COPY --from=anderspitman/iobio-vcf-read-depther:latest /vcfReadDepther tool_bin/
 
+COPY --from=anderspitman/iobio-vcf-stats-alive:latest /vcfStatsAlive tool_bin/
+
 RUN ln -s $PWD/tool_bin/bcftools-1.11 $PWD/tool_bin/bcftools
 RUN ln -s $PWD/tool_bin/samtools-1.11 $PWD/tool_bin/samtools
 RUN ln -s $PWD/tool_bin/tabix-1.11 $PWD/tool_bin/tabix
