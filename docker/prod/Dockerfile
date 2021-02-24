@@ -37,9 +37,13 @@ RUN ["mkdir", "tool_bin"]
 # basing off it
 #COPY --from=ensemblorg/ensembl-vep:latest /opt/vep /vep
 COPY --from=anderspitman/htslib:1.11 /samtools-1.11/samtools tool_bin/samtools-1.11
+RUN ln -s $PWD/tool_bin/samtools-1.11 $PWD/tool_bin/samtools
 COPY --from=anderspitman/htslib:1.11 /samtools-1.11/htslib-1.11/tabix tool_bin/tabix-1.11
+RUN ln -s $PWD/tool_bin/tabix-1.11 $PWD/tool_bin/tabix
 COPY --from=anderspitman/htslib:1.11 /samtools-1.11/htslib-1.11/bgzip tool_bin/bgzip-1.11
+RUN ln -s $PWD/tool_bin/bgzip-1.11 $PWD/tool_bin/bgzip
 COPY --from=anderspitman/htslib:1.11 /bcftools-1.11/bcftools tool_bin/bcftools-1.11
+RUN ln -s $PWD/tool_bin/bcftools-1.11 $PWD/tool_bin/bcftools
 COPY --from=anderspitman/bai-read-depther:latest /bamReadDepther tool_bin/baiReadDepther
 COPY --from=anderspitman/crai-read-depther:latest /craiReadDepther tool_bin/craiReadDepther
 COPY --from=anderspitman/bam-stats-alive:latest /bamstatsAlive/bamstatsAlive tool_bin/bamstatsAlive
@@ -66,10 +70,7 @@ COPY --from=anderspitman/iobio-vcf-read-depther:latest /vcfReadDepther tool_bin/
 
 COPY --from=anderspitman/iobio-vcf-stats-alive:latest /vcfStatsAlive tool_bin/
 
-RUN ln -s $PWD/tool_bin/bcftools-1.11 $PWD/tool_bin/bcftools
-RUN ln -s $PWD/tool_bin/samtools-1.11 $PWD/tool_bin/samtools
-RUN ln -s $PWD/tool_bin/tabix-1.11 $PWD/tool_bin/tabix
-RUN ln -s $PWD/tool_bin/bgzip-1.11 $PWD/tool_bin/bgzip
+COPY --from=anderspitman/iobio-vt:latest /vt/vt tool_bin/
 
 EXPOSE 9001
 
