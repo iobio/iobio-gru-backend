@@ -74,5 +74,4 @@ COPY --from=anderspitman/iobio-vt:latest /vt/vt tool_bin/
 
 EXPOSE 9001
 
-ENTRYPOINT ["node", "src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
-
+ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
