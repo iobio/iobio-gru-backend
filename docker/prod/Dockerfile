@@ -56,7 +56,7 @@ COPY --from=anderspitman/iobio-clinphen:latest /iobio-gru-backend/tool_bin/lib/c
 COPY --from=anderspitman/iobio-clinphen:latest /clinphen.sh tool_bin/clinphen
 
 COPY --from=anderspitman/iobio-coverage:latest /summarize_coverage.py tool_bin/summarize_coverage
-COPY --from=anderspitman/iobio-gene-coverage:latest /genecoverage tool_bin/genecoverage
+COPY --from=anderspitman/iobio-gene-coverage:latest /genecoverage tool_bin/geneCoverage
 
 COPY --from=anderspitman/iobio-gt-enricher:latest /usr/local/bin/gtenricher tool_bin/lib/gtEnricher/
 COPY --from=anderspitman/iobio-gt-enricher:latest /usr/local/lib/libhts.so.1.11 tool_bin/lib/gtEnricher/libhts.so.3
@@ -74,4 +74,5 @@ COPY --from=anderspitman/iobio-vt:latest /vt/vt tool_bin/
 
 EXPOSE 9001
 
-ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
+#ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
+CMD ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
