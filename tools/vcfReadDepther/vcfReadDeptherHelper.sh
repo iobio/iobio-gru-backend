@@ -17,7 +17,10 @@ while getopts i:b: flag; do
   esac
 done
 
-cmd="curl -s \"$input\"  | bgzip -d | vcfReadDepther $args"
+# Incantation taken from https://stackoverflow.com/a/246128/943814
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+cmd="curl -s \"$input\"  | bgzip -d | $SCRIPT_DIR/lib/vcfReadDepther/vcfReadDepther $args"
 eval $cmd   
 
 
