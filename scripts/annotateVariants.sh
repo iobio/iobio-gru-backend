@@ -110,8 +110,12 @@ if [ "$hgvsNotation" == "true" ] || [ "$getRsId" == "true" ] || [ "$isRefSeq" ==
     vepArgs="$vepArgs --fasta $refFastaFile"
 fi
 
+tabixVcfArg=$vcfUrl
+if [ -n "${tbiUrl}" ]; then
+    tabixVcfArg="$vcfUrl##idx##$tbiUrl"
+fi
 
-tabix_od -h $vcfUrl $region $tbiUrl | \
+tabix -h $tabixVcfArg $region | \
     bcftools annotate -h contigs.txt - | \
     $subsetStage | \
     $decomposeStage | \

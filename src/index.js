@@ -160,7 +160,7 @@ router.post('/normalizeVariants', async (ctx) => {
 
     // Pull from passed params
     const vcfUrl = params.vcfUrl;
-    const tbiUrl = params.tbiUrl;
+    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const refName = params.refName;
     const regions = params.regions;
     const contigStr = decodeURIComponent(params.contigStr);

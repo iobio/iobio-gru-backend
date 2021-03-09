@@ -16,7 +16,12 @@ printf "$contigStr" > contigs.txt
 
 #echo vcfUrl: $vcfUrl tbiUrl: $tbiUrl refName: $refName regions: $regions contigStr: $contigStr refFastaFile: $refFastaFile
 
-tabix_od -h $vcfUrl $regions $tbiUrl | \
+tabixVcfArg=$vcfUrl
+if [ -n "${tbiUrl}" ]; then
+    tabixVcfArg="$vcfUrl##idx##$tbiUrl"
+fi
+
+tabix -h $tabixVcfArg $regions | \
     bcftools annotate -h contigs.txt - | \
     vt normalize -q -n -r $refFastaFile -
 
