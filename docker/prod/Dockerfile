@@ -66,7 +66,8 @@ COPY --from=anderspitman/iobio-known-variants:latest /iobio-gru-backend/tool_bin
 COPY --from=anderspitman/iobio-known-variants:latest /iobio-gru-backend/tool_bin/lib/knownVariants/knownVariants.py tool_bin/lib/knownVariants/knownVariants.py
 COPY --from=anderspitman/iobio-known-variants:latest /knownVariants tool_bin/knownVariants
 
-COPY --from=anderspitman/iobio-vcf-read-depther:latest /vcfReadDepther tool_bin/
+COPY --from=anderspitman/iobio-vcf-read-depther:latest /build/vcfReadDepther tool_bin/
+COPY --from=anderspitman/iobio-vcf-read-depther:latest /build/lib/vcfReadDepther/vcfReadDepther tool_bin/lib/vcfReadDepther/vcfReadDepther
 
 COPY --from=anderspitman/iobio-vcf-stats-alive:latest /vcfStatsAlive tool_bin/
 

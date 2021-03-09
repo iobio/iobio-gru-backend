@@ -4,7 +4,7 @@ curl -LO https://raw.githubusercontent.com/tonydisera/vcfReadDepther/master/samp
 g++ -o vcfReadDepther sampler.cpp
 strip vcfReadDepther
 
-mkdir -p lib/vcfReadDepther/
-mv vcfReadDepther lib/vcfReadDepther/
+mkdir -p build/lib/vcfReadDepther/
+mv vcfReadDepther build/lib/vcfReadDepther/
 
-cp vcfReadDeptherHelper.sh vcfReadDepther
+cp vcfReadDeptherHelper.sh build/vcfReadDepther
