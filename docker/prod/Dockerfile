@@ -25,7 +25,7 @@ RUN apt-get -y install libfontconfig1
 RUN ln -s /usr/bin/nodejs /usr/local/bin/node
 
 ARG gru_version=dev
-RUN git clone --depth 1 --branch ${gru_version} https://github.com/iobio/iobio-gru-backend
+RUN git clone --depth 1 --branch ${gru_version} https://github.com/anderspitman/iobio-gru-backend
 
 WORKDIR /iobio-gru-backend
 
