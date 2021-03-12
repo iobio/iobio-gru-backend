@@ -20,10 +20,10 @@ fi
 
 # Pipe into VEP if we want to return counts by VEP categories but haven't already annotated it
 if [ "$requiresVepService" = true ]; then
-    tabix_od -h $clinvarUrl $region | \
+    tabix -h $clinvarUrl $region | \
         vep $vepArgs | \
             knownVariants -r $region $binLengthArg $regionPartsArg $annotationModeArg
 else
-    tabix_od -h $clinvarUrl $region | \
+    tabix -h $clinvarUrl $region | \
         knownVariants -r $region $binLengthArg $regionPartsArg $annotationModeArg
 fi
