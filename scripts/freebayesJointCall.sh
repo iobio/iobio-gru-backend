@@ -34,8 +34,6 @@ echo -e "$samplesFileStr" > $samplesFile
 
 export REF_CACHE=$dataDir/md5_reference_cache/%2s/%2s/%s
 
-# TODO: using tabix instead of tabix_od would likely be faster
-
 freebayesArgs="-s $samplesFile"
 
 # split alignments by ','
@@ -60,7 +58,7 @@ IFS=' '
 tabixCommand=''
 if [ "$useSuggestedVariants" == "true" ]; then
     suggFile="sugg.vcf"
-    tabix_od -h $clinvarUrl $region | vt view -f "INFO.CLNSIG=~'5|4'" - > $suggFile
+    tabix -h $clinvarUrl $region | vt view -f "INFO.CLNSIG=~'5|4'" - > $suggFile
     freebayesArgs="$freebayesArgs -@ $suggFile"
 fi
 
