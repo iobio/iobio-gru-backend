@@ -73,6 +73,8 @@ COPY --from=anderspitman/iobio-vcf-stats-alive:latest /vcfStatsAlive tool_bin/
 
 COPY --from=anderspitman/iobio-vt:latest /vt/vt tool_bin/
 
+COPY --from=anderspitman/iobio-freebayes:latest /freebayes tool_bin/
+
 EXPOSE 9001
 
 #ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
