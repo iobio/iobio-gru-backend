@@ -23,7 +23,8 @@ if [ ! -z "$somaticFilterPhrase" ]; then
 fi
 
 #Compose args
-vepArgs="--assembly $genomeBuildName --format vcf --allele_number --dir_cache $vepCacheDir"
+vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4"
+vepArgs="$vepBaseArgs --assembly $genomeBuildName --allele_number"
 echo -e "$regions" >> regions.txt
 
 #Do work

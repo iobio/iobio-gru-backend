@@ -80,11 +80,9 @@ fi
 
 echo -e "$contigStr" > contigs.txt
 
+vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4"
 
-# TODO: remove --dir_cache from vep Dockerfile since we're overriding it here.
-# Actually, move all the vep args into this script so they aren't split
-# between two locations.
-vepArgs="-i STDIN --format vcf --cache --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4 --assembly $genomeBuildName --format vcf --allele_number --dir_cache $vepCacheDir"
+vepArgs="$vepBaseArgs --assembly $genomeBuildName --allele_number"
 
 if [ "$vepREVELFile" ]; then
     vepArgs="$vepArgs --dir_plugins $vepPluginDir --plugin REVEL,$vepREVELFile"
