@@ -95,7 +95,9 @@ fi
 
 freebayesArgs="$freebayesArgs $extraArgs"
 
-vepArgs="--assembly $genomeBuildName --format vcf --dir_cache $vepCacheDir --allele_number --hgvs --check_existing --fasta $refFastaFile"
+vepArgs="-i STDIN --format vcf --cache --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4 --assembly $genomeBuildName --allele_number --dir_cache $vepCacheDir"
+
+vepArgs="$vepArgs --hgvs --check_existing --fasta $refFastaFile"
 
 if [ "$vepREVELFile" ]; then
     vepArgs="$vepArgs --dir_plugins $vepPluginDir --plugin REVEL,$vepREVELFile"
