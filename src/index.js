@@ -25,7 +25,7 @@ router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowed
 router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
 
 router.get('/static/*', async (ctx) => {
-  const fsPath = dataPath(ctx.path);
+  const fsPath = path.join(__dirname, '..', ctx.path);
   await serveStatic(ctx, fsPath);
 });
 
