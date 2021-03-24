@@ -29,6 +29,8 @@ RUN git clone --depth 1 --branch ${gru_version} https://github.com/anderspitman/
 
 WORKDIR /iobio-gru-backend
 
+RUN ["./dev_tools/populate_static.sh"]
+
 RUN ["npm", "install"]
 
 RUN ["mkdir", "tool_bin"]
