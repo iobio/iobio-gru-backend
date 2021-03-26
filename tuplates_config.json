@@ -1,4 +1,4 @@
 {
-  "exclude": ["node_modules"],
-  "extensions": [".py", ".js", ".json"]
+  "exclude": ["node_modules", "tool_bin"],
+  "extensions": ["py", "js", "json"]
 }
