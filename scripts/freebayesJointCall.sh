@@ -11,16 +11,15 @@ clinvarUrl=$6
 genomeBuildName=$7
 vepREVELFile=$8
 vepAF=$9
-isRefSeq=${10}
-samplesFileStr=${11}
-extraArgs=${12}
-vepCacheDir=${13}
-vepPluginDir=${14}
-gnomadUrl=${15}
-gnomadRegionFileStr=${16}
-gnomadHeaderFile=${17}
-decompose=${18}
-dataDir=${19}
+samplesFileStr=${10}
+extraArgs=${11}
+vepCacheDir=${12}
+vepPluginDir=${13}
+gnomadUrl=${14}
+gnomadRegionFileStr=${15}
+gnomadHeaderFile=${16}
+decompose=${17}
+dataDir=${18}
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -95,9 +94,9 @@ fi
 
 freebayesArgs="$freebayesArgs $extraArgs"
 
-vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4"
+vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4 --merged --fasta $refFastaFile"
 
-vepArgs="$vepBaseArgs --assembly $genomeBuildName --allele_number --hgvs --check_existing --fasta $refFastaFile"
+vepArgs="$vepBaseArgs --assembly $genomeBuildName --allele_number --hgvs --check_existing"
 
 if [ "$vepREVELFile" ]; then
     vepArgs="$vepArgs --dir_plugins $vepPluginDir --plugin REVEL,$vepREVELFile"
@@ -106,11 +105,6 @@ fi
 if [ "$vepAF" == "true" ]; then
     vepArgs="$vepArgs --af --af_gnomad --af_esp --af_1kg --max_af"
 fi
-
-if [ "$isRefSeq" == "true" ]; then
-    vepArgs="$vepArgs --refseq"
-fi
-
 
 wait
 

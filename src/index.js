@@ -202,7 +202,7 @@ router.post('/annotateVariants', async (ctx) => {
     const args = [
         params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
         refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
-        vepPluginDir, params.isRefSeq, params.hgvsNotation, params.getRsId, gnomadUrl,
+        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadUrl,
         gnomadRegionStr, gnomadHeaderFile, params.decompose, gnomadRenameChr
 
     ];
@@ -297,7 +297,7 @@ router.post('/freebayesJointCall', async (ctx) => {
   const args = [
     alignments, indices, region, refFastaFile, useSuggestedVariants,
     params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
-    params.isRefSeq, samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+    samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
     gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose, dataPath(''),
   ];
 

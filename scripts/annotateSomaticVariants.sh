@@ -7,7 +7,7 @@ regions=$3
 somaticFilterPhrase=$4
 genomeBuildName=$5
 vepCacheDir=$6
-fastaPath=$7
+refFastaFile=$7
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -23,14 +23,14 @@ if [ ! -z "$somaticFilterPhrase" ]; then
 fi
 
 #Compose args
-vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4"
+vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4 --merged --fasta $refFastaFile"
 vepArgs="$vepBaseArgs --assembly $genomeBuildName --allele_number"
 echo -e "$regions" >> regions.txt
 
 #Do work
 bcftools view -s $selectedSamples $vcfUrl | \
     bcftools filter -t $regions - | \
-    bcftools norm -m - -w 10000 -f $fastaPath - | \
+    bcftools norm -m - -w 10000 -f $refFastaFile - | \
     $somFilterStage | \
     vep $vepArgs
 

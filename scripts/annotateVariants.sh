@@ -11,14 +11,13 @@ vepCacheDir=$8
 vepREVELFile=$9
 vepAF=${10}
 vepPluginDir=${11}
-isRefSeq=${12}
-hgvsNotation=${13}
-getRsId=${14}
-gnomadUrl=${15}
-gnomadRegionFileStr=${16}
-gnomadHeaderFile=${17}
-decompose=${18}
-gnomadRenameChr=${19}
+hgvsNotation=${12}
+getRsId=${13}
+gnomadUrl=${14}
+gnomadRegionFileStr=${15}
+gnomadHeaderFile=${16}
+decompose=${17}
+gnomadRenameChr=${18}
 
 # default optional stages to no-op
 subsetStage=cat
@@ -80,7 +79,7 @@ fi
 
 echo -e "$contigStr" > contigs.txt
 
-vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4"
+vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4 --merged --fasta $refFastaFile"
 
 vepArgs="$vepBaseArgs --assembly $genomeBuildName --allele_number"
 
@@ -92,20 +91,12 @@ if [ "$vepAF" == "true" ]; then
     vepArgs="$vepArgs --af --af_gnomad --af_esp --af_1kg --max_af"
 fi
 
-if [ "$isRefSeq" == "true" ]; then
-    vepArgs="$vepArgs --refseq"
-fi
-
 if [ "$hgvsNotation" == "true" ]; then
     vepArgs="$vepArgs --hgvs"
 fi
 
 if [ "$getRsId" == "true" ]; then
     vepArgs="$vepArgs --check_existing"
-fi
-
-if [ "$hgvsNotation" == "true" ] || [ "$getRsId" == "true" ] || [ "$isRefSeq" == "true" ]; then
-    vepArgs="$vepArgs --fasta $refFastaFile"
 fi
 
 tabixVcfArg=$vcfUrl
