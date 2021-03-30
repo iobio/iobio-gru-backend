@@ -1,5 +1,5 @@
 #FROM ubuntu:18.04
-FROM ensemblorg/ensembl-vep:release_101.0
+FROM ensemblorg/ensembl-vep:release_103.0
 
 USER root
 WORKDIR /
@@ -81,3 +81,10 @@ EXPOSE 9001
 
 #ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
 CMD ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
+
+# These directories are required for mounting writable singularity sandbox
+# images in the Utah CHPC environment, because of the directories that CHPC
+# automatically binds. Hopefully this won't be necessary in the future.
+RUN ["mkdir", "/uufs"]
+RUN ["mkdir", "/scratch"]
+RUN ["mkdir", "/ssd"]
