@@ -465,7 +465,7 @@ const args = parseArgs();
 // This gives singularity images access to the data directory
 process.env.SINGULARITY_BIND = dataPath('');
 
-let toolDir = dataPath('tool_bin');
+let toolDir = path.join(__dirname, '..', 'tool_bin');
 if (args['--tools-dir']) {
   toolDir = args['--tools-dir'];
 }
