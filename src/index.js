@@ -370,11 +370,12 @@ router.post('/getIdColumns', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     console.log(JSON.stringify(params, null, 2));
 
-    const regionStr = genRegionsStr(params.regions);
+    const regionStr = genRegionsStr(params.regions, ",");
     const args = [
         params.vcfUrl, regionStr
     ];
 
+    console.log(regionStr);
     await handle(ctx, 'getIdColumns.sh', args, { ignoreStderr: true });
 });
 
@@ -440,7 +441,7 @@ function genRegionStr(region) {
   return region.refName + ':' + region.start + '-' + region.end;
 }
 
-function genRegionsStr(regions) {
+function genRegionsStr(regions, delim = " ") {
   let regionStr = "";
   for (const region of regions) {
 
@@ -450,10 +451,11 @@ function genRegionsStr(regions) {
       regionStr += ':' + region.start;
 
       if (region.end) {
-        regionStr += '-' + region.end + " ";
+        regionStr += '-' + region.end + delim;
       }
     }
   }
+  regionStr = regionStr.substring(0, regionStr.length - 1);
   return regionStr;
 }
 
