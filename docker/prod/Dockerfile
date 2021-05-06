@@ -57,6 +57,12 @@ COPY --from=anderspitman/iobio-clinphen:latest /iobio-gru-backend/tool_bin/lib/c
 COPY --from=anderspitman/iobio-clinphen:latest /iobio-gru-backend/tool_bin/lib/clinphen/nltk_data /usr/share/nltk_data
 COPY --from=anderspitman/iobio-clinphen:latest /clinphen.sh tool_bin/clinphen
 
+COPY --from=anderspitman/iobio-phenotype-extractor:latest /iobio-gru-backend/tool_bin/lib/phenotypeExtractor/miniconda3 tool_bin/lib/phenotypeExtractor/miniconda3
+# TODO: Already copied from clinphen above. Maybe not safe to share the same one?
+#COPY --from=anderspitman/iobio-phenotype-extractor:latest /iobio-gru-backend/tool_bin/lib/phenotype-extractor/nltk_data /usr/share/nltk_data
+COPY --from=anderspitman/iobio-phenotype-extractor:latest /iobio-gru-backend/tool_bin/lib/phenotypeExtractor/Phenotype-extractor tool_bin/lib/phenotypeExtractor/Phenotype-extractor
+COPY --from=anderspitman/iobio-phenotype-extractor:latest /phenotypeExtractor.sh tool_bin/phenotypeExtractor
+
 COPY --from=anderspitman/iobio-coverage:latest /summarize_coverage.py tool_bin/summarize_coverage
 COPY --from=anderspitman/iobio-gene-coverage:latest /genecoverage tool_bin/geneCoverage
 

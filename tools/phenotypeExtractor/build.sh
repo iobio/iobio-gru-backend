@@ -11,6 +11,6 @@ git clone https://github.com/adityaekawade/Phenotype-extractor.git
 
 cd Phenotype-extractor
 
-git checkout 9cb4c0c7de850f7c839d1e1f229a02e9be04e3d3
+git checkout 198bf0a55816ae172aa27619f9e1e02c1c8396e8
 
 npm install
