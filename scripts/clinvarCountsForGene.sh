@@ -8,6 +8,9 @@ annotationMode=$5
 requiresVepService=$6
 vepArgs=$7
 
+tempDir=$(mktemp -d)
+cd $tempDir
+
 if [ "$binLength" ]; then
     binLengthArg="-b $binLength"
 elif [ "$regionParts" ]; then
@@ -27,3 +30,5 @@ else
     tabix -h $clinvarUrl $region | \
         knownVariants -r $region $binLengthArg $regionPartsArg $annotationModeArg
 fi
+
+rm -rf $tempDir
