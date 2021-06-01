@@ -179,6 +179,30 @@ router.post('/normalizeVariants', async (ctx) => {
     await handle(ctx, 'normalizeVariants.sh', args);
 });
 
+router.post('/getClinvarVariants', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+    const contigStr = genContigFileStr(params.refNames);
+    const regionStr = genRegionsStr(params.regions);
+    const refFastaFile = dataPath(params.refFastaFile);
+    const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+    const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+    const gnomadHeaderFile = dataPath('gnomad_header.txt');
+    const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
+
+    const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile, 
+        params.genomeBuildName, gnomadUrl, gnomadRegionStr, 
+        gnomadHeaderFile, gnomadRenameChr, params.clinSigFilterPhrase
+    ];
+
+    console.log(args);
+   
+    await handle(ctx, 'getClinvarVariants.sh', args, { ignoreStderr: true });
+});
+
 router.post('/annotateVariants', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
@@ -207,6 +231,7 @@ router.post('/annotateVariants', async (ctx) => {
 
     ];
 
+    console.log(args);
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
 
