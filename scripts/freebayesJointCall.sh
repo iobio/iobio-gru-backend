@@ -11,15 +11,15 @@ clinvarUrl=$6
 genomeBuildName=$7
 vepREVELFile=$8
 vepAF=$9
-isRefSeq=${10}
-samplesFileStr=${11}
-extraArgs=${12}
-vepCacheDir=${13}
-vepPluginDir=${14}
-gnomadUrl=${15}
-gnomadRegionFileStr=${16}
-gnomadHeaderFile=${17}
-decompose=${18}
+samplesFileStr=${10}
+extraArgs=${11}
+vepCacheDir=${12}
+vepPluginDir=${13}
+gnomadUrl=${14}
+gnomadRegionFileStr=${15}
+gnomadHeaderFile=${16}
+decompose=${17}
+dataDir=${18}
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -31,9 +31,7 @@ echo -e "$contigStr" > $contigFile
 samplesFile="samples.txt"
 echo -e "$samplesFileStr" > $samplesFile
 
-
-# TODO: using samtools and tabix instead of samtools_od and tabix_od would
-# likely be faster
+export REF_CACHE=$dataDir/md5_reference_cache/%2s/%2s/%s
 
 freebayesArgs="-s $samplesFile"
 
@@ -45,7 +43,13 @@ for i in "${!urls[@]}"; do
     url=${urls[$i]}
     indexUrl=${indices[$i]}
     alignmentFile=$(mktemp)
-    samtools_od view -b $url $region $indexUrl > $alignmentFile &
+
+    if [ -n "${indexUrl}" ]; then
+        samtools-1.11 view -b -X $url $indexUrl $region > $alignmentFile &
+    else
+        samtools-1.11 view -b $url $region > $alignmentFile &
+    fi
+
     freebayesArgs="$freebayesArgs -b $alignmentFile"
 done
 IFS=' '
@@ -53,7 +57,7 @@ IFS=' '
 tabixCommand=''
 if [ "$useSuggestedVariants" == "true" ]; then
     suggFile="sugg.vcf"
-    tabix_od -h $clinvarUrl $region | vt view -f "INFO.CLNSIG=~'5|4'" - > $suggFile
+    tabix -h $clinvarUrl $region | vt view -f "INFO.CLNSIG=~'5|4'" - > $suggFile
     freebayesArgs="$freebayesArgs -@ $suggFile"
 fi
 
@@ -90,7 +94,9 @@ fi
 
 freebayesArgs="$freebayesArgs $extraArgs"
 
-vepArgs="--assembly $genomeBuildName --format vcf --dir_cache $vepCacheDir --allele_number --hgvs --check_existing --fasta $refFastaFile"
+vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4 --merged --fasta $refFastaFile"
+
+vepArgs="$vepBaseArgs --assembly $genomeBuildName --allele_number --hgvs --check_existing"
 
 if [ "$vepREVELFile" ]; then
     vepArgs="$vepArgs --dir_plugins $vepPluginDir --plugin REVEL,$vepREVELFile"
@@ -99,11 +105,6 @@ fi
 if [ "$vepAF" == "true" ]; then
     vepArgs="$vepArgs --af --af_gnomad --af_esp --af_1kg --max_af"
 fi
-
-if [ "$isRefSeq" == "true" ]; then
-    vepArgs="$vepArgs --refseq"
-fi
-
 
 wait
 

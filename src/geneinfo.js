@@ -1,10 +1,16 @@
-var sqlite3 = require('sqlite3').verbose();
-const { dataPath } = require('./utils.js');
-var db = new sqlite3.Database(dataPath('geneinfo/gene.iobio.db'));
 var async = require('async');
 const Router = require('koa-router');
 const router = new Router();
 
+let _db;
+function getDb() {
+  if (!_db) {
+    const sqlite3 = require('sqlite3').verbose();
+    const { dataPath } = require('./utils.js');
+    _db = new sqlite3.Database(dataPath('geneinfo/gene.iobio.db'));
+  }
+  return _db;
+}
 
 getGenesInClause = function(genes) {
   sqlString = " in (";
@@ -36,6 +42,8 @@ router.get('/api/gene/:gene', async (ctx) => {
   if (build != null && build != "") {
     geneSqlString  += " AND build = \""+build+"\"";
   }
+
+  const db = getDb();
 
   return new Promise((resolve, reject) => {
     db.all(geneSqlString,function(err,rows){ 
@@ -123,6 +131,8 @@ router.get('/api/genes/', async (ctx) => {
   if (build != null && build != "") {
     geneSqlString  += " AND build = \""+build+"\"";
   }
+
+  const db = getDb();
 
   return new Promise((resolve, reject) => {
     db.all(geneSqlString,function(err,rows){ 
@@ -223,6 +233,8 @@ router.get('/api/region/:region', async (ctx) => {
     sqlString +=    " AND source = \""+source+"\"";         
   }
   
+  const db = getDb();
+
   return new Promise((resolve, reject) => {
     db.all(sqlString, function(err, genes) {
       async.map(genes, 
@@ -298,6 +310,8 @@ router.get('/:gene', async (ctx) => {
   if (build != null && build != "") {
     geneSqlString  += " AND build = \""+build+"\"";
   }
+
+  const db = getDb();
 
   return new Promise((resolve, reject) => {
     db.all(geneSqlString,function(err,rows){ 

@@ -1,12 +1,21 @@
 const Router = require('koa-router');
-var sqlite3 = require('sqlite3').verbose();
-const { dataPath } = require('./utils.js');
-var db = new sqlite3.Database(dataPath('gene2pheno/hpo_gene_to_phenotype.db'));
+
+let _db;
+function getDb() {
+  if (!_db) {
+    const sqlite3 = require('sqlite3').verbose();
+    const { dataPath } = require('./utils.js');
+    _db = new sqlite3.Database(dataPath('gene2pheno/hpo_gene_to_phenotype.db'));
+  }
+  return _db;
+}
 
 const router = new Router();
 
 router.get('/api/gene/:gene', async (ctx) => {
   var sqlString = "SELECT * from gene_to_phenotype where entrez_gene_symbol=\""+ctx.params.gene+"\" ";
+
+  const db = getDb();
 
   return new Promise((resolve, reject) => {
     db.all(sqlString,function(err,rows){ 
@@ -35,6 +44,8 @@ router.get('/api/gene/:gene', async (ctx) => {
 // v2 (cacheable) endpoints
 router.get('/:gene', async (ctx) => {
   var sqlString = "SELECT * from gene_to_phenotype where entrez_gene_symbol=\""+ctx.params.gene+"\" ";
+
+  const db = getDb();
 
   return new Promise((resolve, reject) => {
     db.all(sqlString,function(err,rows){ 

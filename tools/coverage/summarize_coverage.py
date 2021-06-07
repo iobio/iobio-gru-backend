@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 #  Title:  coverage_summarize.py
 #  Author: Tony Di Sera, Gabor Marth Lab, iobio project
 #  Written in July 2015

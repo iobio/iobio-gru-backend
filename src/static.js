@@ -1,4 +1,6 @@
 const fs = require('fs');
+const path = require('path');
+const { getType } = require('mime');
 
 
 async function serveStatic(ctx, fsPath) {
@@ -49,6 +51,11 @@ async function serveStatic(ctx, fsPath) {
   else {
     ctx.set('Content-Length', `${stats.size}`);
     stream = fs.createReadStream(fsPath);
+  }
+
+  const mime = getType(path.extname(fsPath));
+  if (mime) {
+    ctx.set('Content-Type', mime);
   }
 
   ctx.set('Accept-Ranges', 'bytes');

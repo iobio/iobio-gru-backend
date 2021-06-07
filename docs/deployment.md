@@ -48,27 +48,11 @@ In the simplest case, all that's necessary for setting up gru is to clone the
 repo, then run `make`. If something goes wrong, it should be fairly easy to
 manually run the steps in the Makefile. There's not much going on in there.
 
-Note that a lot of bioinformatics CLI tools are required by gru at runtime.
-These tools must be in `tool_bin`.  By default, we pre-build these tools and
-store them on a public S3 bucket, and the Makefile downloads them.
-
-Recipes to build the tools from scratch are included in the `tools/`
-directory. Most of them are packaged as singularity containers. As an example,
-to build samtools you would run the following from `tools/samtools/`:
-
-```
-sudo singularity build samtools samtools.def
-```
-
-And then copy the samtools image to `tool_bin/`. It can mostly be treated as
-a static binary, but whatever system you run it on must have singularity
-installed.
-
 
 ## Data directory
 
 gru expects a copy of the data directory to exist at `./data`, relative to
-the working directory.
+the working directory where you run gru.
 
 See [here](populating_data_directory.md) for more information on creating the
 data directory.
@@ -77,10 +61,12 @@ data directory.
 ## Running
 
 You can run `run_local.sh` to start the server. Make sure the data directory
-exists in the working directory you run from.
+exists in the working directory you run from. The default port is 9001. You
+can override it like this:
 
-You can also run `src/index.js` manually. The key thing is properly setting up
-your `PATH`. See `run_local.sh` for details.
+```
+./run_local.sh --port=9002`
+```
 
 
 # Production Deployment
@@ -98,20 +84,52 @@ For a production deployment, you'll want to have a few extra components:
 
 ## iobio AWS deployment
 
-The main production deployment of gru runs on Amazon AWS. This section
+The public production deployment of gru runs on Amazon AWS. This section
 details some of the setup we use.
 
 
 ### Data directory EBS
 
-We maintain an EBS volume which contains a copy of the latest data
-directory. Whenever we update the data directory, we create a snapshot of
-that EBS.
+We maintain an EBS volume which contains a copy of the latest gru, including
+the code (this repository) located in `iobio-gru-backend/`, and the data
+directory in `iobio-gru-backend/data/`.
+
+The current version of the EBS is 0.28.0. You can obtain a copy by using the
+following AWS snapshot:
+
+`snap-02eb780cd49ee41fe`
+
+Let's say you create a copy of that EBS and mount it at `/mnt/gru`. You can
+then run gru like this:
+
+```
+cd /mnt/gru/iobio-gru-backend
+./run_local.sh --port=9002
+```
+
+Note that EBS snapshots are stored on Amazon S3, which is much slower than EBS.
+When you create a new EBS volume from a snapshot, files are lazy-loaded from S3
+on demand. This can cause serious performance issues the first time each file
+is accessed. This means you probably don't want to recreate gru EBS volumes
+from scratch too often if you can avoid it. See [here][0].
 
 
 ### VM Images
 
-We maintain an AMI for launching gru instances.
+We maintain an AMI for launching gru instances. The current AMI ID is:
+
+```
+ami-08333660d9a8a8598
+```
+
+If you want to use that AMI, note that it's decoupled from any specific version
+of the EBS volume, so you'll need to make an AWS [launch template][1] to launch
+the image with a copy of the snapshot version you want attached. I didn't see a
+way to share our launch template publicly, but it's not doing much so hopefully
+won't be too difficult to make your own.
+
+
+#### How we make the AMI
 
 First, we follow all the steps above for a fresh Ubuntu 18.04 VM, including
 enabling the systemd service.
@@ -123,21 +141,11 @@ Then, an fstab entry is created for the data EBS, like so:
 UUID=946d678a-9da6-41b1-9564-26c8fde76852 /home/ubuntu/data ext4 ro,suid,dev,auto 0 0
 ```
 
-You can find the UUID by running `sudo blkid` after attaching the EBS volume.
-
+You can find the UUID by running `sudo blkid` after attaching EBS volume.
 
 From that state, we create an AMI which can be used to start fresh gru
 instances.
 
-Updated AMIs can be created by modifying existing VMs and creating a new AMI,
-or by running these steps from scratch. The `deploy_aws.sh` script is useful
-if you need to update a VM (or multiple VMs) while it's running, as long as
-you don't need to update the data volume at the same time. You'll want to
-read the script to see how it works, here's how we run it as an example:
-
-```
-SSH_KEY_FILE=$HOME/path/to/sshkey.pem ./deploy_aws.sh prod
-```
 
 ### Load balancer
 
@@ -148,9 +156,13 @@ HTTP path of the instances.
 ### Auto scaling group
 
 We use an auto scaling group, in tandem with the load balancer. This requires
-creating a launch template to specify things like the AMI and instance types
-to use.
+creating a launch template mentioned above.
 
 Since the systemd starts gru on boot, the auto scaling is able to replace
 unhealthy nodes easily. It's also easy to manually delete a node and it will
 be replaced automatically.
+
+
+[0]: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-initialize.html
+
+[1]: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html

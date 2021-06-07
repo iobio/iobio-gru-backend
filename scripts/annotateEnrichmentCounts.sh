@@ -9,6 +9,9 @@ filterArgs=$6
 experStr=$7
 controlStr=$8
 
+tempDir=$(mktemp -d)
+cd $tempDir
+
 echo -e "$contigStr" > contigs.txt
 echo -e "$controlStr" > controlNames.txt
 
@@ -24,7 +27,12 @@ if [ -z "$filterArgs" ]; then
 	filterCmd=filterFunc
 fi
 
-tabix_od -h $vcfUrl $regionStr $tbiUrl | \
+tabixVcfArg=$vcfUrl
+if [ -n "${tbiUrl}" ]; then
+    tabixVcfArg="$vcfUrl##idx##$tbiUrl"
+fi
+
+tabix -h $tabixVcfArg $regionStr | \
     bcftools annotate -h contigs.txt - | \
     vt subset -s controlNames.txt - | \
     $filterCmd | \

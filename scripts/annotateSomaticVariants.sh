@@ -7,6 +7,7 @@ regions=$3
 somaticFilterPhrase=$4
 genomeBuildName=$5
 vepCacheDir=$6
+refFastaFile=$7
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -21,20 +22,15 @@ if [ ! -z "$somaticFilterPhrase" ]; then
     somFilterStage=somFilterFunc
 fi
 
-#Get correct fasta file
-fastaPath="/home/ubuntu/data/references/GRCh37/human_g1k_v37_decoy_phix.fasta"
-if [ "${genomeBuildName}" = "GRCh38" ]; then
-    fastaPath="/home/ubuntu/data/references/GRCh38/human_g1k_v38_decoy_phix.fasta"
-fi
-
 #Compose args
-vepArgs="--assembly $genomeBuildName --format vcf --allele_number --dir_cache $vepCacheDir"
+vepBaseArgs="-i STDIN --format vcf --cache --dir_cache $vepCacheDir --offline --vcf -o STDOUT --no_stats --no_escape --sift b --polyphen b --regulatory --fork 4 --merged --fasta $refFastaFile"
+vepArgs="$vepBaseArgs --assembly $genomeBuildName --allele_number"
 echo -e "$regions" >> regions.txt
 
 #Do work
 bcftools view -s $selectedSamples $vcfUrl | \
     bcftools filter -t $regions - | \
-    bcftools norm -m - -w 10000 -f $fastaPath - | \
+    bcftools norm -m - -w 10000 -f $refFastaFile - | \
     $somFilterStage | \
     vep $vepArgs
 
