@@ -57,7 +57,9 @@ if [ "$gnomadUrl" ]; then
     
     # These are the gnomAD INFO fields to add to the input vcf
     annotsToAdd=CHROM,POS,REF,ALT,INFO/AF,INFO/AN,INFO/AC,INFO/nhomalt_raw,INFO/AF_popmax,INFO/AF_fin,INFO/AF_nfe,INFO/AF_oth,INFO/AF_amr,INFO/AF_afr,INFO/AF_asj,INFO/AF_eas,INFO/AF_sas
-    
+    if [ "$genomeBuildName" == "GRCh38" ]; then
+        annotsToAdd=CHROM,POS,REF,ALT,INFO/AF,INFO/AN,INFO/AC,INFO/nhomalt_raw,INFO/AF_popmax,INFO/AF-fin,INFO/AF-nfe,INFO/AF-oth,INFO/AF-amr,INFO/AF-afr,INFO/AF-asj,INFO/AF-eas,INFO/AF-sas
+    fi 
 
     function gnomadAnnotFunc {
         if [ "$gnomadRenameChr" ]; then
