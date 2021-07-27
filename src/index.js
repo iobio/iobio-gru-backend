@@ -25,7 +25,12 @@ router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowed
 router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
 
 router.get('/static/*', async (ctx) => {
-  const fsPath = path.join(__dirname, '..', ctx.path);
+
+  // TODO: Hack to remove prefix when hosting app within gru because I don't
+  // really understand how to do this properly with koa-router
+  const reqPath = ctx.path.startsWith('/gru') ? ctx.path.slice(4) : ctx.path;
+
+  const fsPath = path.join(__dirname, '..', reqPath);
   await serveStatic(ctx, fsPath);
 });
 
