@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-# tuplate_start(https://cdn.jsdelivr.net/gh/gemdrive/gemdrive-cli-py@v0.5.0/client.py)
+# tuplate_start(https://cdn.jsdelivr.net/gh/gemdrive/gemdrive-cli-py@v0.7.0/client.py)
 import os, threading, queue, json, math, shutil, stat
-from urllib import request
+from urllib import request, parse
 from datetime import datetime
 
 
@@ -31,20 +31,26 @@ class GemDriveClient():
 
     def traverse(self, url, parent_dir, gem_data_in):
 
-        max_depth = self.options['depth']
+        depth = self.options['depth']
         token = self.options['token']
 
         gem_data = gem_data_in
 
         if gem_data is None:
-            gem_url = url + 'gemdrive/meta.json?depth=' + str(max_depth)
+            u = parse.urlparse(url)
+            p = parse.quote(u.path)
+            gem_url = u.scheme + '://' + u.netloc + '/gemdrive/index' + p + 'tree.json?depth=' + str(depth)
 
             if token is not None:
                 gem_url += '&access_token=' + token
 
-            res = request.urlopen(gem_url)
-            body = res.read()
-            gem_data = json.loads(body)
+            try:
+                res = request.urlopen(gem_url, timeout=5)
+                body = res.read()
+                gem_data = json.loads(body)
+            except request.URLError as e:
+                print("Timed out retrieving " + gem_url)
+                raise
 
         gem_data = clean_gem_data(gem_data)
 
@@ -137,7 +143,15 @@ class GemDriveClient():
                 if token is not None:
                     file_url += '?access_token=' + token
 
-                res = request.urlopen(file_url)
+                u = parse.urlparse(file_url)
+                req_url = u.scheme + '://' + u.netloc + parse.quote(u.path) + '?' + u.query
+
+                try:
+                    res = request.urlopen(req_url, timeout=5)
+                except request.URLError as e:
+                    print("Timed out retrieving " + req_url)
+                    raise
+
                 with open(path, 'wb') as f:
                     while True:
                         chunk = res.read(4096)
@@ -167,7 +181,7 @@ if __name__ == '__main__':
     cwd = os.getcwd()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gru-version', help='gru version to download', default='0.27.0')
+    parser.add_argument('--gru-version', help='gru version to download', default='1.2.1')
     parser.add_argument('--out-dir', help='Output directory', default=cwd)
     parser.add_argument('--dry-run', help='Enable dry run mode. No changes will be made to destination',
             default=False, action='store_true')
