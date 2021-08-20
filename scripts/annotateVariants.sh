@@ -64,15 +64,25 @@ if [ "$gnomadUrl" ]; then
     function gnomadAnnotFunc {
         if [ "$gnomadRenameChr" ]; then
                 echo -e "$gnomadRenameChr" > gnomad_rename_chr.txt
-                vt rminfo -t $annotsToRemove - | bcftools annotate --rename-chrs gnomad_rename_chr.txt | bgzip -c > gnomad.vcf.gz
+                vt rminfo -t $annotsToRemove - | bcftools annotate --rename-chrs gnomad_rename_chr.txt | bgzip -c > my.vcf.gz 
         else
-                vt rminfo -t $annotsToRemove - | bgzip -c > gnomad.vcf.gz
+                vt rminfo -t $annotsToRemove - | bgzip -c > my.vcf.gz 
         fi        
+        tabix my.vcf.gz
 
-        tabix gnomad.vcf.gz
-        
+        tabix my.vcf.gz $region | cut -f 1-2 > variant_regions.txt
+
+        if (($(wc -l <"variant_regions.txt") >= 1000)); then
+            regions_file=gnomad_regions.txt
+            echo 'Too many variants, using gnomad_regions.txt' >&2
+        else
+            regions_file=variant_regions.txt
+            echo 'Using variant_regions.txt' >&2
+        fi
+
         # Add the gnomAD INFO fields to the input vcf
-        bcftools annotate -a $gnomadUrl -h $gnomadHeaderFile -c $annotsToAdd -R gnomad_regions.txt gnomad.vcf.gz
+        bcftools annotate -a $gnomadUrl -h $gnomadHeaderFile -c $annotsToAdd -R $regions_file my.vcf.gz
+
     }
 
     gnomadAnnotStage=gnomadAnnotFunc
