@@ -13,6 +13,15 @@ runDir=$PWD
 tempDir=$(mktemp -d)
 cd $tempDir
 
+# Add region filter stage if we have regions
+regionFilterStage=cat
+if [ ! -z "$regionFilterPhrase" ]; then
+    function regionFilterFunc {
+        bcftools filter -t $regions -
+    }
+    regionFilterStage=regionFilterFunc
+fi
+
 #Add somatic filter stage if we have a filter
 somFilterStage=cat
 if [ ! -z "$somaticFilterPhrase" ]; then
@@ -29,7 +38,7 @@ echo -e "$regions" >> regions.txt
 
 #Do work
 bcftools view -s $selectedSamples $vcfUrl | \
-    bcftools filter -t $regions - | \
+    $regionFilterStage | \
     bcftools norm -m - -w 10000 -f $refFastaFile - | \
     $somFilterStage | \
     vep $vepArgs
