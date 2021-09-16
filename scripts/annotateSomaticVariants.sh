@@ -15,7 +15,7 @@ cd $tempDir
 
 # Add region filter stage if we have regions
 regionFilterStage=cat
-if [ ! -z "$regionFilterPhrase" ]; then
+if [ ! -z "$regions" ]; then
     function regionFilterFunc {
         bcftools filter -t $regions -
     }
