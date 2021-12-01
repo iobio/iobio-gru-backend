@@ -35,6 +35,9 @@ RUN ["npm", "install"]
 
 RUN ["mkdir", "tool_bin"]
 
+RUN curl -L https://github.com/brentp/vcfanno/releases/download/v0.3.3/vcfanno_linux64 -o tool_bin/vcfanno \
+    && chmod +x tool_bin/vcfanno
+
 # TODO: see if we can just copy what we need from the vep image rather than
 # basing off it
 #COPY --from=ensemblorg/ensembl-vep:latest /opt/vep /vep
