@@ -13,11 +13,8 @@ vepAF=${10}
 vepPluginDir=${11}
 hgvsNotation=${12}
 getRsId=${13}
-gnomadUrl=${14}
-gnomadRegionFileStr=${15}
-gnomadHeaderFile=${16}
-decompose=${17}
-gnomadRenameChr=${18}
+gnomadMergeAnnots=${14}
+decompose=${15}
 
 # default optional stages to no-op
 subsetStage=cat
@@ -47,30 +44,17 @@ if [ "$decompose" == "true" ]; then
     decomposeStage=decomposeFunc
 fi
 
-
-
-if [ "$gnomadUrl" ]; then
-    printf "$gnomadRegionFileStr" > gnomad_regions.txt
+if [ "$gnomadMergeAnnots" ]; then
     
-    # These are the INFO fields to clear out
-    annotsToRemove=AF,AN,AC
-    
-    # These are the gnomAD INFO fields to add to the input vcf
-    annotsToAdd=CHROM,POS,REF,ALT,INFO/AF,INFO/AN,INFO/AC,INFO/nhomalt_raw,INFO/AF_popmax,INFO/AF_fin,INFO/AF_nfe,INFO/AF_oth,INFO/AF_amr,INFO/AF_afr,INFO/AF_asj,INFO/AF_eas,INFO/AF_sas
-    
+    if [ "$genomeBuildName" == "GRCh38" ]; then
+        toml="/data/gnomad/vcfanno_gnomad_3.1_grch38.toml"
+    else
+    	toml="/data/gnomad/vcfanno_gnomad_2.1_grch37.toml"
+    fi
 
     function gnomadAnnotFunc {
-        if [ "$gnomadRenameChr" ]; then
-                echo -e "$gnomadRenameChr" > gnomad_rename_chr.txt
-                vt rminfo -t $annotsToRemove - | bcftools annotate --rename-chrs gnomad_rename_chr.txt | bgzip -c > gnomad.vcf.gz
-        else
-                vt rminfo -t $annotsToRemove - | bgzip -c > gnomad.vcf.gz
-        fi        
-
-        tabix gnomad.vcf.gz
-        
         # Add the gnomAD INFO fields to the input vcf
-        bcftools annotate -a $gnomadUrl -h $gnomadHeaderFile -c $annotsToAdd -R gnomad_regions.txt gnomad.vcf.gz
+        vcfanno $toml /dev/stdin
     }
 
     gnomadAnnotStage=gnomadAnnotFunc

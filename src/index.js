@@ -25,7 +25,12 @@ router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowed
 router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
 
 router.get('/static/*', async (ctx) => {
-  const fsPath = path.join(__dirname, '..', ctx.path);
+
+  // TODO: Hack to remove prefix when hosting app within gru because I don't
+  // really understand how to do this properly with koa-router
+  const reqPath = ctx.path.startsWith('/gru') ? ctx.path.slice(4) : ctx.path;
+
+  const fsPath = path.join(__dirname, '..', reqPath);
   await serveStatic(ctx, fsPath);
 });
 
@@ -187,15 +192,12 @@ router.post('/getClinvarVariants', async (ctx) => {
     const contigStr = genContigFileStr(params.refNames);
     const regionStr = genRegionsStr(params.regions);
     const refFastaFile = dataPath(params.refFastaFile);
-    const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
-    const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
-    const gnomadHeaderFile = dataPath('gnomad_header.txt');
-    const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
+    const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
 
     const args = [
         params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile, 
-        params.genomeBuildName, gnomadUrl, gnomadRegionStr, 
-        gnomadHeaderFile, gnomadRenameChr, params.clinSigFilterPhrase
+        params.genomeBuildName, gnomadMergeAnnots,  
+        params.clinSigFilterPhrase
     ];
 
     console.log(args);
@@ -204,6 +206,7 @@ router.post('/getClinvarVariants', async (ctx) => {
 });
 
 router.post('/annotateVariants', async (ctx) => {
+
 
     const params = JSON.parse(ctx.request.body);
     console.log(JSON.stringify(params, null, 2));
@@ -216,18 +219,13 @@ router.post('/annotateVariants', async (ctx) => {
     const vepCacheDir = dataPath('vep-cache');
     const vepREVELFile = dataPath(params.vepREVELFile);
     const vepPluginDir = dataPath('vep-cache/Plugins');
-
-    const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
-    const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
-    const gnomadHeaderFile = dataPath('gnomad_header.txt');
-    const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
-
+    const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
 
     const args = [
         params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
         refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
-        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadUrl,
-        gnomadRegionStr, gnomadHeaderFile, params.decompose, gnomadRenameChr
+        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadMergeAnnots,
+        params.decompose 
 
     ];
 
