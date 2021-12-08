@@ -208,6 +208,26 @@ router.post('/getClinvarVariants', async (ctx) => {
     await handle(ctx, 'getClinvarVariants.sh', args, { ignoreStderr: true });
 });
 
+router.post('/getClinvarVariantsV2', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+    const contigStr = genContigFileStr(params.refNames);
+    const regionStr = genRegionsStr(params.regions);
+    const refFastaFile = dataPath(params.refFastaFile);
+    const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
+
+    const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile, 
+        params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
+    ];
+
+    console.log(args);
+   
+    await handle(ctx, 'getClinvarVariants.sh', args, { ignoreStderr: true });
+});
+
 router.post('/annotateVariants', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
@@ -240,6 +260,33 @@ router.post('/annotateVariants', async (ctx) => {
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
 
+
+router.post('/annotateVariantsV2', async (ctx) => {
+
+    const params = JSON.parse(ctx.request.body);
+    console.log(JSON.stringify(params, null, 2));
+
+    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+    const contigStr = genContigFileStr(params.refNames);
+    const regionStr = genRegionsStr(params.regions);
+    const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+    const refFastaFile = dataPath(params.refFastaFile);
+    const vepCacheDir = dataPath('vep-cache');
+    const vepREVELFile = dataPath(params.vepREVELFile);
+    const vepPluginDir = dataPath('vep-cache/Plugins');
+    const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
+
+    const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
+        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadMergeAnnots, 
+        params.decompose
+
+    ];
+
+    console.log(args);
+    await handle(ctx, 'annotateVariantsV2.sh', args, { ignoreStderr: true });
+});
 router.post('/annotateEnrichmentCounts', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     console.log(JSON.stringify(params, null, 2));
