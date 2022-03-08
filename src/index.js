@@ -1,7 +1,6 @@
 const Koa = require('koa');
 const Router = require('koa-router');
 const cors = require('@koa/cors');
-const logger = require('koa-logger');
 const bodyParser = require('koa-bodyparser');
 const path = require('path');
 const { run } = require('./process.js');
@@ -447,6 +446,8 @@ router.post('/vcfStatsStream', async (ctx) => {
 
 
 async function handle(ctx, scriptName, args, options) {
+  const timestamp = new Date().toISOString();
+  console.log(`${timestamp}\t${ctx.path}`);
   try {
     const scriptPath = path.join(__dirname, '../scripts', scriptName);
     const proc = await run(scriptPath, args, options ? options : {});
@@ -541,9 +542,29 @@ else {
   });
 }
 
+async function logger(ctx, next) {
+  const contentType = ctx.get('content-type').split(';')[0];
+
+  if (ctx.method !== 'POST' || contentType != 'text/plain') {
+    await next();
+    return;
+  }
+
+  const params = JSON.parse(ctx.request.body);
+
+  let timestamp = new Date().toISOString();
+  const start = Date.now();
+  console.log(`${timestamp}\t${params._requestId}\tstart\t${ctx.url}`);
+
+  await next();
+
+  timestamp = new Date().toISOString();
+  const ms = Date.now() - start;
+  console.log(`${timestamp}\t${params._requestId}\tfinish\t${ms}`);
+}
+
 const server = new Koa();
 server
-  .use(logger())
   .use(cors({
     origin: '*',
     maxAge: 86400,
@@ -553,6 +574,7 @@ server
     jsonLimit: '10mb',
     textLimit: '10mb',
   }))
+  .use(logger)
   .use(rootRouter.routes())
   .use(rootRouter.allowedMethods())
   .listen(port);
