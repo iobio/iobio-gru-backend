@@ -204,7 +204,6 @@ router.post('/getClinvarVariants', async (ctx) => {
 
 router.post('/getClinvarVariantsV2', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const contigStr = genContigFileStr(params.refNames);
@@ -217,8 +216,6 @@ router.post('/getClinvarVariantsV2', async (ctx) => {
         params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
     ];
 
-    console.log(args);
-   
     await handle(ctx, 'getClinvarVariants.sh', args, { ignoreStderr: true });
 });
 
@@ -256,7 +253,6 @@ router.post('/annotateVariants', async (ctx) => {
 router.post('/annotateVariantsV2', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const contigStr = genContigFileStr(params.refNames);
@@ -276,7 +272,6 @@ router.post('/annotateVariantsV2', async (ctx) => {
 
     ];
 
-    console.log(args);
     await handle(ctx, 'annotateVariantsV2.sh', args, { ignoreStderr: true });
 });
 router.post('/annotateEnrichmentCounts', async (ctx) => {
