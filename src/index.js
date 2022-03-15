@@ -13,6 +13,7 @@ const hpoRouter = require('./hpo.js');
 const { parseArgs, dataPath } = require('./utils.js');
 const fs = require('fs');
 const { serveStatic } = require('./static.js');
+const stream = require('stream');
 
 const MAX_STDERR_LEN = 16384;
 
@@ -433,7 +434,13 @@ async function handle(ctx, scriptName, args, options) {
   const scriptPath = path.join(__dirname, '../scripts', scriptName);
   const proc = spawn(scriptPath, args, options);
 
-  ctx.body = proc.stdout;
+  const out = stream.PassThrough();
+
+  ctx.body = out;
+
+  proc.stdout.on('data', (chunk) => {
+    out.write(chunk);
+  });
 
   let stderr = "";
   proc.stderr.on('data', (chunk) => {
@@ -450,7 +457,13 @@ async function handle(ctx, scriptName, args, options) {
       console.log(stderr);
       console.log("params:");
       console.log(ctx.gruParams);
+
+      if (ctx.gruParams._appendErrors === true) {
+        out.write("GRU_ERROR_SENTINEL\n");
+      }
     }
+
+    out.end();
   });
 }
 
