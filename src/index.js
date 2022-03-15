@@ -51,7 +51,6 @@ router.post('/viewAlignments', async (ctx) => {
 //
 router.post('/alignmentHeader', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
-  console.log('url going into alignment header: ' + params.url);
   await handle(ctx, 'alignmentHeader.sh', [params.url]);
 });
 
@@ -94,7 +93,6 @@ router.post('/variantHeader', async (ctx) => {
 
 router.post('/getChromosomes', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
     const indexUrl = params.indexUrl ? params.indexUrl : '';
     await handle(ctx, 'getChromosomes.sh', [params.url, indexUrl]);
 });
@@ -107,7 +105,6 @@ router.post('/vcfReadDepth', async (ctx) => {
 router.post('/alignmentCoverage', async (ctx) => {
 
   const params = JSON.parse(ctx.request.body);
-   console.log(JSON.stringify(params, null, 2));
 
   const url = params.url;
   const indexUrl = params.indexUrl ? params.indexUrl : '';
@@ -185,7 +182,6 @@ router.post('/normalizeVariants', async (ctx) => {
 
 router.post('/getClinvarVariants', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const contigStr = genContigFileStr(params.refNames);
@@ -202,15 +198,12 @@ router.post('/getClinvarVariants', async (ctx) => {
         gnomadHeaderFile, gnomadRenameChr, params.clinSigFilterPhrase
     ];
 
-    console.log(args);
-   
     await handle(ctx, 'getClinvarVariants.sh', args, { ignoreStderr: true });
 });
 
 router.post('/annotateVariants', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const contigStr = genContigFileStr(params.refNames);
@@ -235,13 +228,11 @@ router.post('/annotateVariants', async (ctx) => {
 
     ];
 
-    console.log(args);
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
 
 router.post('/annotateEnrichmentCounts', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const contigStr = genContigFileStr(params.refNames);
@@ -277,7 +268,6 @@ router.post('/annotateSomaticVariants', async (ctx) => {
 router.post('/freebayesJointCall', async (ctx) => {
 
   const params = JSON.parse(ctx.request.body);
-  console.log(JSON.stringify(params, null, 2));
 
   const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
   const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
@@ -320,7 +310,6 @@ router.post('/freebayesJointCall', async (ctx) => {
 
   const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
 
-  console.log(freebayesArgs);
   const extraArgs = freebayesArgs;
 
   const args = [
@@ -335,7 +324,6 @@ router.post('/freebayesJointCall', async (ctx) => {
 
 router.post('/clinvarCountsForGene', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
-  console.log(JSON.stringify(params, null, 2));
 
   const region = genRegionStr(params.region);
   const regions = params.regions;
@@ -397,20 +385,17 @@ router.post('/clinReport', async (ctx) => {
 router.post('/getIdColumns', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const regionStr = genRegionsStr(params.regions, ",");
     const args = [
         params.vcfUrl, regionStr
     ];
 
-    console.log(regionStr);
     await handle(ctx, 'getIdColumns.sh', args, { ignoreStderr: true });
 });
 
 router.post('/checkBamBai', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const indexUrl = params.indexUrl ? params.indexUrl : '';
 
@@ -424,7 +409,6 @@ router.post('/checkBamBai', async (ctx) => {
 router.post('/vcfStatsStream', async (ctx) => {
 
   const params = JSON.parse(ctx.request.body);
-  console.log(params);
 
   const regionStr = genRegionsStr(params.regions);
   const contigStr = genContigFileStr(params.refNames);
@@ -439,7 +423,6 @@ router.post('/vcfStatsStream', async (ctx) => {
   const args = [
     params.url, indexUrl, regionStr, contigStr, sampleNamesStr
   ];
-  console.log(args);
 
   await handle(ctx, 'vcfStatsStream.sh', args, { ignoreStderr: true });
 }); 
