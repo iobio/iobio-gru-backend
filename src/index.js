@@ -3,7 +3,6 @@ const Router = require('koa-router');
 const cors = require('@koa/cors');
 const bodyParser = require('koa-bodyparser');
 const path = require('path');
-const { run } = require('./process.js');
 const { mktemp } = require('./mktemp.js');
 const spawn = require('child_process').spawn;
 const process = require('process');
@@ -15,6 +14,7 @@ const { parseArgs, dataPath } = require('./utils.js');
 const fs = require('fs');
 const { serveStatic } = require('./static.js');
 
+const MAX_STDERR_LEN = 16384;
 
 const router = new Router();
 
@@ -446,18 +446,29 @@ router.post('/vcfStatsStream', async (ctx) => {
 
 
 async function handle(ctx, scriptName, args, options) {
-  const timestamp = new Date().toISOString();
-  console.log(`${timestamp}\t${ctx.path}`);
-  try {
-    const scriptPath = path.join(__dirname, '../scripts', scriptName);
-    const proc = await run(scriptPath, args, options ? options : {});
-    ctx.body = proc.stdout;
-  }
-  catch (e) {
-    console.error(e);
-    ctx.status = 400;
-    ctx.body = e.toString();
-  }
+
+  const scriptPath = path.join(__dirname, '../scripts', scriptName);
+  const proc = spawn(scriptPath, args, options);
+
+  ctx.body = proc.stdout;
+
+  let stderr = "";
+  proc.stderr.on('data', (chunk) => {
+    if (stderr.length < MAX_STDERR_LEN) {
+      stderr += chunk;
+    }
+  });
+
+  proc.on('exit', (exitCode) => {
+    if (exitCode !== 0) {
+      const timestamp = new Date().toISOString();
+      console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
+      console.log("stderr:");
+      console.log(stderr);
+      console.log("params:");
+      console.log(ctx.gruParams);
+    }
+  });
 }
 
 function genContigFileStr(refNames) {
@@ -552,6 +563,8 @@ async function logger(ctx, next) {
 
   const params = JSON.parse(ctx.request.body);
 
+  ctx.gruParams = params;
+
   let timestamp = new Date().toISOString();
   const start = Date.now();
   console.log(`${timestamp}\t${params._requestId}\tstart\t${ctx.url}`);
@@ -560,7 +573,7 @@ async function logger(ctx, next) {
 
   timestamp = new Date().toISOString();
   const ms = Date.now() - start;
-  console.log(`${timestamp}\t${params._requestId}\tfinish\t${ms}`);
+  console.log(`${timestamp}\t${params._requestId}\tfinish\t${ctx.url}\t${ms}ms`);
 }
 
 const server = new Koa();
