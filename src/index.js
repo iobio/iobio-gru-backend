@@ -459,7 +459,7 @@ async function handle(ctx, scriptName, args, options) {
       console.log(ctx.gruParams);
 
       if (ctx.gruParams._appendErrors === true) {
-        out.write("GRU_ERROR_SENTINEL\n");
+        out.write("GRU_ERROR_SENTINEL");
       }
     }
 
@@ -563,7 +563,7 @@ async function logger(ctx, next) {
 
   let timestamp = new Date().toISOString();
   const start = Date.now();
-  console.log(`${timestamp}\t${params._requestId}\tstart\t${ctx.url}`);
+  console.log(`${timestamp}\t${params._requestId}\tstart\t${ctx.url}\t${params._attemptNum}`);
 
   await next();
 
