@@ -1,10 +1,8 @@
 const Koa = require('koa');
 const Router = require('koa-router');
 const cors = require('@koa/cors');
-const logger = require('koa-logger');
 const bodyParser = require('koa-bodyparser');
 const path = require('path');
-const { run } = require('./process.js');
 const { mktemp } = require('./mktemp.js');
 const spawn = require('child_process').spawn;
 const process = require('process');
@@ -15,7 +13,9 @@ const hpoRouter = require('./hpo.js');
 const { parseArgs, dataPath } = require('./utils.js');
 const fs = require('fs');
 const { serveStatic } = require('./static.js');
+const stream = require('stream');
 
+const MAX_STDERR_LEN = 16384;
 
 const router = new Router();
 
@@ -52,7 +52,6 @@ router.post('/viewAlignments', async (ctx) => {
 //
 router.post('/alignmentHeader', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
-  console.log('url going into alignment header: ' + params.url);
   await handle(ctx, 'alignmentHeader.sh', [params.url]);
 });
 
@@ -95,7 +94,6 @@ router.post('/variantHeader', async (ctx) => {
 
 router.post('/getChromosomes', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
     const indexUrl = params.indexUrl ? params.indexUrl : '';
     await handle(ctx, 'getChromosomes.sh', [params.url, indexUrl]);
 });
@@ -108,7 +106,6 @@ router.post('/vcfReadDepth', async (ctx) => {
 router.post('/alignmentCoverage', async (ctx) => {
 
   const params = JSON.parse(ctx.request.body);
-   console.log(JSON.stringify(params, null, 2));
 
   const url = params.url;
   const indexUrl = params.indexUrl ? params.indexUrl : '';
@@ -186,7 +183,6 @@ router.post('/normalizeVariants', async (ctx) => {
 
 router.post('/getClinvarVariants', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const contigStr = genContigFileStr(params.refNames);
@@ -203,8 +199,6 @@ router.post('/getClinvarVariants', async (ctx) => {
         gnomadHeaderFile, gnomadRenameChr, params.clinSigFilterPhrase
     ];
 
-    console.log(args);
-   
     await handle(ctx, 'getClinvarVariants.sh', args, { ignoreStderr: true });
 });
 
@@ -231,7 +225,6 @@ router.post('/getClinvarVariantsV2', async (ctx) => {
 router.post('/annotateVariants', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const contigStr = genContigFileStr(params.refNames);
@@ -256,7 +249,6 @@ router.post('/annotateVariants', async (ctx) => {
 
     ];
 
-    console.log(args);
     await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
 });
 
@@ -289,7 +281,6 @@ router.post('/annotateVariantsV2', async (ctx) => {
 });
 router.post('/annotateEnrichmentCounts', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
     const contigStr = genContigFileStr(params.refNames);
@@ -325,7 +316,6 @@ router.post('/annotateSomaticVariants', async (ctx) => {
 router.post('/freebayesJointCall', async (ctx) => {
 
   const params = JSON.parse(ctx.request.body);
-  console.log(JSON.stringify(params, null, 2));
 
   const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
   const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
@@ -368,7 +358,6 @@ router.post('/freebayesJointCall', async (ctx) => {
 
   const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
 
-  console.log(freebayesArgs);
   const extraArgs = freebayesArgs;
 
   const args = [
@@ -383,7 +372,6 @@ router.post('/freebayesJointCall', async (ctx) => {
 
 router.post('/clinvarCountsForGene', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
-  console.log(JSON.stringify(params, null, 2));
 
   const region = genRegionStr(params.region);
   const regions = params.regions;
@@ -445,20 +433,17 @@ router.post('/clinReport', async (ctx) => {
 router.post('/getIdColumns', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const regionStr = genRegionsStr(params.regions, ",");
     const args = [
         params.vcfUrl, regionStr
     ];
 
-    console.log(regionStr);
     await handle(ctx, 'getIdColumns.sh', args, { ignoreStderr: true });
 });
 
 router.post('/checkBamBai', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
-    console.log(JSON.stringify(params, null, 2));
 
     const indexUrl = params.indexUrl ? params.indexUrl : '';
 
@@ -472,7 +457,6 @@ router.post('/checkBamBai', async (ctx) => {
 router.post('/vcfStatsStream', async (ctx) => {
 
   const params = JSON.parse(ctx.request.body);
-  console.log(params);
 
   const regionStr = genRegionsStr(params.regions);
   const contigStr = genContigFileStr(params.refNames);
@@ -487,23 +471,47 @@ router.post('/vcfStatsStream', async (ctx) => {
   const args = [
     params.url, indexUrl, regionStr, contigStr, sampleNamesStr
   ];
-  console.log(args);
 
   await handle(ctx, 'vcfStatsStream.sh', args, { ignoreStderr: true });
 }); 
 
 
 async function handle(ctx, scriptName, args, options) {
-  try {
-    const scriptPath = path.join(__dirname, '../scripts', scriptName);
-    const proc = await run(scriptPath, args, options ? options : {});
-    ctx.body = proc.stdout;
-  }
-  catch (e) {
-    console.error(e);
-    ctx.status = 400;
-    ctx.body = e.toString();
-  }
+
+  const scriptPath = path.join(__dirname, '../scripts', scriptName);
+  const proc = spawn(scriptPath, args, options);
+
+  const out = stream.PassThrough();
+
+  ctx.body = out;
+
+  proc.stdout.on('data', (chunk) => {
+    out.write(chunk);
+  });
+
+  let stderr = "";
+  proc.stderr.on('data', (chunk) => {
+    if (stderr.length < MAX_STDERR_LEN) {
+      stderr += chunk;
+    }
+  });
+
+  proc.on('exit', (exitCode) => {
+    if (exitCode !== 0) {
+      const timestamp = new Date().toISOString();
+      console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
+      console.log("stderr:");
+      console.log(stderr);
+      console.log("params:");
+      console.log(ctx.gruParams);
+
+      if (ctx.gruParams._appendErrors === true) {
+        out.write("GRU_ERROR_SENTINEL");
+      }
+    }
+
+    out.end();
+  });
 }
 
 function genContigFileStr(refNames) {
@@ -588,9 +596,31 @@ else {
   });
 }
 
+async function logger(ctx, next) {
+  const contentType = ctx.get('content-type').split(';')[0];
+
+  if (ctx.method !== 'POST' || contentType != 'text/plain') {
+    await next();
+    return;
+  }
+
+  const params = JSON.parse(ctx.request.body);
+
+  ctx.gruParams = params;
+
+  let timestamp = new Date().toISOString();
+  const start = Date.now();
+  console.log(`${timestamp}\t${params._requestId}\tstart\t${ctx.url}\t${params._attemptNum}`);
+
+  await next();
+
+  timestamp = new Date().toISOString();
+  const ms = Date.now() - start;
+  console.log(`${timestamp}\t${params._requestId}\tfinish\t${ctx.url}\t${ms}ms`);
+}
+
 const server = new Koa();
 server
-  .use(logger())
   .use(cors({
     origin: '*',
     maxAge: 86400,
@@ -600,6 +630,7 @@ server
     jsonLimit: '10mb',
     textLimit: '10mb',
   }))
+  .use(logger)
   .use(rootRouter.routes())
   .use(rootRouter.allowedMethods())
   .listen(port);
