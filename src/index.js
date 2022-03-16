@@ -480,8 +480,17 @@ async function handle(ctx, scriptName, args, options) {
 
   ctx.body = out;
 
+  let closed = false;
+
+  ctx.res.once('close', () => {
+    closed = true;
+    proc.stdout.destroy();
+  });
+
   proc.stdout.on('data', (chunk) => {
-    out.write(chunk);
+    if (!closed) {
+      out.write(chunk);
+    }
   });
 
   let stderr = "";
@@ -609,9 +618,25 @@ async function logger(ctx, next) {
 
   await next();
 
-  timestamp = new Date().toISOString();
-  const ms = Date.now() - start;
-  console.log(`${timestamp}\t${params._requestId}\tfinish\t${ctx.url}\t${ms}ms`);
+  // Modifed from https://github.com/koajs/logger/blob/f8edfa00cb5af7e696cf276ddc8b482accd9f7a9/index.js#L76
+  const { res } = ctx;
+
+  const onFinish = done.bind(null, 'finish');
+  const onClose = done.bind(null, 'close');
+
+  res.once('finish', onFinish);
+  res.once('close', onClose);
+
+  function done(evt) {
+    res.removeListener('finish', onFinish);
+    res.removeListener('close', onClose);
+
+    const message = evt === 'finish' ? 'finish' : 'canceled';
+
+    timestamp = new Date().toISOString();
+    const seconds = (Date.now() - start) / 1000;
+    console.log(`${timestamp}\t${params._requestId}\t${message}\t${ctx.url}\t${seconds} seconds`);
+  }
 }
 
 const server = new Koa();
