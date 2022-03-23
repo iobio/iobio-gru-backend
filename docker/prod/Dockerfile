@@ -24,8 +24,10 @@ RUN apt-get -y install libfontconfig1
 # We expect node binary to be named "node", but Ubuntu names it "nodejs", so we create a symbolic link
 RUN ln -s /usr/bin/nodejs /usr/local/bin/node
 
-ARG gru_version=dev
-RUN git clone --depth 1 --branch ${gru_version} https://github.com/iobio/iobio-gru-backend
+#ARG gru_version=improve-logging
+#RUN git clone --depth 1 --branch ${gru_version} https://github.com/iobio/iobio-gru-backend
+
+COPY ./ /iobio-gru-backend
 
 WORKDIR /iobio-gru-backend
 
