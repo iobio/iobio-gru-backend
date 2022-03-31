@@ -1,5 +1,5 @@
 #FROM ubuntu:18.04
-FROM ensemblorg/ensembl-vep:release_103.0
+FROM ensemblorg/ensembl-vep:release_105.0
 
 USER root
 WORKDIR /
