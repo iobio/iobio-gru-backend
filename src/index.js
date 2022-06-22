@@ -216,7 +216,7 @@ router.post('/getClinvarVariantsV2', async (ctx) => {
         params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
     ];
 
-    await handle(ctx, 'getClinvarVariants.sh', args, { ignoreStderr: true });
+    await handle(ctx, 'getClinvarVariantsV2.sh', args, { ignoreStderr: true });
 });
 
 router.post('/annotateVariants', async (ctx) => {
