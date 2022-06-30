@@ -15,6 +15,7 @@ hgvsNotation=${12}
 getRsId=${13}
 gnomadMergeAnnots=${14}
 decompose=${15}
+dataDir=${16}
 
 # default optional stages to no-op
 subsetStage=cat
@@ -47,9 +48,9 @@ fi
 if [ "$gnomadMergeAnnots" ]; then
     
     if [ "$genomeBuildName" == "GRCh38" ]; then
-        toml="/data/gnomad/vcfanno_gnomad_3.1_grch38.toml"
+        toml="$dataDir/gnomad/vcfanno_gnomad_3.1_grch38.toml"
     else
-    	toml="/data/gnomad/vcfanno_gnomad_2.1_grch37.toml"
+    	toml="$dataDir/gnomad/vcfanno_gnomad_2.1_grch37.toml"
     fi
 
     function gnomadAnnotFunc {
