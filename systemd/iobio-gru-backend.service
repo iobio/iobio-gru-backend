@@ -7,8 +7,8 @@ Type=simple
 Restart=always
 RestartSec=1
 User=ubuntu
-WorkingDirectory=/home/ubuntu
-ExecStart=/bin/bash -c 'PATH=/home/ubuntu/iobio-gru-backend/tool_bin:$PATH /home/ubuntu/iobio-gru-backend/node/bin/node /home/ubuntu/iobio-gru-backend/src/index.js'
+WorkingDirectory=/mnt/gru
+ExecStart=/bin/bash -c 'singularity exec --bind ./data:/data gru.sif node /iobio-gru-backend/src/index.js --port=9001 --data-dir=/data'
 
 [Install]
 WantedBy=multi-user.target
