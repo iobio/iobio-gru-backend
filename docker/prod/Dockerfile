@@ -91,7 +91,7 @@ COPY --from=quay.io/iobio/iobio-freebayes:latest /freebayes tool_bin/
 EXPOSE 9001
 
 #ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
-CMD ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
+CMD ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin", "--data-dir=/data"]
 
 # These directories are required for mounting writable singularity sandbox
 # images in the Utah CHPC environment, because of the directories that CHPC
