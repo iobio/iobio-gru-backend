@@ -8,6 +8,7 @@ refFastaFile=$5
 genomeBuildName=$6
 gnomadMergeAnnots=$7
 pathoFilterPhrase=${8}
+dataDir=${9}
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -25,9 +26,9 @@ gnomadAnnotStage=cat
 if [ "$gnomadMergeAnnots" ]; then
     
     if [ "$genomeBuildName" == "GRCh38" ]; then
-        toml="/data/gnomad/vcfanno_gnomad_3.1_grch38.toml"
+        toml="$dataDir/gnomad/vcfanno_gnomad_3.1_grch38.toml"
     fi
-    	toml="/data/gnomad/vcfanno_gnomad_2.1_grch37.toml"
+    	toml="$dataDir/gnomad/vcfanno_gnomad_2.1_grch37.toml"
 
     function gnomadAnnotFunc {
         # Add the gnomAD INFO fields to the input vcf
