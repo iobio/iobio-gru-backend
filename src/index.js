@@ -211,9 +211,12 @@ router.post('/getClinvarVariantsV2', async (ctx) => {
     const refFastaFile = dataPath(params.refFastaFile);
     const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
 
+    const dataDir = dataPath('');
+    
     const args = [
         params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile, 
-        params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
+        params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase,
+        dataDir
     ];
 
     await handle(ctx, 'getClinvarVariantsV2.sh', args, { ignoreStderr: true });
@@ -264,11 +267,13 @@ router.post('/annotateVariantsV2', async (ctx) => {
     const vepPluginDir = dataPath('vep-cache/Plugins');
     const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
 
+    const dataDir = dataPath('');
+  
     const args = [
         params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
         refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
         vepPluginDir, params.hgvsNotation, params.getRsId, gnomadMergeAnnots, 
-        params.decompose
+        params.decompose, dataDir
 
     ];
 
