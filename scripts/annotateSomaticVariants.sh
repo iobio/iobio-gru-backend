@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 #SJG updated Jun2020
 
 vcfUrl=$1

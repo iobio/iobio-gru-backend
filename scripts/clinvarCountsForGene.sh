@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 clinvarUrl=$1
 region=$2
