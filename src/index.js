@@ -15,7 +15,7 @@ const fs = require('fs');
 const { serveStatic } = require('./static.js');
 const stream = require('stream');
 
-const MAX_STDERR_LEN = 16384;
+const MAX_STDERR_LEN = 1048576;
 
 const router = new Router();
 
@@ -511,6 +511,9 @@ async function handle(ctx, scriptName, args, options) {
 
       if (ctx.gruParams._appendErrors === true) {
         out.write("GRU_ERROR_SENTINEL");
+        out.write(JSON.stringify({
+          stderr,
+        }));
       }
     }
 
