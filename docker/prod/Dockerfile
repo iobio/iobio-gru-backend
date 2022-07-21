@@ -8,13 +8,12 @@ RUN apt-get update \
     && apt-get -y upgrade \
     && apt-get install -y \
         curl \
-        git \
         xz-utils \
         python-pip \
         build-essential
 
 
-ARG node_version=12.x
+ARG node_version=16.x
 RUN curl -sL https://deb.nodesource.com/setup_${node_version} | bash - && \
     apt-get install -y nodejs
 
