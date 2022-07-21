@@ -12,6 +12,10 @@ vepArgs=$7
 tempDir=$(mktemp -d)
 cd $tempDir
 
+binLengthArg=
+regionPartsArg=
+annotationModeArg=
+
 if [ "$binLength" ]; then
     binLengthArg="-b $binLength"
 elif [ "$regionParts" ]; then
