@@ -314,14 +314,14 @@ router.post('/annotateSomaticVariantsBcsq', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
 
   let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
-  let gffFile = dataPath('ensembl/GRCh37/Homo_sapiens.GRCh37.87.gff3.gz');
+  let gffFile = '/iobio-gru-backend/static/ensembl/GRCh37/geneSet37.gff3.gz';
 
   if (params.genomeBuildName === 'GRCh38') {
     refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
-    gffFile = dataPath('ensembl/GRCh38/Homo_sapiens.GRCh38.107.chr.gff3.gz');
+    gffFile = '/iobio-gru-backend/static/ensembl/GRCh38/geneSet38.gff3.gz';
   }
 
-  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.genomeBuildName, params.somaticFilterPhrase, refFastaFile, gffFile];
+  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, refFastaFile, gffFile];
   
   await handle(ctx, 'annotateSomaticVariantsBcsq.sh', args, { ignoreStderr: true });
 });
