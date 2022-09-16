@@ -318,12 +318,10 @@ router.post('/annotateSomaticVariantsBcsq', async (ctx) => {
 
   if (params.genomeBuildName === 'GRCh38') {
     refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
-
-    // NOTE: this 38 file needs to be amended when updated!! (perl -pe 's/^([0-9]+)/chr$1/')
     gffFile = dataPath('ensembl/GRCh38/Homo_sapiens.GRCh38.107.chr.gff3.gz');
   }
 
-  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, refFastaFile, gffFile];
+  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.genomeBuildName, params.somaticFilterPhrase, refFastaFile, gffFile];
   
   await handle(ctx, 'annotateSomaticVariantsBcsq.sh', args, { ignoreStderr: true });
 });
