@@ -31,21 +31,6 @@ if [ ! -z "$somaticFilterPhrase" ]; then
     somFilterStage=somFilterFunc
 fi
 
-echo -e "$regions" >> regions.txt
-
-#remove prefix from gff file
-#gffFile="/iobio-gru-backend/static/ensembl/GRCh38/geneSet38.gff3.gz"
-#if [ "$genomeBuild" == "GRCh38" ]; then
-#    cat $gffFile | gzip -d - | \
-#    perl -pe 's/^([0-9]+|[X]|[Y]|[M])/chr$1/' - | \
-#    gzip - >> noPrefix.gff3.gz
-#    gffFile="/iobio-gru-backend/static/ensembl/GRCh37/geneSet37.gff3.gz"
-#else
-#    cat $gffFile >> noPrefix.gff3.gz
-#fi
-
-#cat $gffFile | gzip -d -
-
 #Do work
 bcftools view -s $selectedSamples $vcfUrl | \
     $regionFilterStage | \
