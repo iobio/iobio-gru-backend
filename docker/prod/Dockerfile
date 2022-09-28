@@ -8,13 +8,12 @@ RUN apt-get update \
     && apt-get -y upgrade \
     && apt-get install -y \
         curl \
-        git \
         xz-utils \
         python-pip \
         build-essential
 
 
-ARG node_version=12.x
+ARG node_version=16.x
 RUN curl -sL https://deb.nodesource.com/setup_${node_version} | bash - && \
     apt-get install -y nodejs
 
@@ -91,7 +90,7 @@ COPY --from=quay.io/iobio/iobio-freebayes:latest /freebayes tool_bin/
 EXPOSE 9001
 
 #ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
-CMD ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin"]
+CMD ["node", "/iobio-gru-backend/src/index.js", "--tools-dir=/iobio-gru-backend/tool_bin", "--data-dir=/data"]
 
 # These directories are required for mounting writable singularity sandbox
 # images in the Utah CHPC environment, because of the directories that CHPC

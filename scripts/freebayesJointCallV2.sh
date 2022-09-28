@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 #set -x
 
@@ -16,11 +15,9 @@ samplesFileStr=${10}
 extraArgs=${11}
 vepCacheDir=${12}
 vepPluginDir=${13}
-gnomadUrl=${14}
-gnomadRegionFileStr=${15}
-gnomadHeaderFile=${16}
-decompose=${17}
-dataDir=${18}
+decompose=${14}
+contigStr=${15}
+dataDir=${16}
 
 runDir=$PWD
 tempDir=$(mktemp -d)
@@ -70,28 +67,19 @@ if [ "$decompose" == "true" ]; then
     decomposeStage=decomposeFunc
 fi
 
-
-gnomadAnnotStage=''
-if [ "$gnomadUrl" ]; then
-    printf "$gnomadRegionFileStr" > gnomad_regions.txt
-    
-    # These are the INFO fields to clear out
-    annotsToRemove=AF,AN,AC
-    
-    # These are the gnomAD INFO fields to add to the input vcf
-    annotsToAdd=CHROM,POS,REF,ALT,INFO/AF,INFO/AN,INFO/AC,INFO/nhomalt_raw,INFO/AF_popmax,INFO/AF_fin,INFO/AF_nfe,INFO/AF_oth,INFO/AF_amr,INFO/AF_afr,INFO/AF_asj,INFO/AF_eas,INFO/AF_sas
-    
-
-    function gnomadAnnotFunc {
-        vt rminfo -t $annotsToRemove - | bgzip -c > gnomad.vcf.gz
-        tabix gnomad.vcf.gz
-        
-        # Add the gnomAD INFO fields to the input vcf
-        bcftools annotate -a $gnomadUrl -h $gnomadHeaderFile -c $annotsToAdd -R gnomad_regions.txt gnomad.vcf.gz
-    }
-
-    gnomadAnnotStage=gnomadAnnotFunc
+if [ "$genomeBuildName" == "GRCh38" ]; then
+        toml="$dataDir/gnomad/vcfanno_gnomad_3.1_grch38.toml"
+else
+    toml="$dataDir/gnomad/vcfanno_gnomad_2.1_grch37.toml"
 fi
+
+function gnomadAnnotFunc {
+    # Add the gnomAD INFO fields to the input vcf
+    vcfanno $toml /dev/stdin
+}
+
+gnomadAnnotStage=gnomadAnnotFunc
+
 
 freebayesArgs="$freebayesArgs $extraArgs"
 

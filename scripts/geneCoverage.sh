@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 url=$1
 index_url=$2

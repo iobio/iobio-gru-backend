@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 vcfUrl=$1
 region=$2

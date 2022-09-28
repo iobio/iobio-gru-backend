@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 clinvarUrl=$1
 region=$2
@@ -10,6 +11,10 @@ vepArgs=$7
 
 tempDir=$(mktemp -d)
 cd $tempDir
+
+binLengthArg=
+regionPartsArg=
+annotationModeArg=
 
 if [ "$binLength" ]; then
     binLengthArg="-b $binLength"

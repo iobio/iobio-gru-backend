@@ -15,7 +15,7 @@ const fs = require('fs');
 const { serveStatic } = require('./static.js');
 const stream = require('stream');
 
-const MAX_STDERR_LEN = 16384;
+const MAX_STDERR_LEN = 1048576;
 
 const router = new Router();
 
@@ -294,7 +294,8 @@ router.post('/annotateEnrichmentCounts', async (ctx) => {
     await handle(ctx, 'annotateEnrichmentCounts.sh', args, { ignoreStderr: true });
 });
 
-router.post('/annotateSomaticVariants', async (ctx) => {
+// secondary option used by oncogene
+router.post('/annotateSomaticVariantsVep', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
   const vepCacheDir = dataPath('vep-cache');
 
@@ -305,7 +306,24 @@ router.post('/annotateSomaticVariants', async (ctx) => {
   
   const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, params.genomeBuildName, vepCacheDir, refFastaFile];
   
-  await handle(ctx, 'annotateSomaticVariants.sh', args, { ignoreStderr: true });
+  await handle(ctx, 'annotateSomaticVariantsVep.sh', args, { ignoreStderr: true });
+});
+
+// primary, faster option used by oncogene
+router.post('/annotateSomaticVariantsBcsq', async (ctx) => {
+  const params = JSON.parse(ctx.request.body);
+
+  let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
+  let gffFile = '/iobio-gru-backend/static/ensembl/GRCh37/geneSet37.gff3.gz';
+
+  if (params.genomeBuildName === 'GRCh38') {
+    refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
+    gffFile = '/iobio-gru-backend/static/ensembl/GRCh38/geneSet38.gff3.gz';
+  }
+
+  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, refFastaFile, gffFile];
+  
+  await handle(ctx, 'annotateSomaticVariantsBcsq.sh', args, { ignoreStderr: true });
 });
 
 router.post('/freebayesJointCall', async (ctx) => {
@@ -328,7 +346,6 @@ router.post('/freebayesJointCall', async (ctx) => {
   const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
   const gnomadHeaderFile = dataPath('gnomad_header.txt');
   const decompose = params.decompose ? params.decompose : '';
-
 
   const fbArgs = params.fbArgs;
   const freebayesArgs = [];
@@ -364,6 +381,64 @@ router.post('/freebayesJointCall', async (ctx) => {
 
   await handle(ctx, 'freebayesJointCall.sh', args, { ignoreStderr: true });
 });
+
+
+router.post('/freebayesJointCallV2', async (ctx) => {
+
+  const params = JSON.parse(ctx.request.body);
+
+  const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
+  const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
+  const region = genRegionStr(params.region);
+  const vepREVELFile = dataPath(params.vepREVELFile);
+  const refFastaFile = dataPath(params.refFastaFile);
+  const contigStr = genContigFileStr(params.refNames);
+  const samplesFileStr = params.sampleNames.join('\n');
+
+  const vepCacheDir = dataPath('vep-cache');
+  const vepPluginDir = dataPath('vep-cache/Plugins');
+
+  const decompose = params.decompose ? params.decompose : '';
+
+
+  const fbArgs = params.fbArgs;
+  const freebayesArgs = [];
+  if (fbArgs) {
+    for (var key in fbArgs) {
+      var theArg = fbArgs[key];
+      if (theArg.hasOwnProperty('argName')) {
+        if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
+          if (theArg.value && theArg.value == true) {
+              freebayesArgs.push(theArg.argName);
+          }
+        } else {
+          if (theArg.value && theArg.value != '') {
+            freebayesArgs.push(theArg.argName);
+            freebayesArgs.push(theArg.value);
+          }
+        }
+
+      }
+    }
+  }
+
+
+  const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
+
+  const extraArgs = freebayesArgs;
+
+  const dataDir = dataPath('');
+
+  const args = [
+    alignments, indices, region, refFastaFile, useSuggestedVariants,
+    params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
+    samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+    decompose, contigStr, dataDir
+  ];
+
+  await handle(ctx, 'freebayesJointCallV2.sh', args, { ignoreStderr: true });
+});
+
 
 router.post('/clinvarCountsForGene', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
@@ -511,6 +586,9 @@ async function handle(ctx, scriptName, args, options) {
 
       if (ctx.gruParams._appendErrors === true) {
         out.write("GRU_ERROR_SENTINEL");
+        out.write(JSON.stringify({
+          stderr,
+        }));
       }
     }
 

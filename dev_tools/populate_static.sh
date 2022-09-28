@@ -3,8 +3,13 @@
 set -e
 
 mkdir -p static/clinvar/GRCh37
-curl --fail -o static/clinvar/GRCh37/clinvar.vcf.gz https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/clinvar_20220320.vcf.gz
-curl --fail -o static/clinvar/GRCh37/clinvar.vcf.gz.tbi https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/clinvar_20220320.vcf.gz.tbi
+curl --fail -o static/clinvar/GRCh37/clinvar.vcf.gz https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/clinvar_20220917.vcf.gz
+curl --fail -o static/clinvar/GRCh37/clinvar.vcf.gz.tbi https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/weekly/clinvar_20220917.vcf.gz.tbi
 mkdir -p static/clinvar/GRCh38
-curl --fail -o static/clinvar/GRCh38/clinvar.vcf.gz https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/clinvar_20220320.vcf.gz
-curl --fail -o static/clinvar/GRCh38/clinvar.vcf.gz.tbi https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/clinvar_20220320.vcf.gz.tbi
+curl --fail -o static/clinvar/GRCh38/clinvar.vcf.gz https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/clinvar_20220917.vcf.gz
+curl --fail -o static/clinvar/GRCh38/clinvar.vcf.gz.tbi https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/weekly/clinvar_20220917.vcf.gz.tbi
+
+mkdir -p static/ensembl/GRCh37
+curl --fail -o static/ensembl/GRCh37/geneSet37.gff3.gz ftp://ftp.ensembl.org/pub/grch37/current/gff3/homo_sapiens/Homo_sapiens.GRCh37.87.chr.gff3.gz
+mkdir -p static/ensembl/GRCh38
+curl --fail ftp://ftp.ensembl.org/pub/current_gff3/homo_sapiens/Homo_sapiens.GRCh38.107.chr.gff3.gz | gzip -d - | perl -pe 's/^([0-9]+|[X]|[Y]|[M])/chr$1/' - | gzip - >> static/ensembl/GRCh38/geneSet38.gff3.gz 
