@@ -14,8 +14,17 @@ const { parseArgs, dataPath } = require('./utils.js');
 const fs = require('fs');
 const { serveStatic } = require('./static.js');
 const stream = require('stream');
+const semver = require('semver');
 
 const MAX_STDERR_LEN = 1048576;
+const MIN_DATA_DIR_VERSION = '1.9.0';
+
+console.log(`Using data directory ${path.resolve(dataPath(''))}`);
+const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString();
+if (semver.lt(dataDirVersion, MIN_DATA_DIR_VERSION)) {
+  console.error(`Data directory must be at least version ${MIN_DATA_DIR_VERSION} (found ${dataDirVersion})`);
+  process.exit(1);
+}
 
 const router = new Router();
 
