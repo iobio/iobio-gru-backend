@@ -87,7 +87,7 @@ if [ "$vepREVELFile" ]; then
 fi
 
 if [ "$vepAF" == "true" ]; then
-    vepArgs="$vepArgs --af --af_gnomad --af_esp --af_1kg --max_af"
+    vepArgs="$vepArgs --af --af_gnomad --af_1kg --max_af"
 fi
 
 if [ "$hgvsNotation" == "true" ]; then

@@ -1,5 +1,5 @@
 #FROM ubuntu:18.04
-FROM ensemblorg/ensembl-vep:release_105.0
+FROM ensemblorg/ensembl-vep:release_109.3
 
 USER root
 WORKDIR /
@@ -80,7 +80,7 @@ COPY --from=quay.io/iobio/iobio-vt:c6bd159 /vt/vt tool_bin/
 EXPOSE 9001
 
 ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js"]
-CMD ["--tools-dir=/iobio-gru-backend/tool_bin", "--data-dir=/data"]
+CMD ["--tools-dir=/iobio-gru-backend/tool_bin", "--data-dir=/gru_data"]
 
 # These directories are required for mounting writable singularity sandbox
 # images in the Utah CHPC environment, because of the directories that CHPC
