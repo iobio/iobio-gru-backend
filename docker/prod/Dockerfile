@@ -29,8 +29,11 @@ RUN ln -s /usr/bin/nodejs /usr/local/bin/node
 
 RUN ["mkdir", "tool_bin"]
 
-RUN curl -L https://github.com/brentp/vcfanno/releases/download/v0.3.3/vcfanno_linux64 -o tool_bin/vcfanno \
+RUN curl -L https://github.com/brentp/vcfanno/releases/download/v0.3.5/vcfanno_linux64 -o tool_bin/vcfanno \
     && chmod +x tool_bin/vcfanno
+
+RUN curl -L https://github.com/freebayes/freebayes/releases/download/v1.3.6/freebayes-1.3.6-linux-amd64-static.gz | gunzip > tool_bin/freebayes \
+        && chmod +x tool_bin/freebayes
 
 # TODO: see if we can just copy what we need from the vep image rather than
 # basing off it
@@ -60,8 +63,8 @@ COPY --from=quay.io/iobio/iobio-coverage:latest /summarize_coverage.py tool_bin/
 COPY --from=quay.io/iobio/iobio-gene-coverage:latest /genecoverage tool_bin/geneCoverage
 
 COPY --from=quay.io/iobio/iobio-gt-enricher:latest /usr/local/bin/gtenricher tool_bin/lib/gtEnricher/
-COPY --from=quay.io/iobio/iobio-gt-enricher:latest /usr/local/lib/libhts.so.1.11 tool_bin/lib/gtEnricher/libhts.so.3
-COPY --from=quay.io/iobio/iobio-gt-enricher:latest /gtEnricher.sh tool_bin/gtEnricher
+COPY --from=quay.io/iobio/iobio-gt-enricher:htslib-1.11 /usr/local/lib/libhts.so.1.11 tool_bin/lib/gtEnricher/libhts.so.3
+COPY --from=quay.io/iobio/iobio-gt-enricher:htslib-1.11 /gtEnricher.sh tool_bin/gtEnricher
 
 COPY --from=quay.io/iobio/iobio-known-variants:latest /iobio-gru-backend/tool_bin/lib/knownVariants/miniconda3 tool_bin/lib/knownVariants/miniconda3
 COPY --from=quay.io/iobio/iobio-known-variants:latest /iobio-gru-backend/tool_bin/lib/knownVariants/knownVariants.py tool_bin/lib/knownVariants/knownVariants.py
@@ -72,9 +75,7 @@ COPY --from=quay.io/iobio/iobio-vcf-read-depther:latest /build/lib/vcfReadDepthe
 
 COPY --from=quay.io/iobio/iobio-vcf-stats-alive:latest /vcfStatsAlive tool_bin/
 
-COPY --from=quay.io/iobio/iobio-vt:latest /vt/vt tool_bin/
-
-COPY --from=quay.io/iobio/iobio-freebayes:latest /freebayes tool_bin/
+COPY --from=quay.io/iobio/iobio-vt:c6bd159 /vt/vt tool_bin/
 
 EXPOSE 9001
 

@@ -2,6 +2,7 @@
 
 git clone https://github.com/atks/vt
 cd vt
-git checkout db574945014233a797eeafedad6e5f7e1ad2297a
+git checkout c6bd1591a23a1d116d52834a627c00bbf7ed4a64
+git submodule update --init --recursive
 make -j4
 strip vt
