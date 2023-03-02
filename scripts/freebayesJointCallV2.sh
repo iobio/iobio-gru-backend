@@ -19,10 +19,6 @@ decompose=${14}
 contigStr=${15}
 dataDir=${16}
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
-
 contigFile="contig.txt"
 echo -e "$contigStr" > $contigFile
 
@@ -43,9 +39,9 @@ for i in "${!urls[@]}"; do
     alignmentFile=$(mktemp)
 
     if [ -n "${indexUrl}" ]; then
-        samtools-1.11 view -b -X $url $indexUrl $region > $alignmentFile &
+        samtools view -b -X $url $indexUrl $region > $alignmentFile &
     else
-        samtools-1.11 view -b $url $region > $alignmentFile &
+        samtools view -b $url $region > $alignmentFile &
     fi
 
     freebayesArgs="$freebayesArgs -b $alignmentFile"
@@ -107,7 +103,3 @@ freebayes -f $refFastaFile $freebayesArgs | \
     bcftools annotate -h $contigFile | \
     vep $vepArgs | \
     $gnomadAnnotStage
-
-
-rm -rf $tempDir
-cd $runDir

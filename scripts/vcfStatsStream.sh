@@ -12,9 +12,6 @@ if [ -n "${indexUrl}" ]; then
     tabixVcfArg="$url##idx##$indexUrl"
 fi
 
-tempDir=$(mktemp -d)
-cd $tempDir
-
 echo -e "$contigStr" > contigs.txt
 
 if [ "$sampleNamesStr" ]; then
@@ -28,6 +25,3 @@ else
                 bcftools annotate -h contigs.txt - | \
                 vcfStatsAlive -u 1000 -Q 1000
 fi
-
-cd $runDir
-rm -rf $tempDir

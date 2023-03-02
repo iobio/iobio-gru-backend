@@ -11,10 +11,6 @@ genomeBuildName=$5
 vepCacheDir=$6
 refFastaFile=$7
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
-
 # Add region filter stage if we have regions
 regionFilterStage=cat
 if [ ! -z "$regions" ]; then
@@ -44,7 +40,3 @@ bcftools view -s $selectedSamples $vcfUrl | \
     bcftools norm -m - -w 10000 -f $refFastaFile - | \
     $somFilterStage | \
     vep $vepArgs
-
-rm -rf $tempDir
-cd $runDir
-

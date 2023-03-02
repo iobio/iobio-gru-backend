@@ -1,3 +1,4 @@
+const os = require('os');
 const Koa = require('koa');
 const Router = require('koa-router');
 const cors = require('@koa/cors');
@@ -557,8 +558,12 @@ router.post('/vcfStatsStream', async (ctx) => {
 
 async function handle(ctx, scriptName, args, options) {
 
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gru-'));
+
+  const opts = {cwd: tmpDir, ...options};
+  
   const scriptPath = path.join(__dirname, '../scripts', scriptName);
-  const proc = spawn(scriptPath, args, options);
+  const proc = spawn(scriptPath, args, opts);
 
   const out = stream.PassThrough();
 
@@ -602,6 +607,7 @@ async function handle(ctx, scriptName, args, options) {
     }
 
     out.end();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 }
 

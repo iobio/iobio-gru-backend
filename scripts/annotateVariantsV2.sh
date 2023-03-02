@@ -22,10 +22,6 @@ subsetStage=cat
 gnomadAnnotStage=cat
 decomposeStage=cat
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
-
 if [ "$vcfSampleNamesStr" ]; then
     echo -e "$vcfSampleNamesStr" > samples.txt
 
@@ -96,7 +92,3 @@ tabix -h $tabixVcfArg $region | \
     vt normalize -n -r $refFastaFile - | \
     vep $vepArgs | \
     $gnomadAnnotStage
-
-#echo $tempDir
-rm -rf $tempDir
-cd $runDir

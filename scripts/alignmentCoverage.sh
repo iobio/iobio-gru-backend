@@ -10,9 +10,6 @@ coverage_regions=$6
 quality_threshold=$7
 data_dir=$8
 
-tempDir=$(mktemp -d)
-cd $tempDir
-
 #if quality value provided, filter reads by mapq
 # otherwise just add binary flag
 view_opt="-b"
@@ -30,5 +27,3 @@ export REF_CACHE=$data_dir/md5_reference_cache/%2s/%2s/%s
 samtools view $view_opt $data_opts $samtools_region | \
     samtools mpileup - | \
     summarize_coverage $max_points $spanning_region $coverage_regions
-
-rm -rf $tempDir
