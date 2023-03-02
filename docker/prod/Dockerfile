@@ -35,10 +35,10 @@ RUN curl -L https://github.com/brentp/vcfanno/releases/download/v0.3.3/vcfanno_l
 # TODO: see if we can just copy what we need from the vep image rather than
 # basing off it
 #COPY --from=ensemblorg/ensembl-vep:latest /opt/vep /vep
-COPY --from=quay.io/iobio/htslib:1.11 /samtools-1.11/samtools tool_bin/samtools
-COPY --from=quay.io/iobio/htslib:1.11 /samtools-1.11/htslib-1.11/tabix tool_bin/tabix
-COPY --from=quay.io/iobio/htslib:1.11 /samtools-1.11/htslib-1.11/bgzip tool_bin/bgzip
-COPY --from=quay.io/iobio/htslib:1.11 /bcftools-1.11/bcftools tool_bin/bcftools
+COPY --from=quay.io/iobio/htslib:1.17 /samtools-1.17/samtools tool_bin/samtools
+COPY --from=quay.io/iobio/htslib:1.17 /samtools-1.17/htslib-1.17/tabix tool_bin/tabix
+COPY --from=quay.io/iobio/htslib:1.17 /samtools-1.17/htslib-1.17/bgzip tool_bin/bgzip
+COPY --from=quay.io/iobio/htslib:1.17 /bcftools-1.17/bcftools tool_bin/bcftools
 COPY --from=quay.io/iobio/bai-read-depther:latest /bamReadDepther tool_bin/baiReadDepther
 COPY --from=quay.io/iobio/crai-read-depther:latest /craiReadDepther tool_bin/craiReadDepther
 COPY --from=quay.io/iobio/bam-stats-alive:latest /bamstatsAlive/bamstatsAlive tool_bin/bamstatsAlive
