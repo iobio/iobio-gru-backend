@@ -13,10 +13,6 @@ gnomadHeaderFile=$9
 gnomadRenameChr=${10}
 pathoFilterPhrase=${11}
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
-
 echo -e "$contigStr" > contigs.txt
 
 tabixVcfArg=$vcfUrl
@@ -58,7 +54,3 @@ tabix -h $tabixVcfArg $region | \
     vt normalize -n -r $refFastaFile - | \
     bcftools filter -i $pathoFilterPhrase - | \
     $gnomadAnnotStage
-
-#echo $tempDir
-rm -rf $tempDir
-cd $runDir

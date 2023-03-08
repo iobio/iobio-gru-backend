@@ -10,9 +10,6 @@ filterArgs=$6
 experStr=$7
 controlStr=$8
 
-tempDir=$(mktemp -d)
-cd $tempDir
-
 echo -e "$contigStr" > contigs.txt
 echo -e "$controlStr" > controlNames.txt
 
@@ -38,6 +35,3 @@ tabix -h $tabixVcfArg $regionStr | \
     vt subset -s controlNames.txt - | \
     $filterCmd | \
     gtEnricher $experStr
-
-rm -rf $tempDir
-cd $runDir

@@ -25,10 +25,6 @@ subsetStage=cat
 gnomadAnnotStage=cat
 decomposeStage=cat
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
-
 if [ "$vcfSampleNamesStr" ]; then
     echo -e "$vcfSampleNamesStr" > samples.txt
 
@@ -91,7 +87,7 @@ if [ "$vepREVELFile" ]; then
 fi
 
 if [ "$vepAF" == "true" ]; then
-    vepArgs="$vepArgs --af --af_gnomad --af_esp --af_1kg --max_af"
+    vepArgs="$vepArgs --af --af_gnomad --af_1kg --max_af"
 fi
 
 if [ "$hgvsNotation" == "true" ]; then
@@ -114,7 +110,3 @@ tabix -h $tabixVcfArg $region | \
     vt normalize -n -r $refFastaFile - | \
     vep $vepArgs | \
     $gnomadAnnotStage
-
-#echo $tempDir
-rm -rf $tempDir
-cd $runDir

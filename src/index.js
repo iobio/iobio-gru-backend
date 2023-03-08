@@ -1,3 +1,4 @@
+const os = require('os');
 const Koa = require('koa');
 const Router = require('koa-router');
 const cors = require('@koa/cors');
@@ -14,8 +15,17 @@ const { parseArgs, dataPath } = require('./utils.js');
 const fs = require('fs');
 const { serveStatic } = require('./static.js');
 const stream = require('stream');
+const semver = require('semver');
 
 const MAX_STDERR_LEN = 1048576;
+const MIN_DATA_DIR_VERSION = '1.9.0';
+
+console.log(`Using data directory ${path.resolve(dataPath(''))}`);
+const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString();
+if (semver.lt(dataDirVersion, MIN_DATA_DIR_VERSION)) {
+  console.error(`Data directory must be at least version ${MIN_DATA_DIR_VERSION} (found ${dataDirVersion})`);
+  process.exit(1);
+}
 
 const router = new Router();
 
@@ -548,8 +558,12 @@ router.post('/vcfStatsStream', async (ctx) => {
 
 async function handle(ctx, scriptName, args, options) {
 
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gru-'));
+
+  const opts = {cwd: tmpDir, ...options};
+  
   const scriptPath = path.join(__dirname, '../scripts', scriptName);
-  const proc = spawn(scriptPath, args, options);
+  const proc = spawn(scriptPath, args, opts);
 
   const out = stream.PassThrough();
 
@@ -593,6 +607,7 @@ async function handle(ctx, scriptName, args, options) {
     }
 
     out.end();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 }
 

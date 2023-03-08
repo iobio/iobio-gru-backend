@@ -9,9 +9,6 @@ annotationMode=$5
 requiresVepService=$6
 vepArgs=$7
 
-tempDir=$(mktemp -d)
-cd $tempDir
-
 binLengthArg=
 regionPartsArg=
 annotationModeArg=
@@ -35,5 +32,3 @@ else
     tabix -h $clinvarUrl $region | \
         knownVariants -r $region $binLengthArg $regionPartsArg $annotationModeArg
 fi
-
-rm -rf $tempDir

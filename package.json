@@ -17,6 +17,7 @@
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^8.0.0",
     "mime": "^3.0.0",
+    "semver": "^7.3.8",
     "sqlite3": "^5.0.9"
   }
 }

@@ -8,9 +8,6 @@ regions=$4
 contigStr=$5
 refFastaFile=$6
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
 
 # TODO: it doesn't seem to work unless I have a file extension on the end...
 printf "$contigStr" > contigs.txt
@@ -25,6 +22,3 @@ fi
 tabix -h $tabixVcfArg $regions | \
     bcftools annotate -h contigs.txt - | \
     vt normalize -q -n -r $refFastaFile -
-
-cd $runDir
-rm -rf $tempDir

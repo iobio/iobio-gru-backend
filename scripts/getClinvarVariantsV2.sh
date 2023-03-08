@@ -10,9 +10,6 @@ genomeBuildName=$6
 gnomadMergeAnnots=$7
 pathoFilterPhrase=${8}
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
 
 echo -e "$contigStr" > contigs.txt
 
@@ -26,9 +23,9 @@ gnomadAnnotStage=cat
 if [ "$gnomadMergeAnnots" ]; then
     
     if [ "$genomeBuildName" == "GRCh38" ]; then
-        toml="/data/gnomad/vcfanno_gnomad_3.1_grch38.toml"
+        toml="/gru_data/gnomad/vcfanno_gnomad_3.1_grch38.toml"
     fi
-    	toml="/data/gnomad/vcfanno_gnomad_2.1_grch37.toml"
+    	toml="/gru_data/gnomad/vcfanno_gnomad_2.1_grch37.toml"
 
     function gnomadAnnotFunc {
         # Add the gnomAD INFO fields to the input vcf
@@ -43,7 +40,3 @@ tabix -h $tabixVcfArg $region | \
     vt normalize -n -r $refFastaFile - | \
     bcftools filter -i $pathoFilterPhrase - | \
     $gnomadAnnotStage
-
-#echo $tempDir
-rm -rf $tempDir
-cd $runDir

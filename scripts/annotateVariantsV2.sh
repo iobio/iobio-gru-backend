@@ -22,10 +22,6 @@ subsetStage=cat
 gnomadAnnotStage=cat
 decomposeStage=cat
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
-
 if [ "$vcfSampleNamesStr" ]; then
     echo -e "$vcfSampleNamesStr" > samples.txt
 
@@ -48,9 +44,9 @@ fi
 if [ "$gnomadMergeAnnots" ]; then
     
     if [ "$genomeBuildName" == "GRCh38" ]; then
-        toml="/data/gnomad/vcfanno_gnomad_3.1_grch38.toml"
+        toml="/gru_data/gnomad/vcfanno_gnomad_3.1_grch38.toml"
     else
-    	toml="/data/gnomad/vcfanno_gnomad_2.1_grch37.toml"
+    	toml="/gru_data/gnomad/vcfanno_gnomad_2.1_grch37.toml"
     fi
 
     function gnomadAnnotFunc {
@@ -73,7 +69,7 @@ if [ "$vepREVELFile" ]; then
 fi
 
 if [ "$vepAF" == "true" ]; then
-    vepArgs="$vepArgs --af --af_gnomad --af_esp --af_1kg --max_af"
+    vepArgs="$vepArgs --af --af_gnomad --af_1kg --max_af"
 fi
 
 if [ "$hgvsNotation" == "true" ]; then
@@ -96,7 +92,3 @@ tabix -h $tabixVcfArg $region | \
     vt normalize -n -r $refFastaFile - | \
     vep $vepArgs | \
     $gnomadAnnotStage
-
-#echo $tempDir
-rm -rf $tempDir
-cd $runDir

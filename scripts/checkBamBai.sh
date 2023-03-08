@@ -6,9 +6,6 @@ index_url=$2
 samtools_region=$3
 data_dir=$4
 
-tempDir=$(mktemp -d)
-cd $tempDir
-
 url_valid=$(curl -s $url | head -n 1 | tr '\0' '\n')
 index_valid=$(curl -s $index_url | head -n 1 | tr '\0' '\n')
 if [ -z "$url_valid" ] || [ -z "$index_valid" ]; 
@@ -26,5 +23,3 @@ export REF_CACHE=$data_dir/md5_reference_cache/%2s/%2s/%s
 echo "DEBUG - data_opts: $data_opts, REF_CACHE: $REF_CACHE" >&2
 
 samtools view -H $data_opts $samtools_region | head -n 1
-
-rm -rf $tempDir

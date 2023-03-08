@@ -9,10 +9,6 @@ somaticFilterPhrase=$4
 refFastaFile=$5
 gffFile=$6
 
-runDir=$PWD
-tempDir=$(mktemp -d)
-cd $tempDir
-
 # Add region filter stage if we have regions
 regionFilterStage=cat
 if [ ! -z "$regions" ]; then
@@ -37,7 +33,3 @@ bcftools view -s $selectedSamples $vcfUrl | \
     bcftools norm -m - -w 10000 -f $refFastaFile - | \
     $somFilterStage | \
     bcftools csq -f $refFastaFile -g $gffFile - -Ov -l
-
-rm -rf $tempDir
-cd $runDir
-

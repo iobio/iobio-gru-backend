@@ -4,7 +4,7 @@ FROM centos:7
 
 RUN yum update -y && yum install -y autoconf automake make gcc zlib-devel bzip2 bzip2-devel xz-devel curl-devel
 
-ARG htslib_version=1.11
+ARG htslib_version=1.17
 
 COPY build.sh /
 
