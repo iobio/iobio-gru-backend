@@ -590,6 +590,9 @@ async function handle(ctx, scriptName, args, options) {
   });
 
   proc.on('exit', (exitCode) => {
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+
     if (exitCode !== 0) {
       const timestamp = new Date().toISOString();
       console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
@@ -607,7 +610,6 @@ async function handle(ctx, scriptName, args, options) {
     }
 
     out.end();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 }
 
