@@ -1,7 +1,5 @@
 #!/bin/bash
 set -euo pipefail
-#SJG updated Jun2020
-set -euo pipefail
 
 vcfUrl=$1
 selectedSamples=$2
