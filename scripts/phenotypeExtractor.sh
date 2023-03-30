@@ -3,7 +3,7 @@ set -euo pipefail
   
 notes=$@
 
-file=$(mktemp --tmpdir .)
+file=$(mktemp --tmpdir=./)
 
 echo "$notes" > $file
 

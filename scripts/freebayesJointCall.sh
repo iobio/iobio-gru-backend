@@ -39,7 +39,7 @@ read -ra indices <<< "$alignmentIndices"
 for i in "${!urls[@]}"; do
     url=${urls[$i]}
     indexUrl=${indices[$i]}
-    alignmentFile=$(mktemp --tmpdir .)
+    alignmentFile=$(mktemp --tmpdir=./)
 
     if [ -n "${indexUrl}" ]; then
         samtools view -b -X $url $indexUrl $region > $alignmentFile &
