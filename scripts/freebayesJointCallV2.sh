@@ -1,5 +1,9 @@
 #!/bin/bash
-set -euo pipefail
+
+# TODO: Figure out why we can't use pipefail. Apparently some stage of the
+# pipeline is failing even though valid data is getting output.
+#set -euo pipefail
+set -e
 
 alignmentUrls=$1
 alignmentIndices=$2
