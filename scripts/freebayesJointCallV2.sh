@@ -1,6 +1,5 @@
 #!/bin/bash
-
-#set -x
+set -euo pipefail
 
 alignmentUrls=$1
 alignmentIndices=$2
