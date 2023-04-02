@@ -157,6 +157,19 @@ router.post('/geneCoverage', async (ctx) => {
     await handle(ctx, 'geneCoverage.sh', args, { ignoreStderr: true });
 });
 
+router.post('/getOrthologs', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    const geneName = params.geneName;
+    const speciesIds = params.speciesIds.join(',');
+    const taxonLevelId = params.taxonLevelId;
+    const eutilsKey = params.eutilsKey;
+
+    const dataDir = dataPath('');
+    const args = [geneName, eutilsKey, speciesIds, taxonLevelId];
+
+    await handle(ctx, 'getOrthologs.sh', args, { ignoreStderr: true }); 
+});
+
 router.post('/normalizeVariants', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
 

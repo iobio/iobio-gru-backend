@@ -8,6 +8,9 @@ From: alpine:3.9
 %post
     apk update
     apk add bash python3
+    apk add py-pip
+
+    pip install requests
 
     rm -rf /var/cache/apk/*
 

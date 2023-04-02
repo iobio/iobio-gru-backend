@@ -1,23 +1,56 @@
 #!/usr/bin/env python3
-# Given a human gene symbol and species ids, returns ensemble gene ids
+# Given a human gene symbol and species ids, returns ensembl gene ids
 # for orthologs corresponding to provided species ids, if they exist.
-# If no species ids provided, just pulls back zebrafish, mouse, and human.
-# If not orthologs could be found, returns None
+# If no orthologs could be found, returns None.
+# Required arguments: gene name, species ID list (NCBI assigned), taxon level ID (NCBI assigned), and eutils key.
+# NOTE: the taxon level ID corresponds to the narrowest evolutionary convergence level that
+# encompasses the provided species. When using Chordata for mouse/zebrafish/human, however, orthoDB failed.
+# Thus using Verterbrata for that specific list. Any other level should be tested directly with orthoDB
+# before being provided as an argument here.
 # SJG for Gabor Marth lab Mar2023
 
 import requests
 import time
+import sys
+import getopt
+
+
+def get_args(argv):
+    usage = 'get_orthologs.py -g <geneName> -k <eutilsKey> -s <speciesIds> -t <taxonLevelId>'
+    try:
+        opts, args = getopt.getopt(argv, "hg:k:s:t:", ["geneName=", "eutilsKey=", "speciesIds=", "taxonLevelId="])
+    except getopt.GetoptError:
+        print(usage, file=sys.stderr)
+        sys.exit(2)
+
+    the_args = {}
+    for opt, arg in opts:
+        if opt == '-h':
+            print(usage)
+            sys.exit()
+        elif opt in ("-g", "--geneName"):
+            the_args['gene_name'] = arg
+        elif opt in ("-k", "--eutilsKey"):
+            the_args['eutils_key'] = arg
+        elif opt in ("-s", "--speciesIds"):
+            the_args['species_ids'] = arg
+        elif opt in ("-t", "--taxonLevelId"):
+            the_args['taxon_level_id'] = arg
+
+    return the_args
 
 
 # Returns a list of human gene IDs from NCBI corresponding to a given gene name
-def get_ncbi_gene_ids(gene_name):
+def get_ncbi_gene_ids(the_args):
+    gene_name = the_args['gene_name']
+    eutils_key = the_args['eutils_key']
+
     eutils_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-    iobio_eutils_key = "2ce5a212af98a07c6e770d1e95b99a2fef09"
 
     params = {'db': 'gene',
               'retmode': 'json',
               'term': '(9606[Taxonomy ID] AND ' + gene_name + '[Pref])',
-              'api_key': iobio_eutils_key
+              'api_key': eutils_key
               }
     r = requests.get(eutils_url, params=params)
 
@@ -37,20 +70,17 @@ def get_ncbi_gene_ids(gene_name):
 # Returns UNIPROT IDs from ortho-db corresponding to given NCBI gene IDs
 # If no response from UNIPROT, returns None
 # https://www.ezlab.org/orthodb_userguide.html#api for more info
-def get_ortho_ids(gene_name, gene_ids, species_ids):
-    odb_api_url = "https://data.orthodb.org/current/"
-    zebrafish_eutils_id = "7955"
-    mouse_eutils_id = "10090"
-    human_eutils_id = "9606"
-    vertebrata_tax_id = 7742  # Highest level of clade that human, mouse, zebrafish converge at in OrthoDB
+def get_ortho_ids(the_args, gene_ids):
+    gene_name = the_args['gene_name']
+    species_ids = the_args['species_ids']
+    taxon_level_id = the_args['taxon_level_id']
 
-    if species_ids is None:
-        species_ids = [zebrafish_eutils_id, mouse_eutils_id, human_eutils_id]
+    odb_api_url = "https://data.orthodb.org/current/"
 
     cluster_ids = []
     for gene_id in gene_ids:
         params = {'query': gene_name + " " + gene_id,
-                  'level': vertebrata_tax_id
+                  'level': taxon_level_id
                   }
         r = requests.get(odb_api_url + "search", params=params)
         payload = r.json()
@@ -67,11 +97,7 @@ def get_ortho_ids(gene_name, gene_ids, species_ids):
         params = {'id': cluster_id}
         r = requests.get(odb_api_url + "orthologs", params=params)
         payload = r.json()
-        if not payload:
-            print("Incorrect response from orthoDB. Exiting...")
-            return None
-
-        data = payload.get("data")
+        data = payload["data"]
         if data:
             gene_lists = [ortholog["genes"] for ortholog in data if
                           (ortholog["organism"]["id"][:ortholog["organism"]["id"].index('_')]) in species_ids]
@@ -121,30 +147,23 @@ def get_ensembl_ids(uniprot_ids):
 
     r = requests.get(uniprot_api_url + "results/" + job_id)
     payload = r.json()
-    if not payload:
-        print("Incorrect response from uniprot. Exiting...")
-        return None
-    results = payload.get("results")
-    if not results:
-        print("Empty results from uniprot. Exiting...")
-        return []
     ensembl_ids = [result["to"][:result["to"].index('.')] for result in payload["results"]]
     return ensembl_ids
 
 
-def print_orthologs(gene_name, species_ids=None):
-    gene_ids = get_ncbi_gene_ids(gene_name)
+def print_orthologs(the_args):
+    gene_ids = get_ncbi_gene_ids(the_args)
     if not gene_ids:
-        return
-    uniprot_ids = get_ortho_ids(gene_name, gene_ids, species_ids)
+        sys.exit(1)
+    uniprot_ids = get_ortho_ids(the_args, gene_ids)
     if not uniprot_ids:
-        return
+        sys.exit(1)
     ensembl_ids = get_ensembl_ids(uniprot_ids)
     if not ensembl_ids:
-        return
+        sys.exit(1)
     print(ensembl_ids)
 
 
 if __name__ == '__main__':
-    sample_gene = 'APC'
-    print_orthologs(sample_gene)
+    args = get_args(sys.argv[1:])
+    print_orthologs(args)
