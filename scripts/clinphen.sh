@@ -3,7 +3,7 @@ set -euo pipefail
 
 SEARCH_TERM=$@
 
-file=$(mktemp)
+file=$(mktemp --tmpdir=./)
 
 echo "$SEARCH_TERM" > $file
 

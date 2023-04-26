@@ -1,6 +1,9 @@
 #!/bin/bash
 
-#set -x
+# TODO: Figure out why we can't use pipefail. Apparently some stage of the
+# pipeline is failing even though valid data is getting output.
+#set -euo pipefail
+set -e
 
 alignmentUrls=$1
 alignmentIndices=$2
@@ -36,7 +39,7 @@ read -ra indices <<< "$alignmentIndices"
 for i in "${!urls[@]}"; do
     url=${urls[$i]}
     indexUrl=${indices[$i]}
-    alignmentFile=$(mktemp)
+    alignmentFile=$(mktemp --tmpdir=./)
 
     if [ -n "${indexUrl}" ]; then
         samtools view -b -X $url $indexUrl $region > $alignmentFile &
