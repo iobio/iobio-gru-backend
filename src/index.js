@@ -560,10 +560,19 @@ async function handle(ctx, scriptName, args, options) {
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gru-'));
 
+  fs.writeFileSync(path.join(tmpDir, 'gru_params.json'), JSON.stringify(ctx.gruParams, null, 2));
+
   const opts = {cwd: tmpDir, ...options};
   
   const scriptPath = path.join(__dirname, '../scripts', scriptName);
   const proc = spawn(scriptPath, args, opts);
+
+  // Kill process if it runs for more than 5 minutes
+  const MINUTE_MS = 60*1000;
+  const timeoutId = setTimeout(() => {
+    console.error("Timed out. Killing process for request", ctx.gruParams._requestId);
+    proc.kill('SIGKILL');
+  }, 5 * MINUTE_MS);
 
   const out = stream.PassThrough();
 
@@ -590,6 +599,8 @@ async function handle(ctx, scriptName, args, options) {
   });
 
   proc.on('exit', (exitCode) => {
+
+    clearTimeout(timeoutId);
 
     fs.rmSync(tmpDir, { recursive: true, force: true });
 
