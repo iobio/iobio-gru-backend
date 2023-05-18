@@ -560,7 +560,9 @@ async function handle(ctx, scriptName, args, options) {
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gru-'));
 
-  fs.writeFileSync(path.join(tmpDir, 'gru_params.json'), JSON.stringify(ctx.gruParams, null, 2));
+  if (ctx.gruParams) {
+    fs.writeFileSync(path.join(tmpDir, `gru_params_${scriptName}.json`), JSON.stringify(ctx.gruParams, null, 2));
+  }
 
   const opts = {cwd: tmpDir, ...options};
   
