@@ -4,7 +4,6 @@ const Router = require('koa-router');
 const cors = require('@koa/cors');
 const bodyParser = require('koa-bodyparser');
 const path = require('path');
-const { mktemp } = require('./mktemp.js');
 const spawn = require('child_process').spawn;
 const process = require('process');
 const gene2PhenoRouter = require('./gene2pheno.js');
@@ -25,6 +24,17 @@ const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString();
 if (semver.lt(dataDirVersion, MIN_DATA_DIR_VERSION)) {
   console.error(`Data directory must be at least version ${MIN_DATA_DIR_VERSION} (found ${dataDirVersion})`);
   process.exit(1);
+}
+
+
+// Clean up any older tmp files that may have been left behind after a crash
+const tmpFiles = fs.readdirSync(os.tmpdir());
+for (const entName of tmpFiles) {
+  if (entName.startsWith('gru-')) {
+    const tmpPath = path.join(os.tmpdir(), entName);
+    console.log(`Cleaning up tmp file ${tmpPath}`);
+    fs.rmSync(tmpPath, { recursive: true, force: true });
+  }
 }
 
 const router = new Router();
@@ -500,11 +510,14 @@ router.post('/clinReport', async (ctx) => {
   // Copy the data into a temporary file and then pass the path. It was failing
   // before, I'm pretty sure because the file was too large (~3MB) to pass
   // through the child spawing interface.
-  const tmpFilePath = await mktemp();
+  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'gru-'));
+  const tmpFilePath = path.join(tmpDir, 'clin_report');
   await fs.promises.writeFile(tmpFilePath, ctx.request.body);
   const args = [tmpFilePath];
   await handle(ctx, 'clinReport.sh', args); 	
+  await fs.promises.rm(tmpDir, { recursive: true, force: true });
 });
+	
 
 
 
@@ -600,29 +613,32 @@ async function handle(ctx, scriptName, args, options) {
     }
   });
 
-  proc.on('exit', (exitCode) => {
+  return new Promise((resolve, reject) => {
+    proc.on('exit', (exitCode) => {
 
-    clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+      fs.rmSync(tmpDir, { recursive: true, force: true });
 
-    if (exitCode !== 0) {
-      const timestamp = new Date().toISOString();
-      console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
-      console.log("stderr:");
-      console.log(stderr);
-      console.log("params:");
-      console.log(ctx.gruParams);
+      if (exitCode !== 0) {
+        const timestamp = new Date().toISOString();
+        console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
+        console.log("stderr:");
+        console.log(stderr);
+        console.log("params:");
+        console.log(ctx.gruParams);
 
-      if (ctx.gruParams._appendErrors === true) {
-        out.write("GRU_ERROR_SENTINEL");
-        out.write(JSON.stringify({
-          stderr,
-        }));
+        if (ctx.gruParams._appendErrors === true) {
+          out.write("GRU_ERROR_SENTINEL");
+          out.write(JSON.stringify({
+            stderr,
+          }));
+        }
       }
-    }
 
-    out.end();
+      out.end();
+      resolve();
+    });
   });
 }
 
