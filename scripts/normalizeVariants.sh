@@ -21,4 +21,4 @@ fi
 
 tabix -h $tabixVcfArg $regions | \
     bcftools annotate -h contigs.txt - | \
-    vt normalize -q -n -r $refFastaFile -
+    bcftools norm -m - -w 10000 -f $refFastaFile -
