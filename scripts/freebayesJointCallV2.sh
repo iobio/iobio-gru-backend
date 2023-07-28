@@ -101,7 +101,7 @@ wait
 # directly in the bash script
 freebayes -f $refFastaFile $freebayesArgs | \
     $decomposeStage | \
-    vt normalize -r $refFastaFile - | \
+    bcftools norm -m - -w 10000 -f $refFastaFile - \ |
     vt filter -f 'QUAL>1' -t 'PASS' -d 'iobio' - | \
     bcftools annotate -h $contigFile | \
     vep $vepArgs | \
