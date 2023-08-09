@@ -1,6 +1,8 @@
 #!/bin/bash
 
-set -euo pipefail
+# TODO: add 'set -u' once we fix unbound variables
+#set -euo pipefail
+set -eo pipefail
 
 alignmentUrls=$1
 alignmentIndices=$2
