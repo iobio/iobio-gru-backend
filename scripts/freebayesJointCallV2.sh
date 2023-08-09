@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# TODO: Figure out why we can't use pipefail. Apparently some stage of the
-# pipeline is failing even though valid data is getting output.
+# TODO: add 'set -u' once we fix unbound variables
 #set -euo pipefail
-set -e
+set -eo pipefail
 
 alignmentUrls=$1
 alignmentIndices=$2
@@ -101,7 +100,7 @@ wait
 # directly in the bash script
 freebayes -f $refFastaFile $freebayesArgs | \
     $decomposeStage | \
-    vt normalize -r $refFastaFile - | \
+    bcftools norm -m - -w 10000 -f $refFastaFile - \ |
     vt filter -f 'QUAL>1' -t 'PASS' -d 'iobio' - | \
     bcftools annotate -h $contigFile | \
     vep $vepArgs | \
