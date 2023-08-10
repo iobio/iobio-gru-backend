@@ -1,5 +1,13 @@
 const path = require('path');
 
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
+function replaceAll(str, find, replace) {
+  return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+}
+
 function parseArgs() {
   const args = process.argv
     .slice(2)
@@ -27,4 +35,5 @@ function dataPath(name) {
 module.exports = {
   parseArgs,
   dataPath,
+  replaceAll,
 };
