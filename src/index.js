@@ -523,16 +523,16 @@ router.post('/clinReport', async (ctx) => {
 
 // oncogene endpoints
 //
-router.post('/getIdColumns', async (ctx) => {
+router.post('/bcftoolsView', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
 
     const regionStr = genRegionsStr(params.regions, ",");
     const args = [
-        params.vcfUrl, regionStr
+        params.vcfUrl, regionStr, params.rowNum
     ];
 
-    await handle(ctx, 'getIdColumns.sh', args, { ignoreStderr: true });
+    await handle(ctx, 'bcftoolsView.sh', args, { ignoreStderr: true });
 });
 
 router.post('/checkBamBai', async (ctx) => {
