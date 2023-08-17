@@ -14,12 +14,14 @@ if [ ! -z "$region" ]; then
 fi
 
 headStage=cat
+headerArg=$""
 if [ ! -z "$lineNumber" ]; then
     function headFunc {
         head -n $lineNumber
     }
     headStage=headFunc
+    headerArg="-H" #Don't include header
 fi
 
-bcftools view $regionArg $vcfUrl | \
+bcftools view $headerArg $regionArg $vcfUrl | \
     headStage
