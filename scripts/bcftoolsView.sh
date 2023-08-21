@@ -6,7 +6,7 @@ set -euo pipefail
 
 vcfUrl=$1
 region=$2
-lineNumber=$3
+numLines=$3
 
 regionArg=$region
 if [ ! -z "$region" ]; then
@@ -15,13 +15,13 @@ fi
 
 headStage=cat
 headerArg=$""
-if [ ! -z "$lineNumber" ]; then
+if [ ! -z "$numLines" ]; then
     function headFunc {
-        head -n $lineNumber
+        head -n "$numLines"
     }
     headStage=headFunc
     headerArg="-H" #Don't include header
 fi
 
 bcftools view $headerArg $regionArg $vcfUrl | \
-    headStage
+    $headStage
