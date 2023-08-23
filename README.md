@@ -13,7 +13,7 @@ databases and references files.
 The docker image is fairly large (~3GB). This creates a temporary container
 with the data directory mounted
 
-`docker run --rm -it -v /mnt/storage/grudata-1.10.0/:/gru_data -p 9001:9001 anderspitman/iobio-gru-backend:latest`
+`docker run --rm -it -v gru_data_1.10.0/:/gru_data -p 9001:9001 anderspitman/iobio-gru-backend:latest`
 
 
 ## Test
