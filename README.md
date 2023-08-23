@@ -18,6 +18,6 @@ with the data directory mounted
 
 ## Test
 
-The following command should return a 200 status code
+In a separate terminal, the following command should return a 200 status code
 
 `curl localhost:9001`
