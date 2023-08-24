@@ -33,7 +33,7 @@ function promiseGetGeneDisorders(db, gene_name) {
 const router = new Router();
 
 router.get('/api/gene/:gene', async (ctx) => {
-  var sqlString = "SELECT * from gene_to_phenotype where entrez_gene_symbol=\""+ctx.params.gene+"\" ";
+  var sqlString = "SELECT * from gene_to_phenotype where gene_symbol=\""+ctx.params.gene+"\" ";
 
   const db = getDb();
 
@@ -46,7 +46,11 @@ router.get('/api/gene/:gene', async (ctx) => {
       var phenotypes = [];
       if (rows != null && rows.length > 0) {
         for (var i = 0; i < rows.length; i++) {
-          phenotype_data = rows[i];           
+          phenotype_data = rows[i];  
+          phenotype_data['entrez_gene_symbol'] = phenotype_data['gene_symbol']         
+          phenotype_data['entrez_gene_id'] = phenotype_data['ncbi_gene_id']         
+          phenotype_data['hpo_term_id'] = phenotype_data['hpo_id']         
+          phenotype_data['hpo_term_name'] = phenotype_data['hpo_name']         
           phenotypes.push(phenotype_data);
         }
       } 
@@ -63,7 +67,7 @@ router.get('/api/gene/:gene', async (ctx) => {
 
 // v2 (cacheable) endpoints
 router.get('/:gene', async (ctx) => {
-  var sqlString = "SELECT * from gene_to_phenotype where entrez_gene_symbol=\""+ctx.params.gene+"\" ";
+  var sqlString = "SELECT * from gene_to_phenotype where gene_symbol=\""+ctx.params.gene+"\" ";
 
   const db = getDb();
 
@@ -76,7 +80,12 @@ router.get('/:gene', async (ctx) => {
       var phenotypes = [];
       if (rows != null && rows.length > 0) {
         for (var i = 0; i < rows.length; i++) {
-          phenotype_data = rows[i];           
+          phenotype_data = rows[i];    
+          phenotype_data['entrez_gene_symbol'] = phenotype_data['gene_symbol']         
+          phenotype_data['entrez_gene_id'] = phenotype_data['ncbi_gene_id']         
+          phenotype_data['hpo_term_id'] = phenotype_data['hpo_id']         
+          phenotype_data['hpo_term_name'] = phenotype_data['hpo_name']         
+                 
           phenotypes.push(phenotype_data);
         }
       } 
@@ -90,6 +99,7 @@ router.get('/:gene', async (ctx) => {
     });
   });
 });
+
 
 // v3 In addition to returning associated phenotypes, this endpoint also returns 
 // associated disorders for a gene.
@@ -135,6 +145,7 @@ router.get('/associations/:gene', async (ctx) => {
     });
   });
 });
+
 
 
 module.exports = router;
