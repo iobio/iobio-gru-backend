@@ -5,7 +5,7 @@ function getDb() {
   if (!_db) {
     const sqlite3 = require('sqlite3').verbose();
     const { dataPath } = require('./utils.js');
-    _db = new sqlite3.Database(dataPath('gene2pheno/hpo_gene_to_phenotype.db'));
+    _db = new sqlite3.Database(dataPath('gene2pheno/gene_to_phenotype.db'));
   }
   return _db;
 }
