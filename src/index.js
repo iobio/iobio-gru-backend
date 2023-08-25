@@ -106,6 +106,14 @@ router.post('/alignmentStatsStream', async (ctx) => {
 
 // gene.iobio & oncogene & cohort-gene endpoints
 //
+router.post('/bedRegion', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    const url = params.url;
+    const indexUrl = params.indexUrl ? params.indexUrl : '';
+    const region = genRegionStr(params.region);
+    await handle(ctx, 'bedRegion.sh', [params.url, indexUrl, region]);
+});
+
 router.post('/variantHeader', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     const indexUrl = params.indexUrl ? params.indexUrl : '';
