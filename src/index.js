@@ -528,8 +528,9 @@ router.post('/bcftoolsView', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
 
     const regionStr = params.regions == null ? "" : genRegionsStr(params.regions, ",");
+    const numRecords = params.numRecords == null ? "" : params.numRecords;
     const args = [
-        params.vcfUrl, regionStr, params.numRecords
+        params.vcfUrl, regionStr, numRecords
     ];
 
     await handle(ctx, 'bcftoolsView.sh', args, { ignoreStderr: true });

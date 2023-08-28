@@ -13,6 +13,7 @@ if [ ! -z "$region" ]; then
     regionArg="-r $region"
 fi
 
+# Optional retrieve n lines without header
 headStage=cat
 headerArg=$""
 if [ ! -z "$numLines" ]; then
