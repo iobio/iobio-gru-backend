@@ -13,11 +13,11 @@ databases and references files.
 The docker image is fairly large (~3GB). This creates a temporary container
 with the data directory mounted
 
-`docker run --rm -it -v /mnt/storage/grudata-1.10.0/:/gru_data -p 9001:9001 quay.io/iobio/iobio-gru-backend:latest`
+`docker run --rm -it -v $PWD/gru_data_1.10.0/:/gru_data -p 9001:9001 anderspitman/iobio-gru-backend:latest`
 
 
 ## Test
 
-The following command should return a 200 status code
+In a separate terminal, the following command should return a 200 status code
 
 `curl localhost:9001`
