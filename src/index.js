@@ -10,7 +10,7 @@ const gene2PhenoRouter = require('./gene2pheno.js');
 const geneInfoRouter = require('./geneinfo.js');
 const genomeBuildRouter = require('./genomebuild.js');
 const hpoRouter = require('./hpo.js');
-const { parseArgs, dataPath } = require('./utils.js');
+const { parseArgs, dataPath, replaceAll } = require('./utils.js');
 const fs = require('fs');
 const { serveStatic } = require('./static.js');
 const stream = require('stream');
@@ -523,16 +523,17 @@ router.post('/clinReport', async (ctx) => {
 
 // oncogene endpoints
 //
-router.post('/getIdColumns', async (ctx) => {
+router.post('/bcftoolsView', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
 
-    const regionStr = genRegionsStr(params.regions, ",");
+    const regionStr = params.regions == undefined ? "" : genRegionsStr(params.regions, ",");
+    const numRecords = params.numRecords == undefined ? "" : params.numRecords;
     const args = [
-        params.vcfUrl, regionStr
+        params.vcfUrl, regionStr, numRecords
     ];
 
-    await handle(ctx, 'getIdColumns.sh', args, { ignoreStderr: true });
+    await handle(ctx, 'bcftoolsView.sh', args, { ignoreStderr: true });
 });
 
 router.post('/checkBamBai', async (ctx) => {
@@ -571,6 +572,20 @@ router.post('/vcfStatsStream', async (ctx) => {
 
 async function handle(ctx, scriptName, args, options) {
 
+  const scriptPath = path.join(__dirname, '../scripts', scriptName);
+
+  if (ctx.query.print_script === 'true') {
+    let script = fs.readFileSync(scriptPath).toString();
+
+    args.forEach((arg, i) => {
+      script = replaceAll(script, '$' + (i + 1), `"${arg}"`);
+      script = replaceAll(script, '${' + (i + 1) + '}', `"${arg}"`);
+    });
+
+    ctx.body = script;
+    return;
+  }
+
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gru-'));
 
   if (ctx.gruParams) {
@@ -579,7 +594,6 @@ async function handle(ctx, scriptName, args, options) {
 
   const opts = {cwd: tmpDir, ...options};
   
-  const scriptPath = path.join(__dirname, '../scripts', scriptName);
   const proc = spawn(scriptPath, args, opts);
 
   // Kill process if it runs for more than 5 minutes
