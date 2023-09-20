@@ -527,8 +527,8 @@ router.post('/bcftoolsView', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
 
-    const regionStr = params.regions == null ? "" : genRegionsStr(params.regions, ",");
-    const numRecords = params.numRecords == null ? "" : params.numRecords;
+    const regionStr = params.regions == undefined ? "" : genRegionsStr(params.regions, ",");
+    const numRecords = params.numRecords == undefined ? "" : params.numRecords;
     const args = [
         params.vcfUrl, regionStr, numRecords
     ];
