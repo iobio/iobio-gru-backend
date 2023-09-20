@@ -10,7 +10,7 @@ const gene2PhenoRouter = require('./gene2pheno.js');
 const geneInfoRouter = require('./geneinfo.js');
 const genomeBuildRouter = require('./genomebuild.js');
 const hpoRouter = require('./hpo.js');
-const { parseArgs, dataPath } = require('./utils.js');
+const { parseArgs, dataPath, replaceAll } = require('./utils.js');
 const fs = require('fs');
 const { serveStatic } = require('./static.js');
 const stream = require('stream');
@@ -572,6 +572,20 @@ router.post('/vcfStatsStream', async (ctx) => {
 
 async function handle(ctx, scriptName, args, options) {
 
+  const scriptPath = path.join(__dirname, '../scripts', scriptName);
+
+  if (ctx.query.print_script === 'true') {
+    let script = fs.readFileSync(scriptPath).toString();
+
+    args.forEach((arg, i) => {
+      script = replaceAll(script, '$' + (i + 1), `"${arg}"`);
+      script = replaceAll(script, '${' + (i + 1) + '}', `"${arg}"`);
+    });
+
+    ctx.body = script;
+    return;
+  }
+
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gru-'));
 
   if (ctx.gruParams) {
@@ -580,7 +594,6 @@ async function handle(ctx, scriptName, args, options) {
 
   const opts = {cwd: tmpDir, ...options};
   
-  const scriptPath = path.join(__dirname, '../scripts', scriptName);
   const proc = spawn(scriptPath, args, opts);
 
   // Kill process if it runs for more than 5 minutes
