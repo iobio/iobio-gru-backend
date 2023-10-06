@@ -17,7 +17,7 @@ const stream = require('stream');
 const semver = require('semver');
 
 const MAX_STDERR_LEN = 1048576;
-const MIN_DATA_DIR_VERSION = '1.9.0';
+const MIN_DATA_DIR_VERSION = '1.11.0';
 
 console.log(`Using data directory ${path.resolve(dataPath(''))}`);
 const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString();
