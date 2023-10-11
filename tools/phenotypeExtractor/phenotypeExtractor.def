@@ -20,6 +20,8 @@ From: alpine:3.9
 
     cd Phenotype-extractor
 
+    git checkout 9cb4c0c
+
     npm install
 
 
