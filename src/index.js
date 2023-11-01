@@ -54,6 +54,11 @@ router.get('/static/*', async (ctx) => {
   await serveStatic(ctx, fsPath);
 });
 
+router.get('/gru_data/*', async (ctx) => {
+  const fsPath = path.join(dataPath(''), ctx.path.slice(10));
+  await serveStatic(ctx, fsPath);
+});
+
 router.post('/viewAlignments', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
 
@@ -749,7 +754,10 @@ else {
 async function logger(ctx, next) {
   const contentType = ctx.get('content-type').split(';')[0];
 
+  let timestamp = new Date().toISOString();
+
   if (ctx.method !== 'POST' || contentType != 'text/plain') {
+    console.log(`${timestamp}\t${ctx.method}\t${ctx.url}`);
     await next();
     return;
   }
@@ -758,7 +766,6 @@ async function logger(ctx, next) {
 
   ctx.gruParams = params;
 
-  let timestamp = new Date().toISOString();
   const start = Date.now();
   console.log(`${timestamp}\t${params._requestId}\tstart\t${ctx.url}\t${params._attemptNum}`);
 
