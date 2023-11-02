@@ -52,6 +52,7 @@ router.get('/static/*', async (ctx) => {
 
   const fsPath = path.join(__dirname, '..', reqPath);
   await serveStatic(ctx, fsPath);
+  ctx.set('Cache-Control', 'max-age=86400');
 });
 
 router.get('/gru_data/*', async (ctx) => {

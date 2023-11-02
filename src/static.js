@@ -82,7 +82,7 @@ async function serveStatic(ctx, fsPath) {
   }
 
   ctx.set('Accept-Ranges', 'bytes');
-  ctx.set('Cache-Control', 'max-age=86400');
+  ctx.set('Cache-Control', 'no-store');
   ctx.set('Last-Modified', lastModified);
 
   if (ctx.method == 'HEAD') {
