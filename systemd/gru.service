@@ -8,6 +8,8 @@ Type=simple
 Restart=always
 RestartSec=1
 User=ubuntu
+StandardOutput=append:/var/log/gru/std_log.log
+StandardError=append:/var/log/gru/err_log.log
 #WorkingDirectory=/mnt/gru
 ExecStart=/mnt/gru_efs/run.sh
 
