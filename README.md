@@ -11,7 +11,14 @@ rsync -av rsync://data.iobio.io:9009/gru/data/gru_data_1.11.0 .
 
 Note that since `gru_data_1.10.0` it's possible to upgrade data directory
 versions without a complete download. See
-[here](docs/populating_data_directory.md#incremental-updates) for details.
+[here](docs/populating_data_directory.md#incremental-updates) for details. If
+you're not sure what version you currently have, relatively recent versions
+include a `VERSION` file you can use to determine this:
+
+```
+> cat gru_data/VERSION
+> 1.10.0
+```
 
 ## Run the docker image
 
