@@ -31,7 +31,7 @@ version. We're using hard links to make this efficient.
 
 For this you need 3 things:
 
-1. The [`do_update.sh`](dev_tools/do_update.sh) script.
+1. The [`do_update.sh`](../dev_tools/do_update.sh) script.
 2. The version you're updating from
 3. The update directory that contains the changes from your current version to
    the target version.
