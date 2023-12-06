@@ -29,7 +29,7 @@ done < ${update_dir}/FILES_TO_DELETE
 
 cp -alf ${update_dir}/* ${new_dir}/
 
-rm "${new_dir}/FILES_TO_DELETE"
+rm -f "${new_dir}/FILES_TO_DELETE"
 
 chmod -R -w ${new_dir}
 
