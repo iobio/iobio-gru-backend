@@ -27,7 +27,7 @@ rsync -av rsync://data.iobio.io:9009/gru/data/gru_data_1.11.0 .
 
 Note that since version `1.10.0` we're tracking changes between versions, which
 allows for updates without having to download the entire directory for each
-version. We're using hard links to make this efficient.
+version.
 
 For this you need 3 things:
 
@@ -35,6 +35,24 @@ For this you need 3 things:
 2. The version you're updating from
 3. The update directory that contains the changes from your current version to
    the target version.
+
+If you're not sure what version you currently have, relatively recent versions
+include a `VERSION` file you can use to determine this:
+
+```
+> cat gru_data/VERSION
+> 1.10.0
+```
+
+If there's been more than one new version since the last time you updated,
+you'll need to perform each update in turn. This command will list the
+available updates:
+
+```
+rsync rsync://data.iobio.io:9009/gru/updates/
+```
+
+At some point it's easier to just download a fresh copy of the latest version.
 
 Assuming you wanted to update from `1.10.0` to `1.11.0`, and you currently have
 `data/gru_data_1.10.0/` in your working directory, you would do the following:
