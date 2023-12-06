@@ -17,7 +17,7 @@ const stream = require('stream');
 const semver = require('semver');
 
 const MAX_STDERR_LEN = 1048576;
-const MIN_DATA_DIR_VERSION = '1.9.0';
+const MIN_DATA_DIR_VERSION = '1.11.0';
 
 console.log(`Using data directory ${path.resolve(dataPath(''))}`);
 const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString();
@@ -51,6 +51,12 @@ router.get('/static/*', async (ctx) => {
   const reqPath = ctx.path.startsWith('/gru') ? ctx.path.slice(4) : ctx.path;
 
   const fsPath = path.join(__dirname, '..', reqPath);
+  await serveStatic(ctx, fsPath);
+  ctx.set('Cache-Control', 'max-age=86400');
+});
+
+router.get('/gru_data/*', async (ctx) => {
+  const fsPath = path.join(dataPath(''), ctx.path.slice(10));
   await serveStatic(ctx, fsPath);
 });
 
@@ -106,6 +112,14 @@ router.post('/alignmentStatsStream', async (ctx) => {
 
 // gene.iobio & oncogene & cohort-gene endpoints
 //
+router.post('/bedRegion', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    const url = params.url;
+    const indexUrl = params.indexUrl ? params.indexUrl : '';
+    const region = genRegionStr(params.region);
+    await handle(ctx, 'bedRegion.sh', [params.url, indexUrl, region]);
+});
+
 router.post('/variantHeader', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     const indexUrl = params.indexUrl ? params.indexUrl : '';
@@ -741,7 +755,10 @@ else {
 async function logger(ctx, next) {
   const contentType = ctx.get('content-type').split(';')[0];
 
+  let timestamp = new Date().toISOString();
+
   if (ctx.method !== 'POST' || contentType != 'text/plain') {
+    console.log(`${timestamp}\t${ctx.method}\t${ctx.url}`);
     await next();
     return;
   }
@@ -750,7 +767,6 @@ async function logger(ctx, next) {
 
   ctx.gruParams = params;
 
-  let timestamp = new Date().toISOString();
   const start = Date.now();
   console.log(`${timestamp}\t${params._requestId}\tstart\t${ctx.url}\t${params._attemptNum}`);
 

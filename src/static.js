@@ -15,9 +15,32 @@ async function serveStatic(ctx, fsPath) {
     return;
   }
 
+  const lastModified = new Date(stats.mtimeMs).toUTCString();
+
   if (stats.isDirectory()) {
-    ctx.status = 404;
-    ctx.body = "Not Found";
+
+    let itemsHtml = '';
+    const items = await fs.promises.readdir(fsPath, { withFileTypes: true });
+    for (const item of items) {
+      const name = item.isDirectory() ? item.name + '/' : item.name;
+      itemsHtml += `  <div><a href='./${name}'>${name}</a></div>\n`;
+    }
+
+    resHtml = `
+      <!doctype html>
+      <html>
+      <head>
+      </head>
+      <body>
+      ${itemsHtml}
+      </body>
+      </html>
+    `
+
+    ctx.set('Content-Type', 'text/html');
+
+    ctx.status = 200;
+    ctx.body = resHtml;
     return;
   }
 
@@ -59,9 +82,15 @@ async function serveStatic(ctx, fsPath) {
   }
 
   ctx.set('Accept-Ranges', 'bytes');
-  ctx.set('Cache-Control', 'max-age=86400');
+  ctx.set('Cache-Control', 'no-store');
+  ctx.set('Last-Modified', lastModified);
 
-  ctx.body = stream;
+  if (ctx.method == 'HEAD') {
+    ctx.status = 200;
+  }
+  else {
+    ctx.body = stream;
+  }
 }
 
 module.exports = {
