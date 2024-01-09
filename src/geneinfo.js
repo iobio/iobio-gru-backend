@@ -34,8 +34,14 @@ router.get('/api/gene/:gene', async (ctx) => {
   if (source == null || source == '') {
     source = 'gencode';
   } 
-  var geneSqlString = "SELECT * from genes where gene_name like \""+ctx.params.gene+"\" ";
-  geneSqlString    += " AND source = \""+source+"\"";
+  var geneSqlString = "SELECT g.*, ";
+  geneSqlString += "gs.gene_symbol, ";
+  geneSqlString += "GROUP_CONCAT(ga.alias_symbol) AS aliases ";
+  geneSqlString += "FROM genes g ";
+  geneSqlString += "LEFT OUTER JOIN gene_symbol gs on gs.gene_symbol = g.gene_symbol ";
+  geneSqlString += "LEFT OUTER JOIN gene_alias  ga on ga.alias_symbol = g.alias_symbol and ga.alias_symbol != g.gene_name";
+  geneSqlString += "WHERE gene_name like \""+ctx.params.gene+"\" ";
+  geneSqlString += " AND source = \""+source+"\"";
   if (species != null && species != "") {
     geneSqlString  += " AND species = \""+species+"\"";
   }
@@ -65,15 +71,11 @@ router.get('/api/gene/:gene', async (ctx) => {
             source = 'gencode';
           } 
           var sqlString = "";
-          if (source == 'gencode') {
-            sqlString =  "SELECT t.*, x.refseq_id as 'xref' from transcripts t ";
-            sqlString += "LEFT OUTER JOIN xref_transcript x on x.gencode_id = t.transcript_id ";
-          } else if (source == 'refseq') {
-            sqlString =  "SELECT t.*, x.gencode_id as 'xref' from transcripts t ";
-            sqlString += "LEFT OUTER JOIN xref_transcript x on x.refseq_id = t.transcript_id ";
-          }
-          sqlString +=    "WHERE t.transcript_id=\""+id+"\" "
-          sqlString +=    "AND t.source = \""+source+"\"";
+
+          sqlString =  "SELECT t.* ";
+          sqlString += "from transcripts t ";
+          sqlString += "WHERE t.transcript_id=\""+id+"\" "
+          sqlString += " AND t.source = \""+source+"\"";
           if (species != null && species != "") {
             sqlString  += " AND t.species = \""+species+"\"";
           }
@@ -98,7 +100,6 @@ router.get('/api/gene/:gene', async (ctx) => {
           if (err) reject(err);
 
           gene_data['transcripts'] = results;
-          //res.json([gene_data]);
 
           ctx.set('Content-Type', 'application/json');
           ctx.set('Charset', 'utf-8')
@@ -151,16 +152,11 @@ router.get('/api/genes/', async (ctx) => {
         source = 'gencode';
       } 
       var sqlString = "";
-      if (source == 'gencode') {
-        sqlString =  "SELECT t.*, x.refseq_id as 'xref' from transcripts t ";
-        sqlString += "LEFT OUTER JOIN xref_transcript x on x.gencode_id = t.transcript_id ";
-      } else if (source == 'refseq') {
-        sqlString =  "SELECT t.*, x.gencode_id as 'xref' from transcripts t ";
-        sqlString += "LEFT OUTER JOIN xref_transcript x on x.refseq_id = t.transcript_id ";
-      }
-      sqlString     += "WHERE t.gene_name ";
-      sqlString     += getGenesInClause(genes);
-      sqlString +=    "AND t.source = \""+source+"\"";
+      sqlString =  "SELECT t.* ";
+      sqlString += "FROM transcripts t "
+      sqlString += "WHERE t.gene_name ";
+      sqlString += getGenesInClause(genes);
+      sqlString += " AND t.source = \""+source+"\"";
       if (species != null && species != "") {
         sqlString  += " AND t.species = \""+species+"\"";
       }
@@ -244,15 +240,10 @@ router.get('/api/region/:region', async (ctx) => {
           async.map(transcript_ids,      
             function(id, done){      
               var sqlString = "SELECT * from transcripts t ";
-              if (source == 'gencode') {
-                sqlString +=    "LEFT OUTER JOIN xref_transcript x on x.gencode_id = t.transcript_id ";
-              } else if (source == 'refseq') {
-                sqlString +=    "LEFT OUTER JOIN xref_transcript x on x.refseq_id = t.transcript_id ";
-              }
               sqlString +=    "WHERE t.transcript_id=\""+id+"\" "
               if (source != null && source != "") {
-		sqlString +=    " AND t.source = \""+source+"\""; 
-	      }
+            		sqlString += " AND t.source = \""+source+"\"";
+	            }
               if (species != null && species != "") {
                 sqlString  += " AND t.species = \""+species+"\"";
               }
@@ -261,21 +252,21 @@ router.get('/api/region/:region', async (ctx) => {
               }  
               db.all(sqlString,function(err,rows){          
 
-                if (err) {
-		  console.log("error: " + err);
-		  reject(err);
-		} 
-                rows[0]['features'] = JSON.parse(rows[0]['features']);
-                done(null,rows[0]);
-              });
-            },      
-            function(err, results){        
+              if (err) {
+		            console.log("error: " + err);
+		            reject(err);
+		          }
+              rows[0]['features'] = JSON.parse(rows[0]['features']);
+              done(null,rows[0]);
+            });
+          },
+          function(err, results){
 
-              if (err) reject(err);
+            if (err) reject(err);
 
-              gene_data['transcripts'] = results;            
-              outterDone(null, gene_data);
-            }
+            gene_data['transcripts'] = results;
+            outterDone(null, gene_data);
+          }
           );
         },
         function(err, results) {                
@@ -333,15 +324,9 @@ router.get('/:gene', async (ctx) => {
             source = 'gencode';
           } 
           var sqlString = "";
-          if (source == 'gencode') {
-            sqlString =  "SELECT t.*, x.refseq_id as 'xref' from transcripts t ";
-            sqlString += "LEFT OUTER JOIN xref_transcript x on x.gencode_id = t.transcript_id ";
-          } else if (source == 'refseq') {
-            sqlString =  "SELECT t.*, x.gencode_id as 'xref' from transcripts t ";
-            sqlString += "LEFT OUTER JOIN xref_transcript x on x.refseq_id = t.transcript_id ";
-          }
-          sqlString +=    "WHERE t.transcript_id=\""+id+"\" "
-          sqlString +=    "AND t.source = \""+source+"\"";
+          sqlString =   "SELECT t.* from transcripts t ";
+          sqlString +=  "WHERE t.transcript_id=\""+id+"\" "
+          sqlString +=  " AND t.source = \""+source+"\"";
           if (species != null && species != "") {
             sqlString  += " AND t.species = \""+species+"\"";
           }
@@ -366,7 +351,6 @@ router.get('/:gene', async (ctx) => {
           if (err) reject(err);
 
           gene_data['transcripts'] = results;
-          //res.json([gene_data]);
 
           ctx.set('Content-Type', 'application/json');
           ctx.set('Charset', 'utf-8')
