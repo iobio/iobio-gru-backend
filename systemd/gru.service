@@ -1,3 +1,4 @@
+[Unit]
 Description=iobio gru backend
 After=network.target
 StartLimitIntervalSec=0
@@ -7,8 +8,10 @@ Type=simple
 Restart=always
 RestartSec=1
 User=ubuntu
+StandardOutput=append:/var/log/gru/std_log.log
+StandardError=append:/var/log/gru/err_log.log
 #WorkingDirectory=/mnt/gru
-ExecStart=/bin/bash -c 'singularity run --bind /mnt/gru_data:/gru_data /mnt/gru_image/gru.sif'
+ExecStart=/mnt/gru_efs/run.sh
 
 [Install]
 WantedBy=multi-user.target

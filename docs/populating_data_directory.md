@@ -1,15 +1,13 @@
 # Introduction
 
 gru depends on a large data directory in order to support all functionality.
-This directory contains ~120GB of data. Most of this is the VEP cache,
-complete reference sequences, and MD5 reference sequences.
+This directory contains ~128GB of data. Most of this is the VEP cache,
+gnomad files, complete reference sequences, and MD5 reference sequences.
 
 All required data is assumed to be under a `data` directory, relative to the
-current working directory where gru is started from (usually with
-`run_local.sh`). This can be overriden with the `--out-dir=<dir>` argument.
-(note that we only recently fixed some bugs with `--out-dir`, and it's not
-fully tested yet. Please let us know if you run into issues with this
-functionality).
+current working directory where gru is started from. This can be overriden with
+the `--data-dir=<dir>` argument. The docker image defaults to using
+`/gru_data`.
 
 **Note:** There is some legacy cruft in the way the data volume is structured,
 which can make it confusing. For example, there is `/data/data`, and also
@@ -17,40 +15,59 @@ which can make it confusing. For example, there is `/data/data`, and also
 in different ways. We plan to clean this up eventually but for now you'll need
 to be careful to make sure everything ends up in it's proper place.
 
-There are 2 simple ways to get a copy of the data directory:
+You can use rsync to get a copy of the data directory:
 
+## rsync
 
-## AWS snapshot
-
-If you're on AWS, you can create a volume from our public snapshot. The current
-gru version is 0.28.0, which is snapshot ID `snap-02eb780cd49ee41fe`.
-
-
-## GemDrive
-
-Download a copy from our GemDrive instance. [GemDrive] is a simple HTTP
-protocol that allows for recursively downloading directories.
-
-You can explore the data from a web browser here:
-
-https://gemdrive.io/apps/delver/?drive=https://gemdrive.iobio.io&path=/
-
-You can download the files from that interface (for example navigate to
-`/gru-0.28.0/iobio-gru-backend/data` to see the data directory for the 0.28.0
-release), but it's not efficient for datasets this large. We have a python3
-script in `dev_tools/download.py` that can recursively download the data
-directory using the following command:
-
-```bash
-python3 dev_tools/download.py
+```
+rsync -av rsync://data.iobio.io:9009/gru/data/gru_data_1.11.0 .
 ```
 
-There are a few arguments to override defaults:
+### Incremental updates
 
+Note that since version `1.10.0` we're tracking changes between versions, which
+allows for updates without having to download the entire directory for each
+version.
 
-```bash
-python3 dev_tools/download.py --gru-version 0.27.0 --out-dir out --dry-run
+For this you need 3 things:
+
+1. The `do_update.sh` script.
+2. The version you're updating from
+3. The update directory that contains the changes from your current version to
+   the target version.
+
+If you're not sure what version you currently have, relatively recent versions
+include a `VERSION` file you can use to determine this:
+
 ```
+> cat gru_data/VERSION
+> 1.10.0
+```
+
+If there's been more than one new version since the last time you updated,
+you'll need to perform each update in turn. This command will list the
+available updates:
+
+```
+rsync rsync://data.iobio.io:9009/gru/updates/
+```
+
+At some point it's easier to just download a fresh copy of the latest version.
+
+Assuming you wanted to update from `1.10.0` to `1.11.0`, and you currently have
+`data/gru_data_1.10.0/` in your working directory, you would do the following:
+
+```
+rsync -av rsync://data.iobio.io:9009/gru/updates/updates_1.10.0_to_1.11.0 .
+rsync -av rsync://data.iobio.io:9009/gru/do_update.sh .
+./do_update.sh 1.10.0 1.11.0
+```
+
+If you run into problems you can inspect `do_update.sh` to see how it works.
+It's a pretty small script.
+
+Since this uses hard links, once you've completed the update it should be safe
+to delete the old version and the update directory.
 
 
 # Manual downloads
@@ -120,5 +137,3 @@ data/
 [1]: https://github.com/samtools/samtools/blob/develop/misc/seq_cache_populate.pl
 
 [2]: ./handling_cram_references.md
-
-[GemDrive]: https://github.com/gemdrive
