@@ -1,6 +1,6 @@
 # Creating the sandbox
 
-You'll need a `gru_<version>.sif` singularity image to get started. Once you have that,
+You'll need a `gru.sif` singularity image to get started. Once you have that,
 you can run the following commands.
 
 First load the singularity module (if running in CHPC):
@@ -13,8 +13,9 @@ Then create the sandbox directory:
 
 
 ```
-singularity build --sandbox gru_sandbox/ /ssd/gru/images/gru_<version>.sif
+singularity build --sandbox gru_sandbox/ gru.sif
 ```
+
 
 
 # Running gru
@@ -28,7 +29,7 @@ The command to run gru is a bit complicated, but the key ingredients are:
 Here's what it ends up looking like:
 
 ```
-singularity exec --bind /ssd/gru/gru_data_1.10.0/:/gru_data gru_sandbox node /iobio-gru-backend/src/index.js --data-dir=/gru_data --port=9003
+singularity exec --bind /ssd/gru/gru-1.0.0/data/:/data gru.sif node /iobio-gru-backend/src/index.js --port=9003 --data-dir=/data
 ```
 
 
