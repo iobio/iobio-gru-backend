@@ -120,6 +120,21 @@ router.post('/bedRegion', async (ctx) => {
     await handle(ctx, 'bedRegion.sh', [params.url, indexUrl, region]);
 });
 
+router.post('/bigWigDepther', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    const url = params.url;
+    const region = genRegionStr(params.region);
+    await handle(ctx, 'bigWigDepther.sh', ["--url", params.url, "--region", region]);
+});
+
+
+router.post('/getReferenceSequence', async (ctx) => {
+    const params = JSON.parse(ctx.request.body);
+    const refFastaPath = dataPath(params.fastaPath);
+    const region = genRegionStr(params.region);
+    await handle(ctx, 'getReferenceSequence.sh', [refFastaPath, region]);
+});
+
 router.post('/variantHeader', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
     const indexUrl = params.indexUrl ? params.indexUrl : '';
