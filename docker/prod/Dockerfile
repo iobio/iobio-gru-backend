@@ -77,6 +77,11 @@ COPY --from=quay.io/iobio/iobio-vcf-stats-alive:latest /vcfStatsAlive tool_bin/
 
 COPY --from=quay.io/iobio/iobio-vt:c6bd159 /vt/vt tool_bin/
 
+RUN curl -LO https://github.com/iobio/bigwig-depther-rs/releases/download/0.1.0/bigwig-depther-0.1.0-linux-x64.zip \
+        && unzip bigwig-depther-0.1.0-linux-x64.zip \
+        && mv bigwig-depther-0.1.0-linux-x64 tool_bin/bigWigDepther \
+        && rm bigwig-depther-0.1.0-linux-x64.zip
+
 EXPOSE 9001
 
 ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js"]
