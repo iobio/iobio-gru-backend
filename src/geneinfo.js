@@ -64,8 +64,8 @@ router.get('/api/gene/:gene', async (ctx) => {
         }
       } 
           
-      async.map(transcript_ids,     
-        function(id, done){     
+      async.map(transcript_ids,      
+        function(id, done){      
           var source = ctx.query.source; 
           if (source == null || source == '') {
             source = 'gencode';
@@ -97,7 +97,6 @@ router.get('/api/gene/:gene', async (ctx) => {
         },      
         function(err, results){     
 
-
           if (err) reject(err);
 
           gene_data['transcripts'] = results;
@@ -123,7 +122,7 @@ router.get('/api/genes/', async (ctx) => {
   var build = ctx.query.build;
   if (source == null || source == '') {
     source = 'gencode';
-  }  
+  } 
   var geneSqlString = "SELECT distinct * from genes where gene_name ";
   geneSqlString    += getGenesInClause(genes);
   geneSqlString    += " AND source = \""+source+"\"";
@@ -227,7 +226,7 @@ router.get('/api/region/:region', async (ctx) => {
     sqlString  += " AND build = \""+build+"\"";
   }
   if (source != null && source != "") {
-    sqlString +=    " AND source = \""+source+"\"";        
+    sqlString +=    " AND source = \""+source+"\"";         
   }
   
   const db = getDb();
@@ -243,7 +242,7 @@ router.get('/api/region/:region', async (ctx) => {
               var sqlString = "SELECT * from transcripts t ";
               sqlString +=    "WHERE t.transcript_id=\""+id+"\" "
               if (source != null && source != "") {
-		sqlString +=    " AND t.source = \""+source+"\"";                 
+		sqlString +=    " AND t.source = \""+source+"\"";   
 	      }
               if (species != null && species != "") {
                 sqlString  += " AND t.species = \""+species+"\"";
