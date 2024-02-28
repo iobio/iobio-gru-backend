@@ -95,7 +95,7 @@ router.get('/api/gene/:gene', async (ctx) => {
           });
 
         },      
-        function(err, results){     
+        function(err, results){        
 
           if (err) reject(err);
 
@@ -216,7 +216,7 @@ router.get('/api/region/:region', async (ctx) => {
     sqlString += "' and  (start between  " + start + " and " + end 
                + "        or end between " + start + " and " + end + ")";
   } else {
-    sqlString += "' and  (start   <= " + start    
+    sqlString += "' and  (start   <= " + start   
                + "        and end >= " + end + ")";
   }
   if (species != null && species != "") {
@@ -224,7 +224,7 @@ router.get('/api/region/:region', async (ctx) => {
   }
   if (build != null && build != "") {
     sqlString  += " AND build = \""+build+"\"";
-  }
+  }  
   if (source != null && source != "") {
     sqlString +=    " AND source = \""+source+"\"";         
   }
@@ -242,7 +242,7 @@ router.get('/api/region/:region', async (ctx) => {
               var sqlString = "SELECT * from transcripts t ";
               sqlString +=    "WHERE t.transcript_id=\""+id+"\" "
               if (source != null && source != "") {
-		sqlString +=    " AND t.source = \""+source+"\"";   
+		sqlString +=    " AND t.source = \""+source+"\""; 
 	      }
               if (species != null && species != "") {
                 sqlString  += " AND t.species = \""+species+"\"";
