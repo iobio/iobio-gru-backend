@@ -52,21 +52,21 @@ router.get('/api/gene/:gene', async (ctx) => {
   const db = getDb();
 
   return new Promise((resolve, reject) => {
-    db.all(geneSqlString,function(err,rows){
+    db.all(geneSqlString,function(err,rows){ 
       var gene_data = {};
       var transcript_ids = [];
       if (rows != null && rows.length > 0) {
         for (var i = 0; i < rows.length; i++) {
-          gene_data = rows[i];   
+          gene_data = rows[i];    
           if (gene_data.hasOwnProperty("transcripts") && gene_data.transcripts != null && gene_data.transcripts != "") {
             transcript_ids = transcript_ids.concat(JSON.parse(gene_data['transcripts']));
           }       
         }
-      }
-         
-      async.map(transcript_ids,
-        function(id, done){
-          var source = ctx.query.source;
+      } 
+          
+      async.map(transcript_ids,     
+        function(id, done){     
+          var source = ctx.query.source; 
           if (source == null || source == '') {
             source = 'gencode';
           }
@@ -82,15 +82,15 @@ router.get('/api/gene/:gene', async (ctx) => {
           if (build != null && build != "") {
             sqlString  += " AND t.build = \""+build+"\"";
           }        
-          db.all(sqlString,function(err,rows){   
+          db.all(sqlString,function(err,rows){    
 
             if (err) reject(err);
 
             if (rows != null && rows.length > 0) {
               rows[0]['features'] = JSON.parse(rows[0]['features']);
             } else {
-              rows[0]['features'] = [];   
-            }
+              rows[0]['features'] = [];
+            }   
             done(null,rows[0]);
           });
 
@@ -137,7 +137,7 @@ router.get('/api/genes/', async (ctx) => {
   const db = getDb();
 
   return new Promise((resolve, reject) => {
-    db.all(geneSqlString,function(err,rows){
+    db.all(geneSqlString,function(err,rows){ 
       var gene_data = {};
 
       if (rows != null && rows.length > 0) {
@@ -184,7 +184,7 @@ router.get('/api/genes/', async (ctx) => {
 
         ctx.set('Content-Type', 'application/json');
         ctx.set('Charset', 'utf-8')
-        ctx.body = JSON.stringify([gene_data]);
+	ctx.body = JSON.stringify([gene_data]);
         resolve();
       });
     });
@@ -195,7 +195,7 @@ router.get('/api/region/:region', async (ctx) => {
   var chr = ctx.params.region.split(':')[0];
   var start = ctx.params.region.split(':')[1].split('-')[0];
   var end = ctx.params.region.split(':')[1].split('-')[1];
-  var source = ctx.query.source;
+  var source = ctx.query.source; 
   var species = ctx.query.species;
   var build = ctx.query.build;
   
@@ -207,11 +207,11 @@ router.get('/api/region/:region', async (ctx) => {
   var bound = ctx.query.bound;
   if (bound == null || bound == '') {
     bound = 'outer';
-  } 
+  }
 
   if (source == null || source == '') {
     source = 'gencode';
-  }
+  } 
   var sqlString = "SELECT distinct * from genes where chr = '" + chr + "";
   if (bound == 'outer') {
     sqlString += "' and  (start between  " + start + " and " + end 
@@ -227,15 +227,15 @@ router.get('/api/region/:region', async (ctx) => {
     sqlString  += " AND build = \""+build+"\"";
   }
   if (source != null && source != "") {
-    sqlString +=    " AND source = \""+source+"\"";
+    sqlString +=    " AND source = \""+source+"\"";        
   }
-
+  
   const db = getDb();
 
   return new Promise((resolve, reject) => {
     db.all(sqlString, function(err, genes) {
-      async.map(genes,
-        function(gene_data, outterDone) {                
+      async.map(genes, 
+        function(gene_data, outterDone) {                   
           var transcript_ids = JSON.parse(gene_data['transcripts']);
       
           async.map(transcript_ids,      
@@ -243,7 +243,7 @@ router.get('/api/region/:region', async (ctx) => {
               var sqlString = "SELECT * from transcripts t ";
               sqlString +=    "WHERE t.transcript_id=\""+id+"\" "
               if (source != null && source != "") {
-                sqlString += " AND t.source = \""+source+"\"";
+		sqlString +=    " AND t.source = \""+source+"\"";                 
 	      }
               if (species != null && species != "") {
                 sqlString  += " AND t.species = \""+species+"\"";
@@ -268,7 +268,7 @@ router.get('/api/region/:region', async (ctx) => {
               gene_data['transcripts'] = results;            
               outterDone(null, gene_data);
             }
-          );        
+          );
         },
         function(err, results) {                
 
