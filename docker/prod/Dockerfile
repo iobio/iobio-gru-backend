@@ -10,6 +10,7 @@ RUN apt-get update \
         curl \
         xz-utils \
         python-pip \
+        python3-pip \
         build-essential
 
 
