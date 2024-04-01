@@ -100,6 +100,8 @@ RUN ["mkdir", "/ssd"]
 # re-downloading the static files.
 COPY ./dev_tools/populate_static.sh populate_static.sh
 RUN ["./populate_static.sh"]
+COPY ./dev_tools/download_clinvar.sh download_clinvar.sh
+RUN ["./download_clinvar.sh"]
 COPY ./ /iobio-gru-backend
 RUN ["mv", "/static", "/iobio-gru-backend"]
 RUN ["mv", "/tool_bin", "/iobio-gru-backend"]
