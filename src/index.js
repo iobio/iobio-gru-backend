@@ -323,6 +323,28 @@ router.post('/annotateVariantsV2', async (ctx) => {
 
     await handle(ctx, 'annotateVariantsV2.sh', args, { ignoreStderr: true });
 });
+router.post('/annotateVariantsV3', async (ctx) => {
+
+  const params = JSON.parse(ctx.request.body);
+
+  const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+  const contigStr = genContigFileStr(params.refNames);
+  const regionStr = genRegionsStr(params.regions);
+  const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+  const refFastaFile = dataPath(params.refFastaFile);
+  const vepCacheDir = dataPath('vep-cache');
+  const vepREVELFile = dataPath(params.vepREVELFile);
+  const vepPluginDir = dataPath('vep-cache/Plugins');
+
+  const args = [
+      params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+      refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile,
+      vepPluginDir, params.hgvsNotation, params.getRsId, params.decompose
+
+  ];
+
+  await handle(ctx, 'annotateVariantsV3.sh', args, { ignoreStderr: true });
+});
 router.post('/annotateEnrichmentCounts', async (ctx) => {
     const params = JSON.parse(ctx.request.body);
 
@@ -488,6 +510,61 @@ router.post('/freebayesJointCallV2', async (ctx) => {
   await handle(ctx, 'freebayesJointCallV2.sh', args, { ignoreStderr: true });
 });
 
+router.post('/freebayesJointCallV3', async (ctx) => {
+
+  const params = JSON.parse(ctx.request.body);
+
+  const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
+  const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
+  const region = genRegionStr(params.region);
+  const vepREVELFile = dataPath(params.vepREVELFile);
+  const refFastaFile = dataPath(params.refFastaFile);
+  const contigStr = genContigFileStr(params.refNames);
+  const samplesFileStr = params.sampleNames.join('\n');
+
+  const vepCacheDir = dataPath('vep-cache');
+  const vepPluginDir = dataPath('vep-cache/Plugins');
+
+  const decompose = params.decompose ? params.decompose : '';
+
+
+  const fbArgs = params.fbArgs;
+  const freebayesArgs = [];
+  if (fbArgs) {
+    for (var key in fbArgs) {
+      var theArg = fbArgs[key];
+      if (theArg.hasOwnProperty('argName')) {
+        if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
+          if (theArg.value && theArg.value == true) {
+              freebayesArgs.push(theArg.argName);
+          }
+        } else {
+          if (theArg.value && theArg.value != '') {
+            freebayesArgs.push(theArg.argName);
+            freebayesArgs.push(theArg.value);
+          }
+        }
+
+      }
+    }
+  }
+
+
+  const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
+
+  const extraArgs = freebayesArgs;
+
+  const dataDir = dataPath('');
+
+  const args = [
+    alignments, indices, region, refFastaFile, useSuggestedVariants,
+    params.clinvarUrl, params.genomeBuildName, vepREVELFile,
+    samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+    decompose, contigStr, dataDir
+  ];
+
+  await handle(ctx, 'freebayesJointCallV3.sh', args, { ignoreStderr: true });
+});
 
 router.post('/clinvarCountsForGene', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
