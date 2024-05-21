@@ -363,6 +363,196 @@ router.get('/:gene', async (ctx) => {
   });
 });
 
+/*
+ * Return the transcript count by source and build
+ * and return aliases for gene name.
+ */
+router.get('/lookupEntries/:genes', async (ctx) => {
+  let geneWhereClause= ""
+  let idx = 0;
+  geneWhereClause = " g.gene_name in ("
+  ctx.params.genes.split(",").forEach(function(geneName) {
+    if (idx > 0) {
+      geneWhereClause += ","
+    }
+    geneWhereClause += "'" + geneName + "'"
+    idx++;
+  })
+  geneWhereClause +=  ")"
+
+  let stmt = `
+        SELECT
+            g.gene_name,
+            gs.gene_symbol,
+            g.build,
+            g.source,
+            json_array_length(g.transcripts) as transcript_count,
+            GROUP_CONCAT(ga.alias_symbol) AS aliases
+        FROM genes g
+        LEFT JOIN gene_symbol gs
+          ON g.gene_symbol = gs.gene_symbol
+        LEFT JOIN gene_alias ga
+          ON gs.gene_symbol = ga.gene_symbol and ga.alias_symbol != g.gene_name
+        `
+
+  stmt += " WHERE " + geneWhereClause
+  stmt += " GROUP BY g.gene_name, gs.gene_symbol, g.build, g.source";
+
+  console.log(stmt)
+  const db = getDb();
+  return new Promise((resolve, reject) => {
+    db.all(stmt,function(err,rows){
+      if (err) {
+        console.log(err)
+        reject(err);
+      } else {
+        console.log(rows)
+        let gene_map = {}
+	let gene_names = [];
+        rows.forEach(function(row) {
+          let gene_name        = row.gene_name
+          let gene_symbol      = row.gene_symbol
+          let build            = row.build
+          let source           = row.source
+          let transcript_count = row.transcript_count
+          let aliases          = row.aliases
+
+          if (gene_name == null || gene_name == "") {
+            console.log("Warning, invalid gene name")
+            console.log(row)
+          }
+          let gene = null;
+          if (gene_map.hasOwnProperty(gene_name)) {
+            gene = gene_map[gene_name]
+          } else {
+            gene ={   'gene_name': gene_name,
+                      'GRCh37': {'gencode': 0, 'refseq': 0},
+                      'GRCh38': {'gencode': 0, 'refseq': 0},
+                   }
+            gene_map[gene_name] = gene
+
+            // Add the gene_symbol to the aliases (if the gene_symbol is
+            // different than the gene name)
+            if (gene_symbol && gene_symbol != gene_name) {
+              if (aliases == null || aliases == "") {
+                aliases = gene_symbol
+              } else if (!aliases.hasOwnProperty(gene_symbol)) {
+                aliases = gene_symbol + "," + aliases
+              }
+            }
+
+            if (aliases && aliases.length > 0) {
+              gene['aliases'] = aliases
+            }
+
+            if (gene_name && !gene_names.hasOwnProperty(gene_name)) {
+              gene_names.push(gene_name)
+            }
+          }
+
+          // Update the gene with the transcript count for the
+          // row's build and source
+          if (build && source && transcript_count) {
+            gene[build][source] = transcript_count
+          }
+        }) // end of for loop over rows
+
+        let genes = [];
+        gene_names.forEach(function(geneName) {
+         genes.push(gene_map[geneName])
+        })
+        var gene_data = {'genes': genes}
+        ctx.set('Content-Type', 'application/json');
+        ctx.set('Charset', 'utf-8')
+        ctx.set('Cache-Control', 'public,max-age=84600')
+        ctx.body = JSON.stringify(gene_data);
+        resolve();
+      } // end of else (not err)
+    }) // end of db.all
+  }) // end of new Promise
+})
+
+// Asynchronous lookup to support typeahead search based
+// on all or part of gene name
+router.get('/lookup/:gene', async (ctx) => {
+  // searchAlias
+  //   never  - Only search on gene names (known to gencode and refseq)
+  //   always - Search on both gene names and aliases
+  //   last   - Only search aliases if the searching on gene name returned no results
+  // exactMatch
+  //   true            - The gene name must match exactly (use = in WHERE clause)
+  //   false (default) - The gene name starts with or equals the name provided
+  var searchAlias = ctx.query.searchAlias;
+  var exactMatch  = ctx.query.exactMatch && ctx.query.exactMatch == 'true' ? true : false;
+
+  var stmt = "";
+
+  if (searchAlias == 'always') {
+    stmt = `SELECT distinct g.gene_name, ga.alias_symbol AS 'gene_alias'
+        FROM genes g
+        LEFT JOIN gene_symbol gs
+          ON g.gene_symbol = gs.gene_symbol
+        LEFT JOIN gene_alias ga
+          ON gs.gene_symbol = ga.gene_symbol and ga.alias_symbol != g.gene_name`
+    if (exactMatch) {
+      stmt += " WHERE g.gene_name     = " + "\"" + ctx.params.gene + "\""
+      stmt += " OR    ga.alias_symbol = " + "\"" + ctx.params.gene + "\""
+    } else {
+      stmt += " WHERE g.gene_name     like " + "\"" + ctx.params.gene + "%" + "\""
+      stmt += " OR    ga.alias_symbol like " + "\"" + ctx.params.gene + "%" + "\""
+    }
+    stmt += " GROUP BY g.gene_name"
+  } else {
+    stmt = "SELECT distinct g.gene_name from genes g "
+    if (exactMatch) {
+      stmt += " WHERE g.gene_name =    " + "\"" + ctx.params.gene + "\"";
+    } else {
+      stmt += " WHERE g.gene_name like " + "\"" + ctx.params.gene+"%" + "\"";
+    }
+  }
+
+  const db = getDb();
+
+  return new Promise((resolve, reject) => {
+    db.all(stmt,function(err,rows){
+      if (err) {
+        reject(err);
+      } else {
+        if (rows.length == 0 && searchAlias == 'last') {
+          stmt = `SELECT distinct g.gene_name 'gene_name',
+                                  ga.alias_symbol as 'gene_alias'
+                  FROM      genes as g
+                  LEFT JOIN gene_alias as ga on ga.gene_symbol = g.gene_symbol `
+          if (exactMatch) {
+            stmt += " WHERE ga.alias_symbol =    " + "\"" + ctx.params.gene + "\""
+          } else {
+            stmt += " WHERE ga.alias_symbol like " + "\"" + ctx.params.gene + "%" + "\""
+          }
+          db.all(stmt,function(err,rows){
+            if (err) {
+              reject(err);
+            } else {
+              var gene_data = {'genes': rows}
+              ctx.set('Content-Type', 'application/json');
+              ctx.set('Charset', 'utf-8')
+              ctx.set('Cache-Control', 'public,max-age=84600')
+              ctx.body = JSON.stringify(gene_data);
+              resolve();
+            }
+          })
+        } else {
+          var gene_data = {'genes': rows};
+          ctx.set('Content-Type', 'application/json');
+          ctx.set('Charset', 'utf-8')
+          ctx.set('Cache-Control', 'public,max-age=84600')
+          ctx.body = JSON.stringify(gene_data);
+          resolve();
+        }
+      }
+    });
+  });
+});
+
 
 module.exports = router;
 
