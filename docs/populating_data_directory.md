@@ -122,7 +122,7 @@ data/
   md5_reference_cache/
 ```
 
-[0]: https://uswest.ensembl.org/info/docs/tools/vep/script/vep_cache.html#cache
+[0]: https://ensembl.org/info/docs/tools/vep/script/vep_cache.html#cache
 
 [1]: https://github.com/samtools/samtools/blob/develop/misc/seq_cache_populate.pl
 
