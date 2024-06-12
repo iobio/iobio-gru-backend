@@ -73,37 +73,27 @@ to delete the old version and the update directory.
 # Manual downloads
 
 Two of the biggest pieces of the data directory are the VEP cache and the
-MD5 reference cache, both of which are available publicly. If you can download
-them manually from their source locations, it reduces the load on our servers.
-Instructions are below.
-
-Note that you can populate these directories manually, then run the download.py
-script with the same output `data` directory. As long as the file modification
-times match, it will only overwrite missing data from the GemDrive.
+MD5 reference cache, both of which are available publicly. You can download
+these manually if you prefer.
 
 ## VEP cache
 
 gru requires a vep cache installed under `data/vep-cache`. You can follow the
-instructions [here][0] to manually download the appropriate cache data. The
-version we're currently using is **101**. You will need the following files
-(note that these are the indexed versions):
+instructions [here][0] to manually download the appropriate cache data. Using
+VEP version **109** as an example, you would need the following files
+(note that these are the merged versions):
 
-* ftp://ftp.ensembl.org/pub/release-101/variation/indexed_vep_cache/homo_sapiens_refseq_vep_101_GRCh37.tar.gz
-* ftp://ftp.ensembl.org/pub/release-101/variation/indexed_vep_cache/homo_sapiens_refseq_vep_101_GRCh38.tar.gz
-* ftp://ftp.ensembl.org/pub/release-101/variation/indexed_vep_cache/homo_sapiens_vep_101_GRCh37.tar.gz
-* ftp://ftp.ensembl.org/pub/release-101/variation/indexed_vep_cache/homo_sapiens_vep_101_GRCh38.tar.gz
+* https://ftp.ensembl.org/pub/release-109/variation/vep/homo_sapiens_merged_vep_109_GRCh37.tar.gz
+* https://ftp.ensembl.org/pub/release-109/variation/vep/homo_sapiens_merged_vep_109_GRCh38.tar.gz
 
 These need to be decompressed into the following directory structure:
 
 ```
 data/
   vep-cache/
-    homo_sapiens/
-      101_GRCh37/
-      101_GRCh38/
-    homo_sapiens_refseq/
-      101_GRCh37/
-      101_GRCh38/
+    homo_sapiens_merged/
+      109_GRCh37/
+      109_GRCh38/
 ```
 
 ## MD5 Reference Cache
