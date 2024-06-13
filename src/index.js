@@ -656,32 +656,29 @@ async function handle(ctx, scriptName, args, options) {
     }
   });
 
-  return new Promise((resolve, reject) => {
-    proc.on('exit', (exitCode) => {
+  proc.on('exit', (exitCode) => {
 
-      clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
 
-      fs.rmSync(tmpDir, { recursive: true, force: true });
+    fs.rmSync(tmpDir, { recursive: true, force: true });
 
-      if (exitCode !== 0) {
-        const timestamp = new Date().toISOString();
-        console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
-        console.log("stderr:");
-        console.log(stderr);
-        console.log("params:");
-        console.log(ctx.gruParams);
+    if (exitCode !== 0) {
+      const timestamp = new Date().toISOString();
+      console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
+      console.log("stderr:");
+      console.log(stderr);
+      console.log("params:");
+      console.log(ctx.gruParams);
 
-        if (ctx.gruParams._appendErrors === true) {
-          out.write("GRU_ERROR_SENTINEL");
-          out.write(JSON.stringify({
-            stderr,
-          }));
-        }
+      if (ctx.gruParams._appendErrors === true) {
+        out.write("GRU_ERROR_SENTINEL");
+        out.write(JSON.stringify({
+          stderr,
+        }));
       }
+    }
 
-      out.end();
-      resolve();
-    });
+    out.end();
   });
 }
 
