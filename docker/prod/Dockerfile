@@ -86,7 +86,7 @@ RUN curl -LO https://github.com/iobio/bigwig-depther-rs/releases/download/0.1.0/
 EXPOSE 9001
 
 ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js"]
-CMD ["--tools-dir=/iobio-gru-backend/tool_bin", "--data-dir=/gru_data"]
+CMD ["--tools-dir=/tool_bin", "--data-dir=/gru_data"]
 
 # These directories are required for mounting writable singularity sandbox
 # images in the Utah CHPC environment, because of the directories that CHPC
@@ -104,6 +104,5 @@ COPY ./dev_tools/download_clinvar.sh download_clinvar.sh
 RUN ["./download_clinvar.sh"]
 COPY ./ /iobio-gru-backend
 RUN ["mv", "/static", "/iobio-gru-backend"]
-RUN ["mv", "/tool_bin", "/iobio-gru-backend"]
 WORKDIR /iobio-gru-backend
 RUN ["npm", "install"]
