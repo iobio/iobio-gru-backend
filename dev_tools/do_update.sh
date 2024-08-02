@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 old_version=${1}
 new_version=${2}
 
@@ -23,13 +25,25 @@ cp -alf ${old_dir}/* ${new_dir}/
 
 chmod -R +w ${new_dir}
 
+# Copy existing files to a new location. This can be useful for moving large
+# files to a new path using hard links rather than bloating the updates.
+if [ -f ${update_dir}/FILES_TO_COPY ]; then
+        while read copy_cmd; do
+                from=$(echo -e "${copy_cmd}" | cut -f 1)
+                to=$(echo -e "${copy_cmd}" | cut -f 2)
+                mkdir -p $(dirname "${new_dir}/${to}")
+                cp -alf ${new_dir}/${from} ${new_dir}/${to}
+        done < ${update_dir}/FILES_TO_COPY
+fi
+
 while read file; do
-        rm "${new_dir}/${file}"
+        rm -rf "${new_dir}/${file}"
 done < ${update_dir}/FILES_TO_DELETE
 
 cp -alf ${update_dir}/* ${new_dir}/
 
 rm -f "${new_dir}/FILES_TO_DELETE"
+rm -f "${new_dir}/FILES_TO_COPY"
 
 chmod -R -w ${new_dir}
 
