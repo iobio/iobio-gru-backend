@@ -18,13 +18,20 @@ const semver = require('semver');
 
 const MAX_STDERR_LEN = 1048576;
 const MIN_DATA_DIR_VERSION = '1.12.0';
+const VERSION = '1.21.0';
 
 console.log(`Using data directory ${path.resolve(dataPath(''))}`);
-const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString();
+const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString().trim();
 if (semver.lt(dataDirVersion, MIN_DATA_DIR_VERSION)) {
   console.error(`Data directory must be at least version ${MIN_DATA_DIR_VERSION} (found ${dataDirVersion})`);
   process.exit(1);
 }
+
+const statusData = {
+  service_description: "iobio gru backend server",
+  version: VERSION,
+  data_version: dataDirVersion,
+};
 
 
 // Clean up any older tmp files that may have been left behind after a crash
@@ -822,7 +829,7 @@ if (args['--app-dir']) {
   rootRouter.use('/gru', router.routes(), router.allowedMethods());
 
   rootRouter.get('/gru', async (ctx) => {
-    ctx.body = "<h1>I be healthful</h1>";
+    ctx.body = statusData;
   });
 
   rootRouter.get('/*', async (ctx, next) => {
@@ -840,7 +847,7 @@ if (args['--app-dir']) {
 }
 else {
   rootRouter.get('/', async (ctx) => {
-    ctx.body = "<h1>I be healthful</h1>";
+    ctx.body = statusData;
   });
 }
 
