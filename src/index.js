@@ -18,13 +18,20 @@ const semver = require('semver');
 
 const MAX_STDERR_LEN = 1048576;
 const MIN_DATA_DIR_VERSION = '1.12.0';
+const VERSION = '1.21.0';
 
 console.log(`Using data directory ${path.resolve(dataPath(''))}`);
-const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString();
+const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString().trim();
 if (semver.lt(dataDirVersion, MIN_DATA_DIR_VERSION)) {
   console.error(`Data directory must be at least version ${MIN_DATA_DIR_VERSION} (found ${dataDirVersion})`);
   process.exit(1);
 }
+
+const statusData = {
+  service_description: "iobio gru backend server",
+  version: VERSION,
+  data_version: dataDirVersion,
+};
 
 
 // Clean up any older tmp files that may have been left behind after a crash
@@ -733,32 +740,29 @@ async function handle(ctx, scriptName, args, options) {
     }
   });
 
-  return new Promise((resolve, reject) => {
-    proc.on('exit', (exitCode) => {
+  proc.on('exit', (exitCode) => {
 
-      clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
 
-      fs.rmSync(tmpDir, { recursive: true, force: true });
+    fs.rmSync(tmpDir, { recursive: true, force: true });
 
-      if (exitCode !== 0) {
-        const timestamp = new Date().toISOString();
-        console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
-        console.log("stderr:");
-        console.log(stderr);
-        console.log("params:");
-        console.log(ctx.gruParams);
+    if (exitCode !== 0) {
+      const timestamp = new Date().toISOString();
+      console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
+      console.log("stderr:");
+      console.log(stderr);
+      console.log("params:");
+      console.log(ctx.gruParams);
 
-        if (ctx.gruParams._appendErrors === true) {
-          out.write("GRU_ERROR_SENTINEL");
-          out.write(JSON.stringify({
-            stderr,
-          }));
-        }
+      if (ctx.gruParams._appendErrors === true) {
+        out.write("GRU_ERROR_SENTINEL");
+        out.write(JSON.stringify({
+          stderr,
+        }));
       }
+    }
 
-      out.end();
-      resolve();
-    });
+    out.end();
   });
 }
 
@@ -822,7 +826,7 @@ if (args['--app-dir']) {
   rootRouter.use('/gru', router.routes(), router.allowedMethods());
 
   rootRouter.get('/gru', async (ctx) => {
-    ctx.body = "<h1>I be healthful</h1>";
+    ctx.body = statusData;
   });
 
   rootRouter.get('/*', async (ctx, next) => {
@@ -840,7 +844,7 @@ if (args['--app-dir']) {
 }
 else {
   rootRouter.get('/', async (ctx) => {
-    ctx.body = "<h1>I be healthful</h1>";
+    ctx.body = statusData;
   });
 }
 

@@ -66,12 +66,12 @@ fi
 
 
 if [ "$genomeBuildName" == "GRCh38" ]; then
-    toml="/gru_data/vcfanno/GRCh38/annotate_variants.toml"
+    toml="/gru_data/annotations/GRCh38/vcfanno_annotate_variants.toml"
 else
-    toml="/gru_data/vcfanno/GRCh37/annotate_variants.toml"
+    toml="/gru_data/annotations/GRCh37/vcfanno_annotate_variants.toml"
 fi
 
-custom_lua="/gru_data/vcfanno/custom.lua"
+custom_lua="/gru_data/annotations/vcfanno_custom.lua"
 
 vcfanno="vcfanno --lua $custom_lua $toml /dev/stdin"
 
