@@ -104,6 +104,5 @@ COPY ./dev_tools/download_clinvar.sh download_clinvar.sh
 RUN ["./download_clinvar.sh"]
 COPY ./ /iobio-gru-backend
 RUN ["mv", "/static", "/iobio-gru-backend"]
-RUN ["mv", "/tool_bin", "/iobio-gru-backend"]
 WORKDIR /iobio-gru-backend
 RUN ["npm", "install"]
