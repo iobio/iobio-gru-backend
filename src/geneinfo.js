@@ -88,10 +88,10 @@ router.get('/api/gene/:gene', async (ctx) => {
 
             if (rows != null && rows.length > 0) {
               rows[0]['features'] = JSON.parse(rows[0]['features']);
+              done(null,rows[0]);
             } else {
-              rows[0]['features'] = [];
-            }   
-            done(null,rows[0]);
+              done(null, []);
+            }  
           });
 
         },      
@@ -335,14 +335,14 @@ router.get('/:gene', async (ctx) => {
           }        
           db.all(sqlString,function(err,rows){    
 
+            let results = [];
             if (err) reject(err);
 
             if (rows != null && rows.length > 0) {
               rows[0]['features'] = JSON.parse(rows[0]['features']);
-            } else {
-              rows[0]['features'] = [];
-            }   
-            done(null,rows[0]);
+              results = rows[0];
+            }
+            done(null,results);
           });
 
         },      
@@ -386,7 +386,7 @@ router.get('/lookupEntries/:genes', async (ctx) => {
             gs.gene_symbol,
             g.build,
             g.source,
-            json_array_length(g.transcripts) as transcript_count,
+            json(g.transcripts) as transcript_ids,
             GROUP_CONCAT(ga.alias_symbol) AS aliases
         FROM genes g
         LEFT JOIN gene_symbol gs
@@ -397,8 +397,6 @@ router.get('/lookupEntries/:genes', async (ctx) => {
 
   stmt += " WHERE " + geneWhereClause
   stmt += " GROUP BY g.gene_name, gs.gene_symbol, g.build, g.source";
-
-  console.log(stmt)
   const db = getDb();
   return new Promise((resolve, reject) => {
     db.all(stmt,function(err,rows){
@@ -406,7 +404,6 @@ router.get('/lookupEntries/:genes', async (ctx) => {
         console.log(err)
         reject(err);
       } else {
-        console.log(rows)
         let gene_map = {}
 	let gene_names = [];
         rows.forEach(function(row) {
@@ -414,7 +411,7 @@ router.get('/lookupEntries/:genes', async (ctx) => {
           let gene_symbol      = row.gene_symbol
           let build            = row.build
           let source           = row.source
-          let transcript_count = row.transcript_count
+          let transcript_ids   = row.transcript_ids
           let aliases          = row.aliases
 
           if (gene_name == null || gene_name == "") {
@@ -450,10 +447,16 @@ router.get('/lookupEntries/:genes', async (ctx) => {
             }
           }
 
+          let valid_transcript_ids  = [];
+          if (transcript_ids && transcript_ids != '[null]') {
+            valid_transcript_ids = JSON.parse(transcript_ids)
+          }
+
+
           // Update the gene with the transcript count for the
-          // row's build and source
-          if (build && source && transcript_count) {
-            gene[build][source] = transcript_count
+          // row's build and source 
+          if (build && source) {
+            gene[build][source] = valid_transcript_ids.length
           }
         }) // end of for loop over rows
 
