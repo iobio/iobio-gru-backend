@@ -556,6 +556,151 @@ router.get('/lookup/:gene', async (ctx) => {
   });
 });
 
+// Lookup multiple genes and return an array of the genes
+// found, either as the gene name or an alias. Use like
+// in the where clause to perform a case-insensitive search.
+router.get('/api/lookupGenes', async (ctx) => {
+  // genes    - The comma separated list of genes
+  // searchAlias
+  //   never  - Only search on gene names (known to gencode and refseq)
+  //   always - Search on both gene names and aliases
+  //   last   - Only search aliases if the searching on gene name returned no results
+  var genes       = ctx.query.genes;
+  var searchAlias = ctx.query.searchAlias;
+  var stmt = "";
+
+  if (searchAlias == 'always') {
+    stmt = `SELECT distinct g.gene_name, ga.alias_symbol AS 'gene_alias'
+        FROM genes g
+        LEFT JOIN gene_symbol gs
+          ON g.gene_symbol = gs.gene_symbol
+        LEFT JOIN gene_alias ga
+          ON gs.gene_symbol = ga.gene_symbol`
+          
+    let firstTime = true;
+    genes.split(",").forEach(function(geneName) {
+      stmt += firstTime ? ' WHERE ' : ' OR '
+      stmt += " g.gene_name     like " + "\"" + geneName + "\""
+      stmt += " OR    ga.alias_symbol like " + "\"" + geneName + "\""
+      firstTime = false;
+    })
+    stmt += " GROUP BY g.gene_name"
+  } else {
+    stmt = "SELECT distinct g.gene_name from genes g "
+    let firstTime = true;
+    genes.split(",").forEach(function(geneName) {
+      stmt += firstTime ? ' WHERE ' : ' OR '
+      stmt += " g.gene_name     like " + "\"" + geneName + "\""
+      firstTime = false;
+    })
+  }
+  
+  const db = getDb();
+
+  return new Promise((resolve, reject) => {
+    db.all(stmt,function(err,rows){
+      if (err) {
+        reject(err);
+      } else {
+        // Map gene name parameter to result row
+        let inputGeneMap = {};
+        genes.split(',').forEach(function(inputGeneName) {
+          let inputGeneNameUC = inputGeneName.toUpperCase();
+          inputGeneMap[inputGeneNameUC] = false;
+        })
+        rows.forEach(function(row) {
+          let matchedRow = inputGeneMap[row['gene_name'].toUpperCase()]
+          if (matchedRow != null && matchedRow == false) {
+            let result = {'match': true, 'gene_name': row['gene_name']};
+            inputGeneMap[row['gene_name'].toUpperCase()] = result;
+          } else if (row.hasOwnProperty('gene_alias')) {
+            matchedRow = inputGeneMap[row['gene_alias'].toUpperCase()]
+            if (matchedRow != null && matchedRow == false) {
+              let result = {'match': true, 'gene_alias': row['gene_alias']};
+              inputGeneMap[row['gene_alias'].toUpperCase()] = result;;
+            }
+          }
+        })
+        let genesNoMatch = [];
+        genes.split(',').forEach(function(inputGene) {
+          let matchedRow = inputGeneMap[inputGene.toUpperCase()];
+          if (!matchedRow) {
+            genesNoMatch.push(inputGene)
+          }
+        })
+        
+        if (genesNoMatch.length > 0 && searchAlias == 'last') {
+          stmt = `SELECT distinct g.gene_name 'gene_name',
+                                  ga.alias_symbol as 'gene_alias'
+                  FROM      genes as g
+                  LEFT JOIN gene_alias as ga on ga.gene_symbol = g.gene_symbol `
+          
+          let firstTime = true;
+          genesNoMatch.forEach(function(geneName) {
+            stmt += firstTime ? ' WHERE ' : ' OR '
+            stmt += " ga.alias_symbol like " + "\"" + geneName  + "\""
+            firstTime = false;
+          })
+          db.all(stmt,function(err,aliasRows){
+            if (err) {
+              reject(err);
+            } else {
+              // Match the input gene name to the result row for gene alias
+              aliasRows.forEach(function(aliasRow) {
+                let matchedRow = inputGeneMap[aliasRow['gene_alias'].toUpperCase()]
+                if (matchedRow != null && matchedRow == false) {
+                  let result = {'match': true, 'gene_alias': aliasRow['gene_alias']}
+                  inputGeneMap[aliasRow['gene_alias'].toUpperCase()] = result;
+                } 
+              })
+              
+              // Now create a result set for every gene name in the parameter
+              let results = []
+              genes.split(',').forEach(function(inputGene) {
+                let resultRow = inputGeneMap[inputGene.toUpperCase()];
+                if (resultRow) {
+                  resultRow['input_gene_name'] = inputGene;
+                } else {
+                  resultRow = {"input_gene_name": inputGene, "gene_name": '', "gene_alias": '', "match": ''}
+                }
+                results.push(resultRow)
+              })
+              
+             
+              var gene_data = {'genes': results}
+              ctx.set('Content-Type', 'application/json');
+              ctx.set('Charset', 'utf-8')
+              ctx.set('Cache-Control', 'public,max-age=84600')
+              ctx.body = JSON.stringify(gene_data);
+              resolve();
+            }
+          })
+        } else {
+          // Now create a result set for every gene name in the parameter
+          let results = []
+          genes.split(',').forEach(function(inputGene) {
+            let resultRow = inputGeneMap[inputGene.toUpperCase()];
+            if (resultRow) {
+              resultRow['input_gene_name'] = inputGene;
+            } else {
+              resultRow = {'match': false, 'input_gene_name': inputGene};
+            }
+            results.push(resultRow)
+          })
+          
+          
+          var gene_data = {'genes': results}
+          ctx.set('Content-Type', 'application/json');
+          ctx.set('Charset', 'utf-8')
+          ctx.set('Cache-Control', 'public,max-age=84600')
+          ctx.body = JSON.stringify(gene_data);
+          resolve();
+        }
+      }
+    });
+  });
+});
+
 
 module.exports = router;
 
