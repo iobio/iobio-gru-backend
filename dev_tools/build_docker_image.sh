@@ -9,6 +9,7 @@ else
     gru_version=$gru_version_arg
 fi
 
+echo "${gru_version}" > VERSION
 echo "Building version $gru_version"
 
 docker build -t iobio/iobio-gru-backend:${gru_version} -f docker/prod/Dockerfile .
