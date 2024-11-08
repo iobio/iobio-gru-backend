@@ -386,6 +386,9 @@ router.get('/lookupEntries/:genes', async (ctx) => {
             gs.gene_symbol,
             g.build,
             g.source,
+            g.chr,
+            g.start,
+            g.end,
             json(g.transcripts) as transcript_ids,
             GROUP_CONCAT(ga.alias_symbol) AS aliases
         FROM genes g
@@ -396,7 +399,7 @@ router.get('/lookupEntries/:genes', async (ctx) => {
         `
 
   stmt += " WHERE " + geneWhereClause
-  stmt += " GROUP BY g.gene_name, gs.gene_symbol, g.build, g.source";
+  stmt += " GROUP BY g.gene_name, gs.gene_symbol, g.build, g.source, g.chr, g.start, g.end";
   const db = getDb();
   return new Promise((resolve, reject) => {
     db.all(stmt,function(err,rows){
@@ -411,6 +414,9 @@ router.get('/lookupEntries/:genes', async (ctx) => {
           let gene_symbol      = row.gene_symbol
           let build            = row.build
           let source           = row.source
+          let chr              = row.chr
+          let start            = row.start
+          let end              = row.end
           let transcript_ids   = row.transcript_ids
           let aliases          = row.aliases
 
@@ -425,6 +431,10 @@ router.get('/lookupEntries/:genes', async (ctx) => {
             gene ={   'gene_name': gene_name,
                       'GRCh37': {'gencode': 0, 'refseq': 0},
                       'GRCh38': {'gencode': 0, 'refseq': 0},
+                      'gene_coord': {
+                        'GRCh37': {'gencode': {}, 'refseq': {}},
+                        'GRCh38': {'gencode': {}, 'refseq': {}},
+                      }
                    }
             gene_map[gene_name] = gene
 
@@ -457,6 +467,11 @@ router.get('/lookupEntries/:genes', async (ctx) => {
           // row's build and source 
           if (build && source) {
             gene[build][source] = valid_transcript_ids.length
+          }
+          // Update the gene coords 
+          if (build && source) {
+            let coord = {"chr": chr, "start": start, "end": end};
+            gene.gene_coord[build][source] = coord;
           }
         }) // end of for loop over rows
 
