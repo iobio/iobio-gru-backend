@@ -36,9 +36,11 @@ if [ -f ${update_dir}/FILES_TO_COPY ]; then
         done < ${update_dir}/FILES_TO_COPY
 fi
 
-while read file; do
-        rm -rf "${new_dir}/${file}"
-done < ${update_dir}/FILES_TO_DELETE
+if [ -f ${update_dir}/FILES_TO_DELETE ]; then
+        while read file; do
+                rm -rf "${new_dir}/${file}"
+        done < ${update_dir}/FILES_TO_DELETE
+fi
 
 cp -alf ${update_dir}/* ${new_dir}/
 
