@@ -15,6 +15,7 @@ const fs = require('fs');
 const { serveStatic } = require('./static.js');
 const stream = require('stream');
 const semver = require('semver');
+const readline = require('readline');
 
 const MAX_STDERR_LEN = 1048576;
 const MIN_DATA_DIR_VERSION = '1.12.0';
@@ -97,6 +98,74 @@ router.post('/baiReadDepth', async (ctx) => {
 router.post('/craiReadDepth', async (ctx) => {
   const params = JSON.parse(ctx.request.body);
   await handle(ctx, 'craiReadDepth.sh', [params.url]);
+});
+
+router.post('/preciseReadDepth', async (ctx) => {
+
+  const params = JSON.parse(ctx.request.body);
+
+  // +1 because samtools regions are 1-based
+  const numBases = 1 + params.region.end - params.region.start;
+
+  if (numBases > 20000000) {
+    throw new Error("region too large");
+  }
+
+  if (numBases < params.numBins) {
+    throw new Error("end-start must be more than numBins");
+  }
+
+  const samtoolsRegion = genRegionStr(params.region);
+
+  const indexUrl = params.indexUrl ? params.indexUrl : '';
+
+  const scriptPath = path.join(__dirname, '../scripts', 'preciseReadDepth.sh');
+  const args = [
+    params.url,
+    indexUrl,
+    samtoolsRegion,
+    dataPath(''),
+  ];
+  const proc = spawn(scriptPath, args, {});
+
+  const binSize = Math.ceil(numBases / params.numBins);
+
+  const out = stream.PassThrough();
+  ctx.body = out;
+
+  const rl = readline.createInterface({
+    input: proc.stdout,
+  });
+
+  let aggDepth = 0;
+  let binIdx = 0;
+  rl.on('line', (line) => {
+    const parts = line.split('\t');
+    const base = parseInt(parts[1]);
+    const depth = parseInt(parts[2]);
+    aggDepth += depth;
+
+    const baseIdx = base - params.region.start;
+    const assignedBin = Math.floor((baseIdx / numBases) * params.numBins);
+
+    if (assignedBin > binIdx || binIdx === params.numBins - 1) {
+      binIdx += 1;
+
+      const avgDepth = Math.floor(aggDepth / binSize);
+      out.write(`${avgDepth}\n`);
+
+      aggDepth = 0;
+    }
+  });
+
+  proc.on('exit', (exitCode) => {
+
+    //if (binIdx !== params.numBins) {
+    //  throw new Error("bin number mismatch");
+    //}
+
+    out.end();
+  });
 });
 
 router.post('/alignmentStatsStream', async (ctx) => {
@@ -796,7 +865,6 @@ function genRegionsStr(regions, delim = " ") {
   regionStr = regionStr.substring(0, regionStr.length - 1);
   return regionStr;
 }
-
 
 
 
