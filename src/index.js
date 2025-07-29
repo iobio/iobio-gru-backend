@@ -158,12 +158,7 @@ router.post('/preciseReadDepth', async (ctx) => {
     }
   });
 
-  proc.on('exit', (exitCode) => {
-
-    //if (binIdx !== params.numBins) {
-    //  throw new Error("bin number mismatch");
-    //}
-
+  rl.on('close', () => {
     out.end();
   });
 });
