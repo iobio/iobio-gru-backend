@@ -17,6 +17,7 @@ import stream from 'stream';
 import semver from 'semver';
 import readline from 'readline';
 import { fileURLToPath } from 'url';
+import AutoEncrypt from '@small-tech/auto-encrypt';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -883,6 +884,8 @@ if (args['--port']) {
   port = Number(args['--port']);
 }
 
+const enableHttps = args['--enable-https'] === 'true';
+
 
 let rootRouter = router;
 
@@ -970,5 +973,20 @@ app
   }))
   .use(logger)
   .use(rootRouter.routes())
-  .use(rootRouter.allowedMethods())
-  .listen(port);
+  .use(rootRouter.allowedMethods());
+
+if (enableHttps) {
+
+  const domain = args['--domain'];
+
+  const serverOptions = {
+    domains: [domain],
+  };
+
+  const server = AutoEncrypt.https.createServer(serverOptions, app.callback());
+
+  server.listen(port);
+}
+else {
+  app.listen(port);
+}

@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@koa/cors": "^3.0.0",
+    "@small-tech/auto-encrypt": "^4.3.0",
     "async": "^3.2.0",
     "koa": "^2.11.0",
     "koa-bodyparser": "^4.3.0",
