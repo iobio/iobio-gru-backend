@@ -1,18 +1,20 @@
-var async = require('async');
-const Router = require('koa-router');
+import async from 'async';
+import Router from 'koa-router';
+import sqlite3 from 'sqlite3';
+import { dataPath } from './utils.js';
+
 const router = new Router();
 
 let _db;
 function getDb() {
   if (!_db) {
-    const sqlite3 = require('sqlite3').verbose();
-    const { dataPath } = require('./utils.js');
-    _db = new sqlite3.Database(dataPath('geneinfo/gene.iobio.db'));
+    const sqlite3Verbose = sqlite3.verbose();
+    _db = new sqlite3Verbose.Database(dataPath('geneinfo/gene.iobio.db'));
   }
   return _db;
 }
 
-getGenesInClause = function(genes) {
+const getGenesInClause = function(genes) {
   sqlString = " in (";
   let firstTime = true;
   genes.forEach(function(gene) {
@@ -717,5 +719,5 @@ router.get('/api/lookupGenes', async (ctx) => {
 });
 
 
-module.exports = router;
+export default router;
 

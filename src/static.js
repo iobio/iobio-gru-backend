@@ -1,7 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-const { getType } = require('mime');
-
+import fs from 'fs';
+import path from 'path';
+import mimelib from 'mime';
 
 async function serveStatic(ctx, fsPath) {
 
@@ -26,7 +25,7 @@ async function serveStatic(ctx, fsPath) {
       itemsHtml += `  <div><a href='./${name}'>${name}</a></div>\n`;
     }
 
-    resHtml = `
+    const resHtml = `
       <!doctype html>
       <html>
       <head>
@@ -45,6 +44,8 @@ async function serveStatic(ctx, fsPath) {
   }
 
   const rangeHeader = ctx.headers['range'];
+
+  let stream;
 
   // TODO: parse byte range specs properly according to
   // https://tools.ietf.org/html/rfc7233
@@ -76,7 +77,7 @@ async function serveStatic(ctx, fsPath) {
     stream = fs.createReadStream(fsPath);
   }
 
-  const mime = getType(path.extname(fsPath));
+  const mime = mimelib.getType(path.extname(fsPath));
   if (mime) {
     ctx.set('Content-Type', mime);
   }
@@ -93,6 +94,6 @@ async function serveStatic(ctx, fsPath) {
   }
 }
 
-module.exports = {
+export {
   serveStatic,
 };

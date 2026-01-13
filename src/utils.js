@@ -1,4 +1,4 @@
-const path = require('path');
+import path from 'path';
 
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
@@ -32,7 +32,7 @@ function dataPath(name) {
   return absPath;
 }
 
-module.exports = {
+export {
   parseArgs,
   dataPath,
   replaceAll,

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const Koa = require('koa');
-const Router = require('koa-router');
-const cors = require('@koa/cors');
-const { serveStatic } = require('./static.js');
+import path from 'path';
+import Koa from 'koa';
+import Router from 'koa-router';
+import cors from '@koa/cors';
+import { serveStatic } from './static.js';
 
 const router = new Router();
 

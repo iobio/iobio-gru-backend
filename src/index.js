@@ -1,21 +1,25 @@
-const os = require('os');
-const Koa = require('koa');
-const Router = require('koa-router');
-const cors = require('@koa/cors');
-const bodyParser = require('koa-bodyparser');
-const path = require('path');
-const spawn = require('child_process').spawn;
-const process = require('process');
-const gene2PhenoRouter = require('./gene2pheno.js');
-const geneInfoRouter = require('./geneinfo.js');
-const genomeBuildRouter = require('./genomebuild.js');
-const hpoRouter = require('./hpo.js');
-const { parseArgs, dataPath, replaceAll } = require('./utils.js');
-const fs = require('fs');
-const { serveStatic } = require('./static.js');
-const stream = require('stream');
-const semver = require('semver');
-const readline = require('readline');
+import os from 'os';
+import Koa from 'koa';
+import Router from 'koa-router';
+import cors from '@koa/cors';
+import bodyParser from 'koa-bodyparser';
+import path from 'path';
+import { spawn } from 'child_process';
+import process from 'process';
+import gene2PhenoRouter from './gene2pheno.js';
+import geneInfoRouter from './geneinfo.js';
+import genomeBuildRouter from './genomebuild.js';
+import hpoRouter from './hpo.js';
+import { parseArgs, dataPath, replaceAll } from './utils.js';
+import fs from 'fs';
+import { serveStatic } from './static.js';
+import stream from 'stream';
+import semver from 'semver';
+import readline from 'readline';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const MAX_STDERR_LEN = 1048576;
 const MIN_DATA_DIR_VERSION = '1.12.0';
@@ -953,8 +957,8 @@ async function logger(ctx, next) {
   }
 }
 
-const server = new Koa();
-server
+const app = new Koa();
+app
   .use(cors({
     origin: '*',
     maxAge: 86400,

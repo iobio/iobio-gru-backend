@@ -1,10 +1,12 @@
-const Router = require('koa-router');
+import Router from 'koa-router';
+import sqlite3 from 'sqlite3';
+import { dataPath } from './utils.js';
+
 
 let _db;
 function getDb() {
   if (!_db) {
-    const sqlite3 = require('sqlite3').verbose();
-    const { dataPath } = require('./utils.js');
+    const sqlite3Verbose = sqlite3.verbose();
     _db = new sqlite3.Database(dataPath('gene2pheno/gene_to_phenotype.db'));
   }
   return _db;
@@ -148,4 +150,4 @@ router.get('/associations/:gene', async (ctx) => {
 
 
 
-module.exports = router;
+export default router;
