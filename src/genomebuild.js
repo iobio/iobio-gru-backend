@@ -7,7 +7,6 @@ let _db;
 function getDb() {
   if (!_db) {
     const sqlite3Verbose = sqlite3.verbose();
-    _db = new sqlite3.Database(dataPath('gene2pheno/gene_to_phenotype.db'));
     _db = new sqlite3.Database(dataPath('genomebuild/genomebuild.db'));
   }
   return _db;
