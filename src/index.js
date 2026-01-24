@@ -6,8 +6,10 @@ import bodyParser from 'koa-bodyparser';
 import path from 'path';
 import { spawn } from 'child_process';
 import process from 'process';
-import gene2PhenoRouter from './gene2pheno.js';
-import geneInfoRouter from './geneinfo.js';
+//import gene2PhenoRouter from './gene2pheno.js';
+import { gene2PhenoHandler } from './gene2pheno.js';
+//import geneInfoRouter from './geneinfo.js';
+import { createGeneInfoHandler } from './geneinfo.js';
 import genomeBuildRouter from './genomebuild.js';
 import hpoRouter from './hpo.js';
 import { parseArgs, dataPath, replaceAll } from './utils.js';
@@ -18,6 +20,7 @@ import semver from 'semver';
 import readline from 'readline';
 import { fileURLToPath } from 'url';
 import AutoEncrypt from '@small-tech/auto-encrypt';
+import { serve } from '@anderspitman/fetch-handler';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,8 +56,8 @@ for (const entName of tmpFiles) {
 
 const router = new Router();
 
-router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
-router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
+//router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
+//router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
 router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
 router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
 
@@ -884,6 +887,8 @@ if (args['--port']) {
   port = Number(args['--port']);
 }
 
+let koaPort = 9999;
+
 const enableHttps = args['--enable-https'] === 'true';
 
 
@@ -985,8 +990,43 @@ if (enableHttps) {
 
   const server = AutoEncrypt.https.createServer(serverOptions, app.callback());
 
-  server.listen(port);
+  server.listen(koaPort);
 }
 else {
-  app.listen(port);
+  app.listen(koaPort);
 }
+
+const koaHandler = app.callback();
+
+function addCors(handler) {
+  return async (req) => {
+    const res = await handler(req);
+    res.headers.set('Access-Control-Allow-Origin', '*');
+    return res;
+  };
+}
+
+const geneInfoHandler = addCors(createGeneInfoHandler({ prefix: '/geneinfo' }));
+const g2pHandler = addCors(gene2PhenoHandler);
+
+async function handler(req, nodeReq, nodeRes) {
+
+  const url = new URL(req.url);
+
+  if (url.pathname.startsWith('/gene2pheno')) {
+    return g2pHandler(req);
+  }
+  else if (url.pathname.startsWith('/geneinfo')) {
+    return geneInfoHandler(req);
+  }
+  else {
+    koaHandler(nodeReq, nodeRes);
+  }
+  //return new Response("Hi there");
+  return null;
+}
+
+serve({
+  handler,
+  port,
+});
