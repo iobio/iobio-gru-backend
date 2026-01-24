@@ -61,16 +61,17 @@ const router = new Router();
 router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
 router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
 
-router.get('/static/*', async (ctx) => {
-
-  // TODO: Hack to remove prefix when hosting app within gru because I don't
-  // really understand how to do this properly with koa-router
-  const reqPath = ctx.path.startsWith('/gru') ? ctx.path.slice(4) : ctx.path;
-
-  const fsPath = path.join(__dirname, '..', reqPath);
-  await serveStatic(ctx, fsPath);
-  ctx.set('Cache-Control', 'max-age=86400');
-});
+// TODO: port and test embedded app functionality
+//router.get('/static/*', async (ctx) => {
+//
+//  // TODO: Hack to remove prefix when hosting app within gru because I don't
+//  // really understand how to do this properly with koa-router
+//  const reqPath = ctx.path.startsWith('/gru') ? ctx.path.slice(4) : ctx.path;
+//
+//  const fsPath = path.join(__dirname, '..', reqPath);
+//  await serveStatic(ctx, fsPath);
+//  ctx.set('Cache-Control', 'max-age=86400');
+//});
 
 router.get('/gru_data/*', async (ctx) => {
   const fsPath = path.join(dataPath(''), ctx.path.slice(10));
@@ -1013,7 +1014,11 @@ async function handler(req, nodeReq, nodeRes) {
 
   const url = new URL(req.url);
 
-  if (url.pathname.startsWith('/gene2pheno')) {
+  if (url.pathname.startsWith('/static')) {
+    const fsPath = path.join(__dirname, '..', url.pathname);
+    return serveStatic(req, fsPath);
+  }
+  else if (url.pathname.startsWith('/gene2pheno')) {
     return g2pHandler(req);
   }
   else if (url.pathname.startsWith('/geneinfo')) {
