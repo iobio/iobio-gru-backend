@@ -1,4 +1,3 @@
-import Router from 'koa-router';
 import sqlite3 from 'sqlite3';
 import { dataPath } from './utils.js';
 
@@ -12,9 +11,7 @@ function getDb() {
   return _db;
 }
 
-const router = new Router();
-
-router.get('/', async (ctx) => {  
+function genomeBuildHandler(req) {
 
   // Get all species
   var speciesSql = "SELECT * from species";
@@ -118,10 +115,18 @@ router.get('/', async (ctx) => {
                         genomeBuild['aliases'] = aliasMap[genomeBuild.id];
                       });
 
-                      ctx.set('Content-Type', 'application/json');
-                      ctx.set('Charset', 'utf-8')
-                      ctx.body = ctx.query.callback + '(' + JSON.stringify(species) +');';
-                      resolve();
+                      const url = new URL(req.url);
+                      const params = new URLSearchParams(url.search);
+
+                      const body = params.get('callback') + '(' + JSON.stringify(species) +');';
+                      const res = new Response(body, {
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Charset': 'utf-8',
+                        },
+                      });
+
+                      resolve(res);
                     }
                   });
 
@@ -136,6 +141,8 @@ router.get('/', async (ctx) => {
       }
     });
   });
-});
+}
 
-export default router;
+export {
+  genomeBuildHandler,
+};
