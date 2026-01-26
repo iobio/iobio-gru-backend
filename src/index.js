@@ -11,7 +11,8 @@ import { gene2PhenoHandler } from './gene2pheno.js';
 //import geneInfoRouter from './geneinfo.js';
 import { createGeneInfoHandler } from './geneinfo.js';
 import genomeBuildRouter from './genomebuild.js';
-import hpoRouter from './hpo.js';
+//import hpoRouter from './hpo.js';
+import { hpoHandler } from './hpo.js';
 import { parseArgs, dataPath, replaceAll } from './utils.js';
 import fs from 'fs';
 import { serveStatic } from './static.js';
@@ -59,7 +60,7 @@ const router = new Router();
 //router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
 //router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
 router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
-router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
+//router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
 
 // TODO: port and test embedded app functionality
 //router.get('/static/*', async (ctx) => {
@@ -1023,6 +1024,9 @@ async function handler(req, nodeReq, nodeRes) {
   }
   else if (url.pathname.startsWith('/geneinfo')) {
     return geneInfoHandler(req);
+  }
+  else if (url.pathname.startsWith('/hpo/hot/lookup')) {
+    return hpoHandler(req);
   }
   else {
     koaHandler(nodeReq, nodeRes);
