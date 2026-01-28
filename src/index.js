@@ -1069,19 +1069,11 @@ function wrapper(handler) {
     const res = await handler(req, nodeReq, nodeRes);
 
     if (res && res.body) {
-      const { readable, writable } = new TransformStream();
-
-      res.body.pipeTo(writable)
-      .catch((e) => {
-        console.error(e);
-      })
-      .finally(() => {
+      return withCompletedCallback(res, () => {
         timestamp = new Date().toISOString();
         const seconds = (Date.now() - start) / 1000;
         console.log(`${timestamp}\t${params._requestId}\tfinish\t${url.pathname}\t${seconds} seconds`);
       });
-
-      return new Response(readable, res);
     }
     else {
       return res;
@@ -1133,6 +1125,25 @@ function addCors(handler) {
 const geneInfoHandler = addCors(createGeneInfoHandler({ prefix: '/geneinfo' }));
 const g2pHandler = addCors(gene2PhenoHandler);
 
+function withCompletedCallback(res, callback) {
+  if (!res.body) {
+    callback();
+    return res;
+  }
+
+  const { readable, writable } = new TransformStream();
+
+  res.body.pipeTo(writable)
+    .catch((e) => {
+      console.error("Error in withCompletedCallback stream:", e);
+    })
+    .finally(() => {
+      callback();
+    });
+
+  return new Response(readable, res);
+}
+
 async function handler(req, nodeReq, nodeRes) {
 
   const url = new URL(req.url);
@@ -1165,12 +1176,26 @@ async function handler(req, nodeReq, nodeRes) {
     const notes = url.searchParams.get('notes');
     return runScript(req, 'phenotypeExtractor.sh', [notes], { notes });
   }
+  else if (url.pathname === '/clinReport') {
+    // Copy the data into a temporary file and then pass the path. It was failing
+    // before, I'm pretty sure because the file was too large (~3MB) to pass
+    // through the child spawing interface.
+    const body = await req.text();
+    const gruParams = { _requestId: new URL(req.url).searchParams.get('_requestId') };
+    const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'gru-'));
+    const tmpFilePath = path.join(tmpDir, 'clin_report');
+    await fs.promises.writeFile(tmpFilePath, body);
+    const args = [tmpFilePath];
+    const res = runScript(req, 'clinReport.sh', args, gruParams);
+    return withCompletedCallback(res, () => {
+      fs.promises.rm(tmpDir, { recursive: true, force: true });
+    });
+  }
   else {
     if (
       // These endpoints are handled with koa until they can be ported
       // TODO: port these endpoints
       url.pathname === '/preciseReadDepth'
-      || url.pathname === '/clinReport'
     ) {
       koaHandler(nodeReq, nodeRes);
       return null;
