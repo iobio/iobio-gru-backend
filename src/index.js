@@ -1157,10 +1157,13 @@ async function handler(req, nodeReq, nodeRes) {
     const fsPath = path.join(dataPath(''), url.pathname.slice(10));
     return serveStatic(req, fsPath);
   }
-  else if (url.pathname === '/clinphen' || url.pathname === '/phenotypeExtractor') {
-      const notes = url.searchParams.get('notes');
-      const scriptName = url.pathname === '/clinphen' ? 'clinphen.sh' : 'phenotypeExtractor.sh';
-      return runScript(req, scriptName, [notes], { notes });
+  else if (url.pathname === '/clinphen') {
+    const notes = url.searchParams.get('notes');
+    return runScript(req, 'clinphen.sh', [notes], { notes });
+  }
+  else if (url.pathname === '/phenotypeExtractor') {
+    const notes = url.searchParams.get('notes');
+    return runScript(req, 'phenotypeExtractor.sh', [notes], { notes });
   }
   else {
     if (
