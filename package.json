@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@anderspitman/fetch-handler": "^0.4.0",
+    "@anderspitman/fetch-handler": "^0.5.0",
     "@koa/cors": "^3.0.0",
     "@small-tech/auto-encrypt": "^4.3.0",
     "async": "^3.2.0",

@@ -842,6 +842,84 @@ async function handle(ctx, scriptName, args, options) {
   });
 }
 
+function runScript(req, scriptName, args, gruParams, options) {
+
+  const url = new URL(req.url);
+
+  const scriptPath = path.join(__dirname, '../scripts', scriptName);
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gru-'));
+
+  const opts = {cwd: tmpDir, ...options};
+  
+  const proc = spawn(scriptPath, args, opts);
+
+  // Kill process if it runs for more than 5 minutes
+  const MINUTE_MS = 60*1000;
+  const timeoutId = setTimeout(() => {
+    console.error("Timed out. Killing process for request", gruParams._requestId);
+    proc.kill('SIGKILL');
+  }, 5 * MINUTE_MS);
+
+  const { readable, writable } = new TransformStream();
+
+  const writer = writable.getWriter();
+
+  let closed = false;
+
+  req.signal.addEventListener('abort', (evt) => {
+    closed = true;
+    proc.stdout.destroy();
+  });
+
+  proc.stdout.on('data', async (chunk) => {
+    if (!closed) {
+      await writer.write(chunk);
+    }
+  });
+
+  let stderr = "";
+  proc.stderr.on('data', (chunk) => {
+    if (stderr.length < MAX_STDERR_LEN) {
+      stderr += chunk;
+    }
+  });
+
+  proc.on('exit', async (exitCode) => {
+
+    clearTimeout(timeoutId);
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+
+    if (exitCode !== 0) {
+      const timestamp = new Date().toISOString();
+      console.log(`${timestamp}\t${gruParams._requestId}\terror\t${req.url}`);
+      console.log("stderr:");
+      console.log(stderr);
+      console.log("params:");
+      console.log(gruParams);
+
+      if (gruParams._appendErrors === true) {
+        if (!writer.closed) {
+          await writer.write("GRU_ERROR_SENTINEL");
+          await writer.write(JSON.stringify({
+            stderr,
+          }));
+        }
+      }
+    }
+
+    if (!closed) {
+      writer.close();
+    }
+  });
+
+  const res = new Response(readable);
+  res.headers.set('Access-Control-Allow-Origin', '*');
+
+  return res;
+}
+
 function genContigFileStr(refNames) {
   let contigStr = "";
   for (const ref of refNames) {
@@ -968,6 +1046,49 @@ async function logger(ctx, next) {
   }
 }
 
+function wrapper(handler) {
+  return async (req, nodeReq, nodeRes) => {
+
+    const url = new URL(req.url);
+
+    const contentType = req.headers.get('content-type')?.split(';')[0];
+
+    let timestamp = new Date().toISOString();
+
+    if (req.method !== 'POST' || contentType != 'text/plain') {
+      console.log(`${timestamp}\t${req.method}\t${url.pathname}`);
+      const res = await handler(req, nodeReq, nodeRes);
+      return res;
+    }
+
+    const params = new URLSearchParams(url.search);
+
+    const start = Date.now();
+    console.log(`${timestamp}\t${params._requestId}\tstart\t${url.pathname}\t${params._attemptNum}`);
+
+    const res = await handler(req, nodeReq, nodeRes);
+
+    if (res && res.body) {
+      const { readable, writable } = new TransformStream();
+
+      res.body.pipeTo(writable)
+      .catch((e) => {
+        console.error(e);
+      })
+      .finally(() => {
+        timestamp = new Date().toISOString();
+        const seconds = (Date.now() - start) / 1000;
+        console.log(`${timestamp}\t${params._requestId}\tfinish\t${url.pathname}\t${seconds} seconds`);
+      });
+
+      return new Response(readable, res);
+    }
+    else {
+      return res;
+    }
+  };
+}
+
 const app = new Koa();
 app
   .use(cors({
@@ -1031,15 +1152,32 @@ async function handler(req, nodeReq, nodeRes) {
   }
   else if (url.pathname.startsWith('/hpo/hot/lookup')) {
     return hpoHandler(req);
-  }
+  } 
   else {
-    koaHandler(nodeReq, nodeRes);
+    if (
+      url.pathname !== '/alignmentHeader'
+      && url.pathname !== '/variantHeader'
+    ) {
+      koaHandler(nodeReq, nodeRes);
+      return null;
+    }
+
+    const params = await req.json();
+
+    if (url.pathname === '/alignmentHeader') {
+      return runScript(req, 'alignmentHeader.sh', [params.url], params);
+    }
+    else if (url.pathname === '/variantHeader') {
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      return runScript(req, 'variantHeader.sh', [params.url, indexUrl], params);
+    }
   }
-  //return new Response("Hi there");
+
   return null;
 }
 
 serve({
-  handler,
+  handler: wrapper(handler),
+  //handler,
   port,
 });
