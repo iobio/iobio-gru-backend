@@ -7,10 +7,9 @@ import { createGeneInfoHandler } from './geneinfo.js';
 import { genomeBuildHandler } from './genomebuild.js';
 import { hpoHandler } from './hpo.js';
 import { preciseReadDepthHandler } from './precise_read_depth_handler.js';
-import { parseArgs, dataPath, replaceAll, genRegionStr } from './utils.js';
+import { parseArgs, dataPath, replaceAll, genRegionStr, semverLess } from './utils.js';
 import fs from 'node:fs';
 import { serveStatic } from './static.js';
-import semver from 'semver';
 import { fileURLToPath } from 'node:url';
 //import AutoEncrypt from '@small-tech/auto-encrypt';
 import { serve } from '@anderspitman/fetch-handler';
@@ -25,7 +24,7 @@ const gruVersion = fs.readFileSync(path.join(__dirname, '..', 'VERSION')).toStri
 
 console.log(`Using data directory ${path.resolve(dataPath(''))}`);
 const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString().trim();
-if (semver.lt(dataDirVersion, MIN_DATA_DIR_VERSION)) {
+if (semverLess(dataDirVersion, MIN_DATA_DIR_VERSION)) {
   console.error(`Data directory must be at least version ${MIN_DATA_DIR_VERSION} (found ${dataDirVersion})`);
   process.exit(1);
 }

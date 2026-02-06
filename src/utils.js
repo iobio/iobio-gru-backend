@@ -1,5 +1,17 @@
 import path from 'node:path';
 
+function semverLess(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) !== (pb[i] || 0)) {
+      return (pa[i] || 0) < (pb[i] || 0);
+    }
+  }
+  return false;
+}
+
 function genRegionStr(region) {
   return region.refName + ':' + region.start + '-' + region.end;
 }
@@ -37,6 +49,7 @@ function dataPath(name) {
 }
 
 export {
+  semverLess,
   genRegionStr,
   parseArgs,
   dataPath,
