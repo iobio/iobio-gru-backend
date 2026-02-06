@@ -1696,7 +1696,6 @@ function preciseReadDepthHandler(req, params) {
     if (assignedBin > binIdx || binIdx === params.numBins - 1) {
       binIdx += 1;
 
-      console.log(aggDepth, binSize);
       const avgDepth = Math.floor(aggDepth / binSize);
       await writer.write(`${avgDepth}\n`);
 
