@@ -1145,7 +1145,14 @@ async function handler(req, nodeReq, nodeRes) {
 
   const url = new URL(req.url);
 
-  if (url.pathname.startsWith('/static')) {
+  if (url.pathname === '/') {
+    return new Response(JSON.stringify(statusData), {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+  else if (url.pathname.startsWith('/static')) {
     const fsPath = path.join(__dirname, '..', url.pathname);
     return serveStatic(req, fsPath);
   }
@@ -1189,7 +1196,16 @@ async function handler(req, nodeReq, nodeRes) {
     });
   }
   else {
-    const params = await req.json();
+    let params;
+
+    try {
+      params = await req.json();
+    }
+    catch (e) {
+      return new Response("Invalid JSON payload", {
+        status: 400,
+      });
+    }
 
     if (url.pathname === '/viewAlignments') {
       const args = [params.url];
@@ -1634,13 +1650,11 @@ async function handler(req, nodeReq, nodeRes) {
     else if (url.pathname === '/preciseReadDepth') {
       return preciseReadDepthHandler(req, params);
     }
-    else {
-      koaHandler(nodeReq, nodeRes);
-      return null;
-    }
   }
 
-  return null;
+  return new Response("Invalid request", {
+    status: 400,
+  });
 }
 
 serve({
