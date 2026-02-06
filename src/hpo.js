@@ -1,4 +1,3 @@
-import async from 'async';
 import sqlite3 from 'sqlite3';
 import { dataPath } from './utils.js';
 

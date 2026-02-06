@@ -1,4 +1,3 @@
-import async from 'async';
 //import Router from 'koa-router';
 import sqlite3 from 'sqlite3';
 import { dataPath } from './utils.js';
@@ -462,85 +461,72 @@ function createGeneInfoHandler(opt) {
 }
 
 // v2 (cacheable) endpoints
-function geneinfo(gene, params) {  
-  var source = params.source;
-  var species = params.species;
-  var build = params.build;
-  if (source == null || source == '') {
-    source = 'gencode';
-  } 
-  var geneSqlString = "SELECT * from genes where gene_name like \""+gene+"\" ";
-  geneSqlString    += " AND source = \""+source+"\"";
-  if (species != null && species != "") {
-    geneSqlString  += " AND species = \""+species+"\"";
-  }
-  if (build != null && build != "") {
-    geneSqlString  += " AND build = \""+build+"\"";
-  }
-
+async function geneinfo(gene, params) {
+  let source = params.source || 'gencode';
+  const { species, build } = params;
   const db = getDb();
 
-  return new Promise((resolve, reject) => {
-    db.all(geneSqlString,function(err,rows){ 
-      var gene_data = {};
-      var transcript_ids = [];
-      if (rows != null && rows.length > 0) {
-        for (var i = 0; i < rows.length; i++) {
-          gene_data = rows[i];    
-          if (gene_data.hasOwnProperty("transcripts") && gene_data.transcripts != null && gene_data.transcripts != "") {
-            transcript_ids = transcript_ids.concat(JSON.parse(gene_data['transcripts']));
-          }       
-        }
-      } 
-          
-      async.map(transcript_ids,      
-        function(id, done){      
-          var source = params.source; 
-          if (source == null || source == '') {
-            source = 'gencode';
-          } 
-          var sqlString = "";
-          sqlString =   "SELECT t.* from transcripts t ";
-          sqlString +=  "WHERE t.transcript_id=\""+id+"\" "
-          sqlString +=  " AND t.source = \""+source+"\"";
-          if (species != null && species != "") {
-            sqlString  += " AND t.species = \""+species+"\"";
-          }
-          if (build != null && build != "") {
-            sqlString  += " AND t.build = \""+build+"\"";
-          }        
-          db.all(sqlString,function(err,rows){    
+  let geneSqlString = `SELECT * from genes where gene_name like "${gene}" `;
+  geneSqlString += ` AND source = "${source}"`;
+  if (species) geneSqlString += ` AND species = "${species}"`;
+  if (build) geneSqlString += ` AND build = "${build}"`;
 
-            let results = [];
-            if (err) reject(err);
-
-            if (rows != null && rows.length > 0) {
-              rows[0]['features'] = JSON.parse(rows[0]['features']);
-              results = rows[0];
-            }
-            done(null,results);
-          });
-
-        },      
-        function(err, results){        
-
-          if (err) reject(err);
-
-          gene_data['transcripts'] = results;
-
-          const body = JSON.stringify([gene_data]);
-          const res = new Response(body, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Charset': 'utf-8',
-              'Cache-Control': 'public,max-age=84600',
-            },
-          });
-
-          resolve(res);
-        }
-      );
+  // Promisified db.all
+  const dbAll = (sql) =>
+    new Promise((resolve, reject) => {
+      db.all(sql, (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows);
+      });
     });
+
+  const geneRows = await dbAll(geneSqlString);
+
+  let gene_data = {};
+  let transcript_ids = [];
+
+  if (geneRows && geneRows.length > 0) {
+    for (const row of geneRows) {
+      gene_data = row;
+      if (row.transcripts) {
+        transcript_ids = transcript_ids.concat(
+          JSON.parse(row.transcripts)
+        );
+      }
+    }
+  }
+
+  // Fetch transcripts in parallel
+  const transcripts = await Promise.all(
+    transcript_ids.map(async (id) => {
+      let sqlString = `
+        SELECT t.* from transcripts t
+        WHERE t.transcript_id="${id}"
+        AND t.source="${source}"
+      `;
+      if (species) sqlString += ` AND t.species="${species}"`;
+      if (build) sqlString += ` AND t.build="${build}"`;
+
+      const rows = await dbAll(sqlString);
+
+      if (rows && rows.length > 0) {
+        rows[0].features = JSON.parse(rows[0].features);
+        return rows[0];
+      }
+
+      return {};
+    })
+  );
+
+  gene_data.transcripts = transcripts;
+
+  const body = JSON.stringify([gene_data]);
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Charset': 'utf-8',
+      'Cache-Control': 'public,max-age=84600',
+    },
   });
 }
 
