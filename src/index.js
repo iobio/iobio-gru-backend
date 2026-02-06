@@ -3,8 +3,8 @@ import Koa from 'koa';
 import Router from 'koa-router';
 import cors from '@koa/cors';
 import bodyParser from 'koa-bodyparser';
-import path from 'path';
-import { spawn } from 'child_process';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
 import process from 'process';
 //import gene2PhenoRouter from './gene2pheno.js';
 import { gene2PhenoHandler } from './gene2pheno.js';
@@ -14,7 +14,8 @@ import { createGeneInfoHandler } from './geneinfo.js';
 import { genomeBuildHandler } from './genomebuild.js';
 //import hpoRouter from './hpo.js';
 import { hpoHandler } from './hpo.js';
-import { parseArgs, dataPath, replaceAll } from './utils.js';
+import { preciseReadDepthHandler } from './precise_read_depth_handler.js';
+import { parseArgs, dataPath, replaceAll, genRegionStr } from './utils.js';
 import fs from 'fs';
 import { serveStatic } from './static.js';
 import stream from 'stream';
@@ -928,10 +929,6 @@ function genContigFileStr(refNames) {
   return contigStr;
 }
 
-function genRegionStr(region) {
-  return region.refName + ':' + region.start + '-' + region.end;
-}
-
 function genRegionsStr(regions, delim = " ") {
   let regionStr = "";
   for (const region of regions) {
@@ -1644,70 +1641,6 @@ async function handler(req, nodeReq, nodeRes) {
   }
 
   return null;
-}
-
-function preciseReadDepthHandler(req, params) {
-
-  // +1 because samtools regions are 1-based
-  const numBases = 1 + params.region.end - params.region.start;
-
-  if (numBases > 20000000) {
-    throw new Error("region too large");
-  }
-
-  if (numBases < params.numBins) {
-    throw new Error("end-start must be more than numBins");
-  }
-
-  const samtoolsRegion = genRegionStr(params.region);
-
-  const indexUrl = params.indexUrl ? params.indexUrl : '';
-
-  const scriptPath = path.join(__dirname, '../scripts', 'preciseReadDepth.sh');
-  const args = [
-    params.url,
-    indexUrl,
-    samtoolsRegion,
-    dataPath(''),
-  ];
-  const proc = spawn(scriptPath, args, {});
-
-  const binSize = Math.ceil(numBases / params.numBins);
-
-  const { readable, writable } = new TransformStream();
-
-  const writer = writable.getWriter();
-
-  const rl = readline.createInterface({
-    input: proc.stdout,
-  });
-
-  let aggDepth = 0;
-  let binIdx = 0;
-  rl.on('line', async (line) => {
-    const parts = line.split('\t');
-    const base = parseInt(parts[1]);
-    const depth = parseInt(parts[2]);
-    aggDepth += depth;
-
-    const baseIdx = base - params.region.start;
-    const assignedBin = Math.floor((baseIdx / numBases) * params.numBins);
-
-    if (assignedBin > binIdx || binIdx === params.numBins - 1) {
-      binIdx += 1;
-
-      const avgDepth = Math.floor(aggDepth / binSize);
-      await writer.write(`${avgDepth}\n`);
-
-      aggDepth = 0;
-    }
-  });
-
-  rl.on('close', async () => {
-    await writer.close();
-  });
-
-  return new Response(readable);
 }
 
 serve({

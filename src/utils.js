@@ -1,5 +1,9 @@
 import path from 'path';
 
+function genRegionStr(region) {
+  return region.refName + ':' + region.start + '-' + region.end;
+}
+
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
@@ -33,6 +37,7 @@ function dataPath(name) {
 }
 
 export {
+  genRegionStr,
   parseArgs,
   dataPath,
   replaceAll,
