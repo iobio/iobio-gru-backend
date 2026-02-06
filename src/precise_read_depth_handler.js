@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import readline from 'node:readline';
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'node:url';
 
 import { genRegionStr, dataPath } from './utils.js';
 

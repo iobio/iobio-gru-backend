@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 
 function genRegionStr(region) {
   return region.refName + ':' + region.start + '-' + region.end;
