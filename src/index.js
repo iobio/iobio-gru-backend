@@ -117,7 +117,7 @@ function runScript(req, scriptName, args, gruParams, options) {
       console.log(gruParams);
 
       if (gruParams._appendErrors === true) {
-        if (!writer.closed) {
+        if (!closed) {
           await writer.write("GRU_ERROR_SENTINEL");
           await writer.write(JSON.stringify({
             stderr,
