@@ -62,6 +62,7 @@ for (const entName of tmpFiles) {
 function runScript(req, scriptName, args, gruParams, options) {
 
   const url = new URL(req.url);
+  const requestId = gruParams?._requestId || '';
 
   const scriptPath = path.join(__dirname, '../scripts', scriptName);
 
@@ -74,7 +75,7 @@ function runScript(req, scriptName, args, gruParams, options) {
   // Kill process if it runs for more than 5 minutes
   const MINUTE_MS = 60*1000;
   const timeoutId = setTimeout(() => {
-    console.error("Timed out. Killing process for request", gruParams._requestId);
+    console.error("Timed out. Killing process for request", requestId);
     proc.kill('SIGKILL');
   }, 5 * MINUTE_MS);
 
@@ -110,7 +111,7 @@ function runScript(req, scriptName, args, gruParams, options) {
 
     if (exitCode !== 0) {
       const timestamp = new Date().toISOString();
-      console.log(`${timestamp}\t${gruParams._requestId}\terror\t${req.url}`);
+      console.log(`${timestamp}\t${requestId}\terror\t${req.url}`);
       console.log("stderr:");
       console.log(stderr);
       console.log("params:");
@@ -245,8 +246,8 @@ function wrapper(handler) {
       bodyParams = {};
     }
 
-    const requestId = bodyParams._requestId || url.searchParams.get('_requestId') || '';
-    const attemptNum = bodyParams._attemptNum || url.searchParams.get('_attemptNum') || '';
+    const requestId = bodyParams._requestId || '';
+    const attemptNum = bodyParams._attemptNum || '';
 
     const start = Date.now();
     console.log(`${timestamp}\t${requestId}\tstart\t${url.pathname}\t${attemptNum}`);
@@ -359,7 +360,7 @@ async function handler(req) {
     // before, I'm pretty sure because the file was too large (~3MB) to pass
     // through the child spawing interface.
     const body = await req.text();
-    const gruParams = { _requestId: new URL(req.url).searchParams.get('_requestId') };
+    const gruParams = {};
     const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'gru-'));
     const tmpFilePath = path.join(tmpDir, 'clin_report');
     await fs.promises.writeFile(tmpFilePath, body);
