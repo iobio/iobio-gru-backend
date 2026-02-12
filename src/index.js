@@ -382,432 +382,432 @@ async function handler(req, nodeReq, nodeRes) {
       return runScript(req, 'alignmentHeader.sh', [params.url], params);
     }
     else if (url.pathname === '/baiReadDepth') {
-        return runScript(req, 'baiReadDepth.sh', [params.url], params);
+      return runScript(req, 'baiReadDepth.sh', [params.url], params);
     }
     else if (url.pathname === '/craiReadDepth') {
-        return runScript(req, 'craiReadDepth.sh', [params.url], params);
+      return runScript(req, 'craiReadDepth.sh', [params.url], params);
     }
     else if (url.pathname === '/alignmentStatsStream') {
-        const samtoolsRegions = genRegionsStr(params.regions);
-        const bamstatsRegions = JSON.stringify(params.regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
-        const indexUrl = params.indexUrl ? params.indexUrl : '';
-        const args = [
-            params.url,
-            indexUrl,
-            samtoolsRegions,
-            bamstatsRegions,
-            dataPath(''),
-        ];
-        return runScript(req, 'alignmentStatsStream.sh', args, params, { ignoreStderr: true });
+      const samtoolsRegions = genRegionsStr(params.regions);
+      const bamstatsRegions = JSON.stringify(params.regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const args = [
+        params.url,
+        indexUrl,
+        samtoolsRegions,
+        bamstatsRegions,
+        dataPath(''),
+      ];
+      return runScript(req, 'alignmentStatsStream.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/bedRegion') {
-        const url = params.url;
-        const indexUrl = params.indexUrl ? params.indexUrl : '';
-        const region = genRegionStr(params.region);
-        return runScript(req, 'bedRegion.sh', [params.url, indexUrl, region], params);
+      const url = params.url;
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const region = genRegionStr(params.region);
+      return runScript(req, 'bedRegion.sh', [params.url, indexUrl, region], params);
     }
     else if (url.pathname === '/bigWigDepther') {
-        const url = params.url;
-        const region = genRegionStr(params.region);
-        return runScript(req, 'bigWigDepther.sh', ["--url", params.url, "--region", region], params);
+      const url = params.url;
+      const region = genRegionStr(params.region);
+      return runScript(req, 'bigWigDepther.sh', ["--url", params.url, "--region", region], params);
     }
     else if (url.pathname === '/getReferenceSequence') {
-        const refFastaPath = dataPath(params.fastaPath);
-        const region = genRegionStr(params.region);
-        return runScript(req, 'getReferenceSequence.sh', [refFastaPath, region], params);
+      const refFastaPath = dataPath(params.fastaPath);
+      const region = genRegionStr(params.region);
+      return runScript(req, 'getReferenceSequence.sh', [refFastaPath, region], params);
     }
     else if (url.pathname === '/variantHeader') {
       const indexUrl = params.indexUrl ? params.indexUrl : '';
       return runScript(req, 'variantHeader.sh', [params.url, indexUrl], params);
     }
     else if (url.pathname === '/getChromosomes') {
-        const indexUrl = params.indexUrl ? params.indexUrl : '';
-        return runScript(req, 'getChromosomes.sh', [params.url, indexUrl], params);
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      return runScript(req, 'getChromosomes.sh', [params.url, indexUrl], params);
     }
     else if (url.pathname === '/vcfReadDepth') {
-        return runScript(req, 'vcfReadDepth.sh', [params.url], params);
+      return runScript(req, 'vcfReadDepth.sh', [params.url], params);
     }
     else if (url.pathname === '/alignmentCoverage') {
-        const url = params.url;
-        const indexUrl = params.indexUrl ? params.indexUrl : '';
-        const samtoolsRegion = params.samtoolsRegion;
-        const maxPoints = params.maxPoints;
-        const coverageRegions = params.coverageRegions;
-        const qualityCutoff = params.qualityCutoff;
-        const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
-        const spanningRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
+      const url = params.url;
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const samtoolsRegion = params.samtoolsRegion;
+      const maxPoints = params.maxPoints;
+      const coverageRegions = params.coverageRegions;
+      const qualityCutoff = params.qualityCutoff;
+      const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
+      const spanningRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
 
-        const coverageRegionsArg = coverageRegions.length === 0 ? '' :
-        coverageRegions
-            .filter(d => d.name && d.start && d.end)
-            .map(d => d.name + ":" + d.start + ':' + d.end)
-            .join(',');
+      const coverageRegionsArg = coverageRegions.length === 0 ? '' :
+      coverageRegions
+        .filter(d => d.name && d.start && d.end)
+        .map(d => d.name + ":" + d.start + ':' + d.end)
+        .join(',');
 
-        const maxPointsArg = maxPoints;
+      const maxPointsArg = maxPoints;
 
-        const args = [
-            url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg,
-            coverageRegionsArg, qualityCutoff, dataPath(''),
-        ];
-        return runScript(req, 'alignmentCoverage.sh', args, params, { ignoreStderr: true });
+      const args = [
+        url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg,
+        coverageRegionsArg, qualityCutoff, dataPath(''),
+      ];
+      return runScript(req, 'alignmentCoverage.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/geneCoverage') {
-        const url = params.url;
-        const indexUrl = params.indexUrl ? params.indexUrl : '';
-        const refName = params.refName;
-        const geneName = params.geneName;
-        const regionStart = params.regionStart;
-        const regionEnd = params.regionEnd;
-        const regions = params.regions;
+      const url = params.url;
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const refName = params.refName;
+      const geneName = params.geneName;
+      const regionStart = params.regionStart;
+      const regionEnd = params.regionEnd;
+      const regions = params.regions;
 
-        const dataDir = dataPath('');
+      const dataDir = dataPath('');
 
-        // Format params
-        let regionStr = "#" + geneName + "\n";
-        regions.forEach(function(region) {
-            regionStr += refName + ":" + region.start + "-" + region.end + "\n";
-        });
-        const samtoolsRegionArg = refName + ':' + regionStart + '-' + regionEnd;
-        const args = [url, indexUrl, samtoolsRegionArg, regionStr, dataDir];
-        return runScript(req, 'geneCoverage.sh', args, params, { ignoreStderr: true });
+      // Format params
+      let regionStr = "#" + geneName + "\n";
+      regions.forEach(function(region) {
+        regionStr += refName + ":" + region.start + "-" + region.end + "\n";
+      });
+      const samtoolsRegionArg = refName + ':' + regionStart + '-' + regionEnd;
+      const args = [url, indexUrl, samtoolsRegionArg, regionStr, dataDir];
+      return runScript(req, 'geneCoverage.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/normalizeVariants') {
-        const vcfUrl = params.vcfUrl;
-        const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-        const refName = params.refName;
-        const regions = params.regions;
-        const contigStr = decodeURIComponent(params.contigStr);
-        const refFastaFile = dataPath(decodeURIComponent(params.refFastaFile));
+      const vcfUrl = params.vcfUrl;
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const refName = params.refName;
+      const regions = params.regions;
+      const contigStr = decodeURIComponent(params.contigStr);
+      const refFastaFile = dataPath(decodeURIComponent(params.refFastaFile));
 
-        // Format params
-        let regionParm = "";
-        regions.forEach(function(region) {
-            if (regionParm.length > 0) {
-                regionParm += " ";
-            }
-            regionParm += region.refName + ":" + region.start + "-" + region.end;
-        });
-        const args = [vcfUrl, tbiUrl, refName, regionParm, contigStr, refFastaFile];
-        return runScript(req, 'normalizeVariants.sh', args, params);
+      // Format params
+      let regionParm = "";
+      regions.forEach(function(region) {
+        if (regionParm.length > 0) {
+          regionParm += " ";
+        }
+        regionParm += region.refName + ":" + region.start + "-" + region.end;
+      });
+      const args = [vcfUrl, tbiUrl, refName, regionParm, contigStr, refFastaFile];
+      return runScript(req, 'normalizeVariants.sh', args, params);
     }
     else if (url.pathname === '/getClinvarVariants') {
-        const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-        const contigStr = genContigFileStr(params.refNames);
-        const regionStr = genRegionsStr(params.regions);
-        const refFastaFile = dataPath(params.refFastaFile);
-        const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
-        const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
-        const gnomadHeaderFile = dataPath('gnomad_header.txt');
-        const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+      const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+      const gnomadHeaderFile = dataPath('gnomad_header.txt');
+      const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
 
-        const args = [
-            params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile,
-            params.genomeBuildName, gnomadUrl, gnomadRegionStr,
-            gnomadHeaderFile, gnomadRenameChr, params.clinSigFilterPhrase
-        ];
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile,
+        params.genomeBuildName, gnomadUrl, gnomadRegionStr,
+        gnomadHeaderFile, gnomadRenameChr, params.clinSigFilterPhrase
+      ];
 
-        return runScript(req, 'getClinvarVariants.sh', args, params, { ignoreStderr: true });
+      return runScript(req, 'getClinvarVariants.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/getClinvarVariantsV2') {
-        const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-        const contigStr = genContigFileStr(params.refNames);
-        const regionStr = genRegionsStr(params.regions);
-        const refFastaFile = dataPath(params.refFastaFile);
-        const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
 
-        const args = [
-            params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile,
-            params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
-        ];
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile,
+        params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
+      ];
 
-        return runScript(req, 'getClinvarVariantsV2.sh', args, params, { ignoreStderr: true });
+      return runScript(req, 'getClinvarVariantsV2.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/annotateVariants') {
-        const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-        const contigStr = genContigFileStr(params.refNames);
-        const regionStr = genRegionsStr(params.regions);
-        const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
-        const refFastaFile = dataPath(params.refFastaFile);
-        const vepCacheDir = dataPath('vep-cache');
-        const vepREVELFile = dataPath(params.vepREVELFile);
-        const vepPluginDir = dataPath('vep-cache/Plugins');
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+      const refFastaFile = dataPath(params.refFastaFile);
+      const vepCacheDir = dataPath('vep-cache');
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const vepPluginDir = dataPath('vep-cache/Plugins');
 
-        const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
-        const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
-        const gnomadHeaderFile = dataPath('gnomad_header.txt');
-        const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
+      const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+      const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+      const gnomadHeaderFile = dataPath('gnomad_header.txt');
+      const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
 
-        const args = [
-            params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-            refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
-            vepPluginDir, params.hgvsNotation, params.getRsId, gnomadUrl,
-            gnomadRegionStr, gnomadHeaderFile, params.decompose, gnomadRenameChr
-        ];
-        return runScript(req, 'annotateVariants.sh', args, params, { ignoreStderr: true });
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
+        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadUrl,
+        gnomadRegionStr, gnomadHeaderFile, params.decompose, gnomadRenameChr
+      ];
+      return runScript(req, 'annotateVariants.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/annotateVariantsV2') {
-        const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-        const contigStr = genContigFileStr(params.refNames);
-        const regionStr = genRegionsStr(params.regions);
-        const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
-        const refFastaFile = dataPath(params.refFastaFile);
-        const vepCacheDir = dataPath('vep-cache');
-        const vepREVELFile = dataPath(params.vepREVELFile);
-        const vepPluginDir = dataPath('vep-cache/Plugins');
-        const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+      const refFastaFile = dataPath(params.refFastaFile);
+      const vepCacheDir = dataPath('vep-cache');
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const vepPluginDir = dataPath('vep-cache/Plugins');
+      const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
 
-        const args = [
-            params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-            refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
-            vepPluginDir, params.hgvsNotation, params.getRsId, gnomadMergeAnnots,
-            params.decompose
-        ];
-        return runScript(req, 'annotateVariantsV2.sh', args, params, { ignoreStderr: true });
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
+        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadMergeAnnots,
+        params.decompose
+      ];
+      return runScript(req, 'annotateVariantsV2.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/annotateVariantsV3') {
-        const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-        const contigStr = genContigFileStr(params.refNames);
-        const regionStr = genRegionsStr(params.regions);
-        const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
-        const refFastaFile = dataPath(params.refFastaFile);
-        const vepCacheDir = dataPath('vep-cache');
-        const vepREVELFile = dataPath(params.vepREVELFile);
-        const vepPluginDir = dataPath('vep-cache/Plugins');
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+      const refFastaFile = dataPath(params.refFastaFile);
+      const vepCacheDir = dataPath('vep-cache');
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const vepPluginDir = dataPath('vep-cache/Plugins');
 
-        const args = [
-            params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-            refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile,
-            vepPluginDir, params.hgvsNotation, params.getRsId, params.decompose
-        ];
-        return runScript(req, 'annotateVariantsV3.sh', args, params, { ignoreStderr: true });
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile,
+        vepPluginDir, params.hgvsNotation, params.getRsId, params.decompose
+      ];
+      return runScript(req, 'annotateVariantsV3.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/annotateEnrichmentCounts') {
-        const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-        const contigStr = genContigFileStr(params.refNames);
-        const regionStr = genRegionsStr(params.regions);
-        const refFastaFile = dataPath(params.refFastaFile);
-        const filterArgs = params.filterArgs ? params.filterArgs : '';
-        const experStr = params.expIdString ? params.expIdString : '';
-        const controlStr = params.controlIdString ? params.controlIdString : '';
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const filterArgs = params.filterArgs ? params.filterArgs : '';
+      const experStr = params.expIdString ? params.expIdString : '';
+      const controlStr = params.controlIdString ? params.controlIdString : '';
 
-        const args = [
-            params.vcfUrl, tbiUrl, regionStr, contigStr,
-            refFastaFile, params.filterArgs,
-            experStr, controlStr
-        ];
-        return runScript(req, 'annotateEnrichmentCounts.sh', args, params, { ignoreStderr: true });
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr,
+        refFastaFile, params.filterArgs,
+        experStr, controlStr
+      ];
+      return runScript(req, 'annotateEnrichmentCounts.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/annotateSomaticVariantsVep') {
-        const vepCacheDir = dataPath('vep-cache');
-        let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
-        if (params.genomeBuildName === 'GRCh38') {
-            refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
-        }
-        const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, params.genomeBuildName, vepCacheDir, refFastaFile];
-        return runScript(req, 'annotateSomaticVariantsVep.sh', args, params, { ignoreStderr: true });
+      const vepCacheDir = dataPath('vep-cache');
+      let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
+      if (params.genomeBuildName === 'GRCh38') {
+        refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
+      }
+      const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, params.genomeBuildName, vepCacheDir, refFastaFile];
+      return runScript(req, 'annotateSomaticVariantsVep.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/annotateSomaticVariantsBcsq') {
-        let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
-        let gffFile = '/iobio-gru-backend/static/ensembl/GRCh37/geneSet37.gff3.gz';
+      let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
+      let gffFile = '/iobio-gru-backend/static/ensembl/GRCh37/geneSet37.gff3.gz';
 
-        if (params.genomeBuildName === 'GRCh38') {
-            refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
-            gffFile = '/iobio-gru-backend/static/ensembl/GRCh38/geneSet38.gff3.gz';
-        }
-        const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, refFastaFile, gffFile];
-        return runScript(req, 'annotateSomaticVariantsBcsq.sh', args, params, { ignoreStderr: true });
+      if (params.genomeBuildName === 'GRCh38') {
+        refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
+        gffFile = '/iobio-gru-backend/static/ensembl/GRCh38/geneSet38.gff3.gz';
+      }
+      const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, refFastaFile, gffFile];
+      return runScript(req, 'annotateSomaticVariantsBcsq.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/freebayesJointCall') {
-        const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
-        const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
-        const region = genRegionStr(params.region);
-        const vepREVELFile = dataPath(params.vepREVELFile);
-        const refFastaFile = dataPath(params.refFastaFile);
-        const contigStr = genContigFileStr(params.refNames);
-        const samplesFileStr = params.sampleNames.join('\n');
+      const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
+      const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
+      const region = genRegionStr(params.region);
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const contigStr = genContigFileStr(params.refNames);
+      const samplesFileStr = params.sampleNames.join('\n');
 
-        const vepCacheDir = dataPath('vep-cache');
-        const vepPluginDir = dataPath('vep-cache/Plugins');
+      const vepCacheDir = dataPath('vep-cache');
+      const vepPluginDir = dataPath('vep-cache/Plugins');
 
-        const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
-        const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
-        const gnomadHeaderFile = dataPath('gnomad_header.txt');
-        const decompose = params.decompose ? params.decompose : '';
+      const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+      const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+      const gnomadHeaderFile = dataPath('gnomad_header.txt');
+      const decompose = params.decompose ? params.decompose : '';
 
-        const fbArgs = params.fbArgs;
-        const freebayesArgs = [];
-        if (fbArgs) {
-            for (var key in fbArgs) {
-                var theArg = fbArgs[key];
-                if (theArg.hasOwnProperty('argName')) {
-                    if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
-                        if (theArg.value && theArg.value == true) {
-                            freebayesArgs.push(theArg.argName);
-                        }
-                    } else {
-                        if (theArg.value && theArg.value != '') {
-                            freebayesArgs.push(theArg.argName);
-                            freebayesArgs.push(theArg.value);
-                        }
-                    }
-                }
+      const fbArgs = params.fbArgs;
+      const freebayesArgs = [];
+      if (fbArgs) {
+        for (var key in fbArgs) {
+          var theArg = fbArgs[key];
+          if (theArg.hasOwnProperty('argName')) {
+            if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
+              if (theArg.value && theArg.value == true) {
+                  freebayesArgs.push(theArg.argName);
+              }
+            } else {
+              if (theArg.value && theArg.value != '') {
+                freebayesArgs.push(theArg.argName);
+                freebayesArgs.push(theArg.value);
+              }
             }
+          }
         }
-        const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
-        const extraArgs = freebayesArgs;
-        const args = [
-            alignments, indices, region, refFastaFile, useSuggestedVariants,
-            params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
-            samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
-            gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose, dataPath(''),
-        ];
-        return runScript(req, 'freebayesJointCall.sh', args, params, { ignoreStderr: true });
+      }
+      const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
+      const extraArgs = freebayesArgs;
+      const args = [
+        alignments, indices, region, refFastaFile, useSuggestedVariants,
+        params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
+        samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+        gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose, dataPath(''),
+      ];
+      return runScript(req, 'freebayesJointCall.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/freebayesJointCallV2') {
-        const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
-        const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
-        const region = genRegionStr(params.region);
-        const vepREVELFile = dataPath(params.vepREVELFile);
-        const refFastaFile = dataPath(params.refFastaFile);
-        const contigStr = genContigFileStr(params.refNames);
-        const samplesFileStr = params.sampleNames.join('\n');
+      const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
+      const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
+      const region = genRegionStr(params.region);
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const contigStr = genContigFileStr(params.refNames);
+      const samplesFileStr = params.sampleNames.join('\n');
 
-        const vepCacheDir = dataPath('vep-cache');
-        const vepPluginDir = dataPath('vep-cache/Plugins');
+      const vepCacheDir = dataPath('vep-cache');
+      const vepPluginDir = dataPath('vep-cache/Plugins');
 
-        const decompose = params.decompose ? params.decompose : '';
+      const decompose = params.decompose ? params.decompose : '';
 
-        const fbArgs = params.fbArgs;
-        const freebayesArgs = [];
-        if (fbArgs) {
-            for (var key in fbArgs) {
-                var theArg = fbArgs[key];
-                if (theArg.hasOwnProperty('argName')) {
-                    if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
-                        if (theArg.value && theArg.value == true) {
-                            freebayesArgs.push(theArg.argName);
-                        }
-                    } else {
-                        if (theArg.value && theArg.value != '') {
-                            freebayesArgs.push(theArg.argName);
-                            freebayesArgs.push(theArg.value);
-                        }
-                    }
-                }
+      const fbArgs = params.fbArgs;
+      const freebayesArgs = [];
+      if (fbArgs) {
+        for (var key in fbArgs) {
+          var theArg = fbArgs[key];
+          if (theArg.hasOwnProperty('argName')) {
+            if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
+              if (theArg.value && theArg.value == true) {
+                freebayesArgs.push(theArg.argName);
+              }
+            } else {
+              if (theArg.value && theArg.value != '') {
+                freebayesArgs.push(theArg.argName);
+                freebayesArgs.push(theArg.value);
+              }
             }
+          }
         }
+      }
 
-        const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
-        const extraArgs = freebayesArgs;
-        const dataDir = dataPath('');
+      const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
+      const extraArgs = freebayesArgs;
+      const dataDir = dataPath('');
 
-        const args = [
-            alignments, indices, region, refFastaFile, useSuggestedVariants,
-            params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
-            samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
-            decompose, contigStr, dataDir
-        ];
-        return runScript(req, 'freebayesJointCallV2.sh', args, params, { ignoreStderr: true });
+      const args = [
+        alignments, indices, region, refFastaFile, useSuggestedVariants,
+        params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
+        samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+        decompose, contigStr, dataDir
+      ];
+      return runScript(req, 'freebayesJointCallV2.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/freebayesJointCallV3') {
-        const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
-        const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
-        const region = genRegionStr(params.region);
-        const vepREVELFile = dataPath(params.vepREVELFile);
-        const refFastaFile = dataPath(params.refFastaFile);
-        const contigStr = genContigFileStr(params.refNames);
-        const samplesFileStr = params.sampleNames.join('\n');
+      const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
+      const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
+      const region = genRegionStr(params.region);
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const contigStr = genContigFileStr(params.refNames);
+      const samplesFileStr = params.sampleNames.join('\n');
 
-        const vepCacheDir = dataPath('vep-cache');
-        const vepPluginDir = dataPath('vep-cache/Plugins');
+      const vepCacheDir = dataPath('vep-cache');
+      const vepPluginDir = dataPath('vep-cache/Plugins');
 
-        const decompose = params.decompose ? params.decompose : '';
+      const decompose = params.decompose ? params.decompose : '';
 
-        const fbArgs = params.fbArgs;
-        const freebayesArgs = [];
-        if (fbArgs) {
-            for (var key in fbArgs) {
-                var theArg = fbArgs[key];
-                if (theArg.hasOwnProperty('argName')) {
-                    if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
-                        if (theArg.value && theArg.value == true) {
-                            freebayesArgs.push(theArg.argName);
-                        }
-                    } else {
-                        if (theArg.value && theArg.value != '') {
-                            freebayesArgs.push(theArg.argName);
-                            freebayesArgs.push(theArg.value);
-                        }
-                    }
-                }
+      const fbArgs = params.fbArgs;
+      const freebayesArgs = [];
+      if (fbArgs) {
+        for (var key in fbArgs) {
+          var theArg = fbArgs[key];
+          if (theArg.hasOwnProperty('argName')) {
+            if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
+              if (theArg.value && theArg.value == true) {
+                freebayesArgs.push(theArg.argName);
+              }
+            } else {
+              if (theArg.value && theArg.value != '') {
+                freebayesArgs.push(theArg.argName);
+                freebayesArgs.push(theArg.value);
+              }
             }
+          }
         }
+      }
 
-        const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
-        const extraArgs = freebayesArgs;
-        const dataDir = dataPath('');
+      const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
+      const extraArgs = freebayesArgs;
+      const dataDir = dataPath('');
 
-        const args = [
-            alignments, indices, region, refFastaFile, useSuggestedVariants,
-            params.clinvarUrl, params.genomeBuildName, vepREVELFile,
-            samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
-            decompose, contigStr, dataDir
-        ];
-        return runScript(req, 'freebayesJointCallV3.sh', args, params, { ignoreStderr: true });
+      const args = [
+        alignments, indices, region, refFastaFile, useSuggestedVariants,
+        params.clinvarUrl, params.genomeBuildName, vepREVELFile,
+        samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+        decompose, contigStr, dataDir
+      ];
+      return runScript(req, 'freebayesJointCallV3.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/clinvarCountsForGene') {
-        const region = genRegionStr(params.region);
-        const regions = params.regions;
+      const region = genRegionStr(params.region);
+      const regions = params.regions;
 
-        let regionParts = "";
-        if (regions) {
-            regions.forEach(function(region) {
-                if (regionParts.length > 0) {
-                    regionParts += ",";
-                }
-                regionParts += region.start + "-" + region.end;
-            })
-        }
+      let regionParts = "";
+      if (regions) {
+        regions.forEach(function(region) {
+          if (regionParts.length > 0) {
+            regionParts += ",";
+          }
+          regionParts += region.start + "-" + region.end;
+        })
+      }
 
-        const binLength = params.binLength ? params.binLength : '';
-        const annotationMode = params.annotationMode ? params.annotationMode : '';
-        const requiresVepService = params.requiresVepService ? params.requiresVepService : false;
-        const vepArgs = params.vepArgs ? params.vepArgs : '';
+      const binLength = params.binLength ? params.binLength : '';
+      const annotationMode = params.annotationMode ? params.annotationMode : '';
+      const requiresVepService = params.requiresVepService ? params.requiresVepService : false;
+      const vepArgs = params.vepArgs ? params.vepArgs : '';
 
-        const args = [
-            params.clinvarUrl, region, binLength, regionParts, annotationMode, requiresVepService, vepArgs
-        ];
+      const args = [
+        params.clinvarUrl, region, binLength, regionParts, annotationMode, requiresVepService, vepArgs
+      ];
 
-        return runScript(req, 'clinvarCountsForGene.sh', args, params);
+      return runScript(req, 'clinvarCountsForGene.sh', args, params);
     }
     else if (url.pathname === '/bcftoolsView') {
-        const regionStr = params.regions == undefined ? "" : genRegionsStr(params.regions, ",");
-        const numRecords = params.numRecords == undefined ? "" : params.numRecords;
-        const args = [
-            params.vcfUrl, regionStr, numRecords
-        ];
-        return runScript(req, 'bcftoolsView.sh', args, params, { ignoreStderr: true });
+      const regionStr = params.regions == undefined ? "" : genRegionsStr(params.regions, ",");
+      const numRecords = params.numRecords == undefined ? "" : params.numRecords;
+      const args = [
+        params.vcfUrl, regionStr, numRecords
+      ];
+      return runScript(req, 'bcftoolsView.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/checkBamBai') {
-        const indexUrl = params.indexUrl ? params.indexUrl : '';
-        const args = [ params.url, indexUrl, params.region, dataPath('') ];
-        return runScript(req, 'checkBamBai.sh', args, params, { ignoreStderr: true });
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const args = [ params.url, indexUrl, params.region, dataPath('') ];
+      return runScript(req, 'checkBamBai.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/vcfStatsStream') {
-        const regionStr = genRegionsStr(params.regions);
-        const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const contigStr = genContigFileStr(params.refNames);
 
-        let sampleNamesStr = "";
-        if (params.sampleNames) {
-            sampleNamesStr = params.sampleNames.join('\n');
-        }
+      let sampleNamesStr = "";
+      if (params.sampleNames) {
+        sampleNamesStr = params.sampleNames.join('\n');
+      }
 
-        const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
 
-        const args = [
-            params.url, indexUrl, regionStr, contigStr, sampleNamesStr
-        ];
-        return runScript(req, 'vcfStatsStream.sh', args, params, { ignoreStderr: true });
+      const args = [
+        params.url, indexUrl, regionStr, contigStr, sampleNamesStr
+      ];
+      return runScript(req, 'vcfStatsStream.sh', args, params, { ignoreStderr: true });
     }
     else if (url.pathname === '/preciseReadDepth') {
       return preciseReadDepthHandler(req, params);
