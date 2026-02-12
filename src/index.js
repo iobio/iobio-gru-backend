@@ -220,7 +220,7 @@ const enableHttps = args['--enable-https'] === 'true';
 //}
 
 function wrapper(handler) {
-  return async (req, nodeReq, nodeRes) => {
+  return async (req) => {
 
     const url = new URL(req.url);
 
@@ -230,7 +230,7 @@ function wrapper(handler) {
 
     if (req.method !== 'POST' || contentType != 'text/plain') {
       console.log(`${timestamp}\t${req.method}\t${url.pathname}`);
-      const res = await handler(req, nodeReq, nodeRes);
+      const res = await handler(req);
       return res;
     }
 
@@ -239,7 +239,7 @@ function wrapper(handler) {
     const start = Date.now();
     console.log(`${timestamp}\t${params._requestId}\tstart\t${url.pathname}\t${params._attemptNum}`);
 
-    const res = await handler(req, nodeReq, nodeRes);
+    const res = await handler(req);
 
     if (res && res.body) {
       return withCompletedCallback(res, () => {
@@ -303,7 +303,7 @@ function withCompletedCallback(res, callback) {
   return new Response(readable, res);
 }
 
-async function handler(req, nodeReq, nodeRes) {
+async function handler(req) {
 
   const url = new URL(req.url);
 
