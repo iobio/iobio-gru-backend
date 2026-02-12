@@ -234,10 +234,22 @@ function wrapper(handler) {
       return res;
     }
 
-    const params = new URLSearchParams(url.search);
+    // Read logging params from a cloned request so the original body stream can
+    // still be consumed by downstream handlers.
+    const bodyReq = req.clone();
+    let bodyParams = {};
+    try {
+      bodyParams = await bodyReq.json();
+    }
+    catch (e) {
+      bodyParams = {};
+    }
+
+    const requestId = bodyParams._requestId || url.searchParams.get('_requestId') || '';
+    const attemptNum = bodyParams._attemptNum || url.searchParams.get('_attemptNum') || '';
 
     const start = Date.now();
-    console.log(`${timestamp}\t${params._requestId}\tstart\t${url.pathname}\t${params._attemptNum}`);
+    console.log(`${timestamp}\t${requestId}\tstart\t${url.pathname}\t${attemptNum}`);
 
     const res = await handler(req);
 
@@ -245,7 +257,7 @@ function wrapper(handler) {
       return withCompletedCallback(res, () => {
         timestamp = new Date().toISOString();
         const seconds = (Date.now() - start) / 1000;
-        console.log(`${timestamp}\t${params._requestId}\tfinish\t${url.pathname}\t${seconds} seconds`);
+        console.log(`${timestamp}\t${requestId}\tfinish\t${url.pathname}\t${seconds} seconds`);
       });
     }
     else {
