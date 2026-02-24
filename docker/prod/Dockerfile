@@ -21,24 +21,17 @@ RUN ["mkdir", "/uufs"]
 RUN ["mkdir", "/scratch"]
 RUN ["mkdir", "/ssd"]
 
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-ARG USER_NAME=iobio
-ARG NODE_VERSION=24.13.0
 
-RUN groupadd -g ${GROUP_ID} ${USER_NAME} && useradd -m -u ${USER_ID} -g ${GROUP_ID} ${USER_NAME} 
 RUN ["mkdir", "/iobio-gru-backend"]
-RUN chown ${USER_NAME}:${GROUP_ID} /iobio-gru-backend
 
-USER ${USER_NAME} 
+WORKDIR /
 
-WORKDIR /home/${USER_NAME}
-
+ARG NODE_VERSION=24.13.1
 RUN curl -O https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz \
         && tar xf node-v${NODE_VERSION}-linux-x64.tar.xz \
         && mv node-v${NODE_VERSION}-linux-x64 node \
         && rm node-v${NODE_VERSION}-linux-x64.tar.xz
-RUN echo 'PATH="$HOME/node/bin:${PATH}"' >> .profile
+RUN echo 'PATH="/node/bin:${PATH}"' >> /root/.profile
 
 #ARG gru_version=improve-logging
 #RUN git clone --depth 1 --branch ${gru_version} https://github.com/iobio/iobio-gru-backend
@@ -106,14 +99,12 @@ COPY ./dev_tools/populate_static.sh populate_static.sh
 RUN ["./populate_static.sh"]
 COPY ./dev_tools/download_clinvar.sh download_clinvar.sh
 RUN ["./download_clinvar.sh"]
-COPY --chown=${USER_ID}:${GROUP_ID} ./ /iobio-gru-backend/
+COPY ./ /iobio-gru-backend/
 RUN ["mv", "static", "/iobio-gru-backend"]
-# TODO: /home/iobio/tool_bin needed to be hard-coded for some reason. Would
-# prefer to use /home/${USER_NAME}/tool_bin
-RUN ["ln", "-s", "/home/iobio/tool_bin", "/iobio-gru-backend/tool_bin"]
+RUN ["ln", "-s", "/tool_bin", "/iobio-gru-backend/tool_bin"]
 
 WORKDIR /iobio-gru-backend
-ENV PATH="/home/${USER_NAME}/node/bin:${PATH}"
+ENV PATH="/node/bin:${PATH}"
 RUN ["npm", "install"]
 
 EXPOSE 9001
