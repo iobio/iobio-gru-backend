@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const MAX_STDERR_LEN = 1048576;
-const MIN_DATA_DIR_VERSION = '1.12.0';
+const MIN_DATA_DIR_VERSION = '1.15.0';
 
 const gruVersion = fs.readFileSync(path.join(__dirname, '..', 'VERSION')).toString().trim();
 
