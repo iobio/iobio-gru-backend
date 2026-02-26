@@ -182,8 +182,6 @@ if (args['--port']) {
   port = Number(args['--port']);
 }
 
-const enableHttps = args['--enable-https'] === 'true';
-
 
 // TODO: port and test embedded app functionality
 //import Router from 'koa-router';
@@ -266,25 +264,6 @@ function wrapper(handler) {
     }
   };
 }
-
-
-// TODO: figure out HTTPS
-//if (enableHttps) {
-//
-//  const domain = args['--domain'];
-//
-//  const serverOptions = {
-//    domains: [domain],
-//  };
-//
-//  const server = AutoEncrypt.https.createServer(serverOptions, app.callback());
-//
-//  server.listen(koaPort);
-//}
-//else {
-//  app.listen(koaPort);
-//}
-
 
 function addCors(handler) {
   return async (req) => {
@@ -834,6 +813,7 @@ async function handler(req) {
 
 serve({
   handler: wrapper(handler),
-  //handler,
+  keyPath: args['--key-path'],
+  certPath: args['--cert-path'],
   port,
 });
