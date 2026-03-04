@@ -22,7 +22,6 @@ const MIN_DATA_DIR_VERSION = '1.15.0';
 
 const gruVersion = fs.readFileSync(path.join(__dirname, '..', 'VERSION')).toString().trim();
 
-console.log(`Using data directory ${path.resolve(dataPath(''))}`);
 const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString().trim();
 if (semverLess(dataDirVersion, MIN_DATA_DIR_VERSION)) {
   console.error(`Data directory must be at least version ${MIN_DATA_DIR_VERSION} (found ${dataDirVersion})`);
