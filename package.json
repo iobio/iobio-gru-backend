@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@anderspitman/fetch-handler": "^0.6.0",
+    "@anderspitman/fetch-handler": "^0.7.0",
     "mime": "^4.1.0",
     "sqlite3": "^5.1.7"
   }
