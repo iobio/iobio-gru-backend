@@ -1,4 +1,13 @@
-#/bin/bash
+#!/bin/bash
+#SBATCH --account=notchpeak-shared-short
+#SBATCH --partition=notchpeak-shared-short
+#SBATCH --qos=notchpeak-shared-short
+#SBATCH --time=8:00:00
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=8G
+#SBATCH --requeue
+
 
 set -euo pipefail
 
