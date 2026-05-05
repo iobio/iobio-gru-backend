@@ -7,6 +7,7 @@ RUN apt-get update \
     && apt-get -y upgrade \
     && apt-get install -y \
         curl \
+        git \
         xz-utils \
         python3-pip \
         build-essential
@@ -91,6 +92,15 @@ RUN curl -LO https://github.com/iobio/bigwig-depther-rs/releases/download/0.1.0/
         && unzip bigwig-depther-0.1.0-linux-x64.zip \
         && mv bigwig-depther-0.1.0-linux-x64 tool_bin/bigWigDepther \
         && rm bigwig-depther-0.1.0-linux-x64.zip
+
+# Phenolyzer
+RUN cpanm --notest Bio::OntologyIO
+ARG PHENOLYZER_COMMIT=f939514f92919e1bd6c3a5bc0d7f4d396f346206 
+RUN git clone --no-checkout --depth 1 https://github.com/WGLab/phenolyzer /tool_bin/lib/phenolyzer \
+        && cd /tool_bin/lib/phenolyzer \
+        && git fetch --depth 1 origin ${PHENOLYZER_COMMIT} \
+        && git checkout ${PHENOLYZER_COMMIT}
+COPY tools/phenolyzer/phenolyzer.sh /tool_bin/phenolyzer
 
 # TODO: This is a bit hacky. Manually copying this script in order to sequence
 # the docker layers such that we can rebuild code changes without

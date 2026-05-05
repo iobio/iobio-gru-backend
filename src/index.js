@@ -7,6 +7,7 @@ import { createGeneInfoHandler } from './geneinfo.js';
 import { genomeBuildHandler } from './genomebuild.js';
 import { hpoHandler } from './hpo.js';
 import { preciseReadDepthHandler } from './precise_read_depth_handler.js';
+import { phenolyzerHandler } from './phenolyzer_handler.js';
 import { parseArgs, dataPath, replaceAll, genRegionStr, semverLess } from './utils.js';
 import fs from 'node:fs';
 import { serveStatic } from './static.js';
@@ -274,6 +275,7 @@ function addCors(handler) {
 
 const geneInfoHandler = addCors(createGeneInfoHandler({ prefix: '/geneinfo' }));
 const g2pHandler = addCors(gene2PhenoHandler);
+const phenoHandler = addCors(phenolyzerHandler);
 
 function withCompletedCallback(res, callback) {
   if (!res.body) {
@@ -347,6 +349,9 @@ async function handler(req) {
     return withCompletedCallback(res, () => {
       fs.promises.rm(tmpDir, { recursive: true, force: true });
     });
+  }
+  else if (url.pathname === '/phenolyzer') {
+    return phenoHandler(req);
   }
   else {
     let params;
