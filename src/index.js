@@ -350,7 +350,7 @@ async function handler(req) {
       fs.promises.rm(tmpDir, { recursive: true, force: true });
     });
   }
-  else if (url.pathname === '/phenolyzer') {
+  else if (url.pathname.startsWith('/phenolyzer')) {
     return phenoHandler(req);
   }
   else {
