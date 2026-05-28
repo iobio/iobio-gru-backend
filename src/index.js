@@ -340,6 +340,23 @@ router.post('/getClinvarVariantsV2', async (ctx) => {
     await handle(ctx, 'getClinvarVariantsV2.sh', args, { ignoreStderr: true });
 });
 
+router.post('/getClinvarVariantsV3', async (ctx) => {
+  const params = JSON.parse(ctx.request.body);
+
+  const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+  const contigStr = genContigFileStr(params.refNames);
+  const regionStr = genRegionsStr(params.regions);
+  const refFastaFile = dataPath(params.refFastaFile);
+  const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
+
+  const args = [
+      params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile, 
+      params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
+  ];
+
+  await handle(ctx, 'getClinvarVariantsV3.sh', args, { ignoreStderr: true });
+});
+
 router.post('/annotateVariants', async (ctx) => {
 
     const params = JSON.parse(ctx.request.body);
