@@ -518,6 +518,20 @@ async function handler(req) {
 
       return runScript(req, 'getClinvarVariantsV2.sh', args, params, { ignoreStderr: true });
     }
+    else if (url.pathname === '/getClinvarVariantsV3') {
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
+
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile,
+        params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
+      ];
+
+      return runScript(req, 'getClinvarVariantsV3.sh', args, params, { ignoreStderr: true });
+    }
     else if (url.pathname === '/annotateVariants') {
       const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
       const contigStr = genContigFileStr(params.refNames);
