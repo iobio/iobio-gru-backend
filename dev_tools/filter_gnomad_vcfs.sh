@@ -30,8 +30,7 @@ if [ ! -f "${out_file}" ]; then
     echo "Generating ${out_file}"
 
     ${bcftools} annotate --threads 4 -x \
-    '^INFO/AF_mid,^INFO/AF_asj,^INFO/AF_ami,^INFO/AF_fin,^INFO/AF_nfe,^INFO/AF_amr,^INFO/AF_afr,^INFO/AF_eas,^INFO/AF_sas,^INFO/AF,^INFO/AF_remaining,^INFO/nhomalt,^INFO/AC_XY,^INF
-    O/AC,^INFO/AN,^INFO/AF_grpmax,^INFO/VarDP,^INFO/non_par' \
+    '^INFO/AF_mid,^INFO/AF_asj,^INFO/AF_ami,^INFO/AF_fin,^INFO/AF_nfe,^INFO/AF_amr,^INFO/AF_afr,^INFO/AF_eas,^INFO/AF_sas,^INFO/AF,^INFO/AF_remaining,^INFO/nhomalt,^INFO/AC_XY,^INFO/AC,^INFO/AN,^INFO/AF_grpmax,^INFO/VarDP,^INFO/non_par' \
     -O z -o ${out_file_tmp} \
     ${in_file}
 
