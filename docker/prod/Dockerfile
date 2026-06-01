@@ -1,5 +1,5 @@
 #FROM ubuntu:18.04
-FROM ensemblorg/ensembl-vep:release_115.2
+FROM docker.io/ensemblorg/ensembl-vep:release_115.2
 
 USER root
 
