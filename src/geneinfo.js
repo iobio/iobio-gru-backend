@@ -435,7 +435,7 @@ function getDb() {
 function createGeneInfoHandler(opt) {
   return (req) => {
     const url = new URL(req.url);
-    const params = new URLSearchParams(url.search);
+    const params = Object.fromEntries(url.searchParams);
 
     const path = url.pathname.slice(opt.prefix.length);
 
