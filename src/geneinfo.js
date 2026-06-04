@@ -30,7 +30,16 @@ function jsonResponse(body, opts = {}) {
     headers['Cache-Control'] = 'public,max-age=84600';
   }
 
-  return new Response(body, { headers });
+  const init = { headers };
+  if (opts.status) {
+    init.status = opts.status;
+  }
+
+  return new Response(body, init);
+}
+
+function badRequest(message) {
+  return jsonResponse(JSON.stringify({ error: message }), { status: 400 });
 }
 
 function getGenesInClause(genes) {
@@ -51,50 +60,67 @@ function getGenesInClause(genes) {
 }
 
 function getPathPart(pathParts, idx) {
-  return decodeURIComponent(pathParts[idx] || '');
+  try {
+    return decodeURIComponent(pathParts[idx] || '');
+  } catch (err) {
+    return null;
+  }
 }
 
 function createGeneInfoHandler(opt) {
-  return (req) => {
-    const url = new URL(req.url);
-    const params = Object.fromEntries(url.searchParams);
+  return async (req) => {
+    try {
+      const url = new URL(req.url);
+      const params = Object.fromEntries(url.searchParams);
 
-    const path = url.pathname.slice(opt.prefix.length);
-    const pathParts = path.split('/');
-    const command = pathParts[1];
+      const path = url.pathname.slice(opt.prefix.length);
+      const pathParts = path.split('/');
+      const command = pathParts[1];
 
-    if (command === 'api') {
-      const apiCommand = pathParts[2];
+      let response;
+      if (command === 'api') {
+        const apiCommand = pathParts[2];
 
-      if (apiCommand === 'gene') {
-        return apiGene(getPathPart(pathParts, 3), params);
+        if (apiCommand === 'gene') {
+          response = apiGene(getPathPart(pathParts, 3), params);
+        }
+        else if (apiCommand === 'genes') {
+          response = apiGenes(params);
+        }
+        else if (apiCommand === 'region') {
+          response = apiRegion(getPathPart(pathParts, 3), params);
+        }
+        else if (apiCommand === 'lookupGenes') {
+          response = apiLookupGenes(params);
+        }
+        else {
+          response = new Response('Not found', { status: 404 });
+        }
       }
-      else if (apiCommand === 'genes') {
-        return apiGenes(params);
+      else if (command === 'lookupEntries') {
+        response = lookupEntries(getPathPart(pathParts, 2));
       }
-      else if (apiCommand === 'region') {
-        return apiRegion(getPathPart(pathParts, 3), params);
+      else if (command === 'lookup') {
+        response = lookup(getPathPart(pathParts, 2), params);
       }
-      else if (apiCommand === 'lookupGenes') {
-        return apiLookupGenes(params);
+      else {
+        response = geneinfo(getPathPart(pathParts, 1), params);
       }
 
-      return new Response('Not found', { status: 404 });
-    }
-    else if (command === 'lookupEntries') {
-      return lookupEntries(getPathPart(pathParts, 2));
-    }
-    else if (command === 'lookup') {
-      return lookup(getPathPart(pathParts, 2), params);
-    }
-    else {
-      return geneinfo(getPathPart(pathParts, 1), params);
+      return await response;
+    } catch (err) {
+      console.error('Unhandled geneinfo error:', err);
+      return jsonResponse(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
     }
   };
 }
 
 // Legacy /api/* endpoints retained for clients that still call the pre-v2 API.
 async function apiGene(gene, params) {
+  if (gene == null || gene == '') {
+    return badRequest('Missing required path parameter: gene');
+  }
+
   let source = params.source;
   const { species, build } = params;
 
@@ -159,6 +185,10 @@ async function apiGene(gene, params) {
 
 async function apiGenes(params) {
   const genesString = params.genes;
+  if (genesString == null || genesString == '') {
+    return badRequest('Missing required query parameter: genes');
+  }
+
   const genes = genesString.split(',');
 
   let source = params.source;
@@ -221,9 +251,22 @@ async function apiGenes(params) {
 }
 
 async function apiRegion(region, params) {
-  const chr = region.split(':')[0];
-  const start = region.split(':')[1].split('-')[0];
-  const end = region.split(':')[1].split('-')[1];
+  if (region == null || region == '') {
+    return badRequest('Missing required path parameter: region');
+  }
+
+  const regionParts = region.split(':');
+  const coordParts = regionParts[1] ? regionParts[1].split('-') : [];
+  if (regionParts.length < 2 || coordParts.length < 2 || !regionParts[0] || !coordParts[0] || !coordParts[1]) {
+    return badRequest('Invalid region. Expected chr:start-end');
+  }
+
+  const chr = regionParts[0];
+  const start = coordParts[0];
+  const end = coordParts[1];
+  if (!/^\d+$/.test(start) || !/^\d+$/.test(end)) {
+    return badRequest('Invalid region coordinates. Expected numeric start and end');
+  }
   let source = params.source;
   const { species, build } = params;
 
@@ -294,6 +337,10 @@ async function apiRegion(region, params) {
 
 // v2 (cacheable) endpoints
 async function geneinfo(gene, params) {
+  if (gene == null || gene == '') {
+    return badRequest('Missing required path parameter: gene');
+  }
+
   const source = params.source || 'gencode';
   const { species, build } = params;
 
@@ -350,6 +397,10 @@ async function geneinfo(gene, params) {
  * and return aliases for gene name.
  */
 function lookupEntries(genes) {
+  if (genes == null || genes == '') {
+    return badRequest('Missing required path parameter: genes');
+  }
+
   let geneWhereClause= ""
   let idx = 0;
   geneWhereClause = " g.gene_name in ("
@@ -472,6 +523,10 @@ function lookupEntries(genes) {
 // Asynchronous lookup to support typeahead search based
 // on all or part of gene name
 function lookup(gene, params) {
+  if (gene == null || gene == '') {
+    return badRequest('Missing required path parameter: gene');
+  }
+
   // searchAlias
   //   never  - Only search on gene names (known to gencode and refseq)
   //   always - Search on both gene names and aliases
@@ -552,6 +607,10 @@ async function apiLookupGenes(params) {
   //   always - Search on both gene names and aliases
   //   last   - Only search aliases if the searching on gene name returned no results
   const genes       = params.genes;
+  if (genes == null || genes == '') {
+    return badRequest('Missing required query parameter: genes');
+  }
+
   const searchAlias = params.searchAlias;
   let stmt = '';
 
@@ -591,11 +650,15 @@ async function apiLookupGenes(params) {
   })
 
   rows.forEach(function(row) {
+    if (!row.gene_name) {
+      return;
+    }
+
     let matchedRow = inputGeneMap[row.gene_name.toUpperCase()]
     if (matchedRow != null && matchedRow == false) {
       const result = {'match': true, 'gene_name': row.gene_name};
       inputGeneMap[row.gene_name.toUpperCase()] = result;
-    } else if (row.hasOwnProperty('gene_alias')) {
+    } else if (row.gene_alias != null) {
       matchedRow = inputGeneMap[row.gene_alias.toUpperCase()]
       if (matchedRow != null && matchedRow == false) {
         const result = {'match': true, 'gene_alias': row.gene_alias};
@@ -629,6 +692,10 @@ async function apiLookupGenes(params) {
 
     // Match the input gene name to the result row for gene alias
     aliasRows.forEach(function(aliasRow) {
+      if (aliasRow.gene_alias == null) {
+        return;
+      }
+
       const matchedRow = inputGeneMap[aliasRow.gene_alias.toUpperCase()]
       if (matchedRow != null && matchedRow == false) {
         const result = {'match': true, 'gene_alias': aliasRow.gene_alias}
