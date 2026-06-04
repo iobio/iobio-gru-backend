@@ -1,8 +1,5 @@
-//import Router from 'koa-router';
 import sqlite3 from 'sqlite3';
 import { dataPath } from './utils.js';
-
-//const router = new Router();
 
 let _db;
 function getDb() {
@@ -13,424 +10,49 @@ function getDb() {
   return _db;
 }
 
-//const getGenesInClause = function(genes) {
-//  sqlString = " in (";
-//  let firstTime = true;
-//  genes.forEach(function(gene) {
-//    if (firstTime) {
-//      firstTime = false;
-//    } else {
-//      sqlString += ",";
-//    }
-//    sqlString += "\""+gene+"\" ";
-//  }) 
-//  sqlString += ")";
-//  return sqlString
-//}
-//
-// TODO: /api/* endpoints are to be removed for gru 2.0 once we verify they
-// aren't used by any apps.
-//router.get('/api/gene/:gene', async (ctx) => {  
-//  var source = ctx.query.source;
-//  var species = ctx.query.species;
-//  var build = ctx.query.build;
-//  if (source == null || source == '') {
-//    source = 'gencode';
-//  } 
-//  var geneSqlString = "SELECT g.*, ";
-//  geneSqlString += "gs.gene_symbol, ";
-//  geneSqlString += "GROUP_CONCAT(distinct ga.alias_symbol) AS aliases ";
-//  geneSqlString += "FROM genes g ";
-//  geneSqlString += "LEFT OUTER JOIN gene_symbol gs on gs.gene_symbol = g.gene_symbol ";
-//  geneSqlString += "LEFT OUTER JOIN gene_alias  ga on ga.gene_symbol = g.gene_symbol and ga.alias_symbol != g.gene_name ";
-//  geneSqlString += "WHERE gene_name like \""+ctx.params.gene+"\" ";
-//  geneSqlString += " AND source = \""+source+"\"";
-//  if (species != null && species != "") {
-//    geneSqlString  += " AND species = \""+species+"\"";
-//  }
-//  if (build != null && build != "") {
-//    geneSqlString  += " AND build = \""+build+"\"";
-//  }
-//
-//  const db = getDb();
-//
-//  return new Promise((resolve, reject) => {
-//    db.all(geneSqlString,function(err,rows){ 
-//      var gene_data = {};
-//      var transcript_ids = [];
-//      if (rows != null && rows.length > 0) {
-//        for (var i = 0; i < rows.length; i++) {
-//          gene_data = rows[i];    
-//          if (gene_data.hasOwnProperty("transcripts") && gene_data.transcripts != null && gene_data.transcripts != "") {
-//            transcript_ids = transcript_ids.concat(JSON.parse(gene_data['transcripts']));
-//          }       
-//        }
-//      } 
-//          
-//      async.map(transcript_ids,      
-//        function(id, done){      
-//          var source = ctx.query.source; 
-//          if (source == null || source == '') {
-//            source = 'gencode';
-//          }
-//          var sqlString = "";
-//
-//          sqlString =  "SELECT t.* ";
-//          sqlString += "from transcripts t ";
-//          sqlString += "WHERE t.transcript_id=\""+id+"\" "
-//          sqlString += " AND t.source = \""+source+"\"";
-//          if (species != null && species != "") {
-//            sqlString  += " AND t.species = \""+species+"\"";
-//          }
-//          if (build != null && build != "") {
-//            sqlString  += " AND t.build = \""+build+"\"";
-//          }        
-//          db.all(sqlString,function(err,rows){    
-//
-//            if (err) reject(err);
-//
-//            if (rows != null && rows.length > 0) {
-//              rows[0]['features'] = JSON.parse(rows[0]['features']);
-//              done(null,rows[0]);
-//            } else {
-//              done(null, []);
-//            }  
-//          });
-//
-//        },      
-//        function(err, results){        
-//
-//          if (err) reject(err);
-//
-//          gene_data['transcripts'] = results;
-//
-//          ctx.set('Content-Type', 'application/json');
-//          ctx.set('Charset', 'utf-8')
-//          ctx.body = ctx.query.callback + '(' + JSON.stringify([gene_data]) +');';
-//          resolve();
-//        }
-//      );
-//    });
-//  });
-//});
-//
-//
-//router.get('/api/genes/', async (ctx) => {  
-//
-//  var genesString = ctx.query.genes;
-//  var genes = genesString.split(",")
-//
-//  var source = ctx.query.source;
-//  var species = ctx.query.species;
-//  var build = ctx.query.build;
-//  if (source == null || source == '') {
-//    source = 'gencode';
-//  } 
-//  var geneSqlString = "SELECT distinct * from genes where gene_name ";
-//  geneSqlString    += getGenesInClause(genes);
-//  geneSqlString    += " AND source = \""+source+"\"";
-//  if (species != null && species != "") {
-//    geneSqlString  += " AND species = \""+species+"\"";
-//  }
-//  if (build != null && build != "") {
-//    geneSqlString  += " AND build = \""+build+"\"";
-//  }
-//
-//  const db = getDb();
-//
-//  return new Promise((resolve, reject) => {
-//    db.all(geneSqlString,function(err,rows){ 
-//      var gene_data = {};
-//
-//      if (rows != null && rows.length > 0) {
-//        for (var i = 0; i < rows.length; i++) {
-//          let gene_record = rows[i]
-//          gene_record.transcripts = []
-//          gene_data[gene_record.gene_name] = gene_record;    
-//        }
-//      } 
-//          
-//      var source = ctx.query.source; 
-//      if (source == null || source == '') {
-//        source = 'gencode';
-//      }
-//      var sqlString = "";
-//      sqlString =  "SELECT t.* ";
-//      sqlString += "FROM transcripts t "
-//      sqlString += "WHERE t.gene_name ";
-//      sqlString += getGenesInClause(genes);
-//      sqlString += " AND t.source = \""+source+"\"";
-//      if (species != null && species != "") {
-//        sqlString  += " AND t.species = \""+species+"\"";
-//      }
-//      if (build != null && build != "") {
-//        sqlString  += " AND t.build = \""+build+"\"";
-//      }        
-//      db.all(sqlString,function(err,transcriptRows){    
-//
-//        if (err) reject(err);
-//
-//
-//        if (transcriptRows != null && transcriptRows.length > 0) {
-//          for (var i = 0; i < transcriptRows.length; i++) {
-//            var transcript = transcriptRows[i]; 
-//            transcript['features'] = JSON.parse(transcript['features']);
-//            gene_record = gene_data[transcript.gene_name]
-//            if (gene_record) {
-//              gene_record["transcripts"].push(transcript);
-//            } else {
-//              console.log("cannot find gene for transcript " + transcript.transcript_id + " " + transcript.gene_name)
-//            }  
-//          }
-//        }
-//
-//        ctx.set('Content-Type', 'application/json');
-//        ctx.set('Charset', 'utf-8')
-//	ctx.body = JSON.stringify([gene_data]);
-//        resolve();
-//      });
-//    });
-//  });
-//});
-//
-//router.get('/api/region/:region', async (ctx) => {  
-//  var chr = ctx.params.region.split(':')[0];
-//  var start = ctx.params.region.split(':')[1].split('-')[0];
-//  var end = ctx.params.region.split(':')[1].split('-')[1];
-//  var source = ctx.query.source; 
-//  var species = ctx.query.species;
-//  var build = ctx.query.build;
-//  
-//  // bound
-//  // 'outer'   (default) means start and end specified represent the outer-bounds.  i
-//  //           find all genes in the specified start and end region
-//  // 'inner'   means start and end specified represent a coordinate inside.
-//  //           in other words, find the gene that contains this start and end coordinate  
-//  var bound = ctx.query.bound;
-//  if (bound == null || bound == '') {
-//    bound = 'outer';
-//  }
-//
-//  if (source == null || source == '') {
-//    source = 'gencode';
-//  } 
-//  var sqlString = "SELECT distinct * from genes where chr = '" + chr + "";
-//  if (bound == 'outer') {
-//    sqlString += "' and  (start between  " + start + " and " + end 
-//               + "        or end between " + start + " and " + end + ")";
-//  } else {
-//    sqlString += "' and  (start   <= " + start   
-//               + "        and end >= " + end + ")";
-//  }
-//  if (species != null && species != "") {
-//    sqlString  += " AND species = \""+species+"\"";
-//  }
-//  if (build != null && build != "") {
-//    sqlString  += " AND build = \""+build+"\"";
-//  }  
-//  if (source != null && source != "") {
-//    sqlString +=    " AND source = \""+source+"\"";         
-//  }
-//  
-//  const db = getDb();
-//
-//  return new Promise((resolve, reject) => {
-//    db.all(sqlString, function(err, genes) {
-//      async.map(genes, 
-//        function(gene_data, outterDone) {                   
-//          var transcript_ids = JSON.parse(gene_data['transcripts']);
-//      
-//          async.map(transcript_ids,      
-//            function(id, done){      
-//              var sqlString = "SELECT * from transcripts t ";
-//              sqlString +=    "WHERE t.transcript_id=\""+id+"\" "
-//              if (source != null && source != "") {
-//		sqlString +=    " AND t.source = \""+source+"\""; 
-//	      }
-//              if (species != null && species != "") {
-//                sqlString  += " AND t.species = \""+species+"\"";
-//              }
-//              if (build != null && build != "") {
-//                sqlString  += " AND t.build = \""+build+"\"";
-//              }  
-//              db.all(sqlString,function(err,rows){          
-//
-//                if (err) {
-//		  console.log("error: " + err);
-//		  reject(err);
-//		} 
-//                rows[0]['features'] = JSON.parse(rows[0]['features']);
-//                done(null,rows[0]);
-//              });
-//            },      
-//            function(err, results){        
-//
-//              if (err) reject(err);
-//
-//              gene_data['transcripts'] = results;            
-//              outterDone(null, gene_data);
-//            }
-//          );
-//        },
-//        function(err, results) {                
-//
-//          if (err) reject(err);
-//
-//          ctx.set('Content-Type', 'application/json');
-//          ctx.set('Charset', 'utf-8')
-//          ctx.body = JSON.stringify(results);
-//          resolve();
-//        }
-//      );
-//    }); 
-//  });
-//});
-//
-//
-//// Lookup multiple genes and return an array of the genes
-//// found, either as the gene name or an alias. Use like
-//// in the where clause to perform a case-insensitive search.
-//router.get('/api/lookupGenes', async (ctx) => {
-//  // genes    - The comma separated list of genes
-//  // searchAlias
-//  //   never  - Only search on gene names (known to gencode and refseq)
-//  //   always - Search on both gene names and aliases
-//  //   last   - Only search aliases if the searching on gene name returned no results
-//  var genes       = ctx.query.genes;
-//  var searchAlias = ctx.query.searchAlias;
-//  var stmt = "";
-//
-//  if (searchAlias == 'always') {
-//    stmt = `SELECT distinct g.gene_name, ga.alias_symbol AS 'gene_alias'
-//        FROM genes g
-//        LEFT JOIN gene_symbol gs
-//          ON g.gene_symbol = gs.gene_symbol
-//        LEFT JOIN gene_alias ga
-//          ON gs.gene_symbol = ga.gene_symbol`
-//          
-//    let firstTime = true;
-//    genes.split(",").forEach(function(geneName) {
-//      stmt += firstTime ? ' WHERE ' : ' OR '
-//      stmt += " g.gene_name     like " + "\"" + geneName + "\""
-//      stmt += " OR    ga.alias_symbol like " + "\"" + geneName + "\""
-//      firstTime = false;
-//    })
-//    stmt += " GROUP BY g.gene_name"
-//  } else {
-//    stmt = "SELECT distinct g.gene_name from genes g "
-//    let firstTime = true;
-//    genes.split(",").forEach(function(geneName) {
-//      stmt += firstTime ? ' WHERE ' : ' OR '
-//      stmt += " g.gene_name     like " + "\"" + geneName + "\""
-//      firstTime = false;
-//    })
-//  }
-//  
-//  const db = getDb();
-//
-//  return new Promise((resolve, reject) => {
-//    db.all(stmt,function(err,rows){
-//      if (err) {
-//        reject(err);
-//      } else {
-//        // Map gene name parameter to result row
-//        let inputGeneMap = {};
-//        genes.split(',').forEach(function(inputGeneName) {
-//          let inputGeneNameUC = inputGeneName.toUpperCase();
-//          inputGeneMap[inputGeneNameUC] = false;
-//        })
-//        rows.forEach(function(row) {
-//          let matchedRow = inputGeneMap[row['gene_name'].toUpperCase()]
-//          if (matchedRow != null && matchedRow == false) {
-//            let result = {'match': true, 'gene_name': row['gene_name']};
-//            inputGeneMap[row['gene_name'].toUpperCase()] = result;
-//          } else if (row.hasOwnProperty('gene_alias')) {
-//            matchedRow = inputGeneMap[row['gene_alias'].toUpperCase()]
-//            if (matchedRow != null && matchedRow == false) {
-//              let result = {'match': true, 'gene_alias': row['gene_alias']};
-//              inputGeneMap[row['gene_alias'].toUpperCase()] = result;;
-//            }
-//          }
-//        })
-//        let genesNoMatch = [];
-//        genes.split(',').forEach(function(inputGene) {
-//          let matchedRow = inputGeneMap[inputGene.toUpperCase()];
-//          if (!matchedRow) {
-//            genesNoMatch.push(inputGene)
-//          }
-//        })
-//        
-//        if (genesNoMatch.length > 0 && searchAlias == 'last') {
-//          stmt = `SELECT distinct g.gene_name 'gene_name',
-//                                  ga.alias_symbol as 'gene_alias'
-//                  FROM      genes as g
-//                  LEFT JOIN gene_alias as ga on ga.gene_symbol = g.gene_symbol `
-//          
-//          let firstTime = true;
-//          genesNoMatch.forEach(function(geneName) {
-//            stmt += firstTime ? ' WHERE ' : ' OR '
-//            stmt += " ga.alias_symbol like " + "\"" + geneName  + "\""
-//            firstTime = false;
-//          })
-//          db.all(stmt,function(err,aliasRows){
-//            if (err) {
-//              reject(err);
-//            } else {
-//              // Match the input gene name to the result row for gene alias
-//              aliasRows.forEach(function(aliasRow) {
-//                let matchedRow = inputGeneMap[aliasRow['gene_alias'].toUpperCase()]
-//                if (matchedRow != null && matchedRow == false) {
-//                  let result = {'match': true, 'gene_alias': aliasRow['gene_alias']}
-//                  inputGeneMap[aliasRow['gene_alias'].toUpperCase()] = result;
-//                } 
-//              })
-//              
-//              // Now create a result set for every gene name in the parameter
-//              let results = []
-//              genes.split(',').forEach(function(inputGene) {
-//                let resultRow = inputGeneMap[inputGene.toUpperCase()];
-//                if (resultRow) {
-//                  resultRow['input_gene_name'] = inputGene;
-//                } else {
-//                  resultRow = {"input_gene_name": inputGene, "gene_name": '', "gene_alias": '', "match": ''}
-//                }
-//                results.push(resultRow)
-//              })
-//              
-//             
-//              var gene_data = {'genes': results}
-//              ctx.set('Content-Type', 'application/json');
-//              ctx.set('Charset', 'utf-8')
-//              ctx.set('Cache-Control', 'public,max-age=84600')
-//              ctx.body = JSON.stringify(gene_data);
-//              resolve();
-//            }
-//          })
-//        } else {
-//          // Now create a result set for every gene name in the parameter
-//          let results = []
-//          genes.split(',').forEach(function(inputGene) {
-//            let resultRow = inputGeneMap[inputGene.toUpperCase()];
-//            if (resultRow) {
-//              resultRow['input_gene_name'] = inputGene;
-//            } else {
-//              resultRow = {'match': false, 'input_gene_name': inputGene};
-//            }
-//            results.push(resultRow)
-//          })
-//          
-//          
-//          var gene_data = {'genes': results}
-//          ctx.set('Content-Type', 'application/json');
-//          ctx.set('Charset', 'utf-8')
-//          ctx.set('Cache-Control', 'public,max-age=84600')
-//          ctx.body = JSON.stringify(gene_data);
-//          resolve();
-//        }
-//      }
-//    });
-//  });
-//});
+function dbAll(sql) {
+  const db = getDb();
+  return new Promise((resolve, reject) => {
+    db.all(sql, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+}
+
+function jsonResponse(body, opts = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Charset': 'utf-8',
+  };
+
+  if (opts.cache) {
+    headers['Cache-Control'] = 'public,max-age=84600';
+  }
+
+  return new Response(body, { headers });
+}
+
+function getGenesInClause(genes) {
+  let sqlString = ' in (';
+  let firstTime = true;
+
+  genes.forEach(function(gene) {
+    if (firstTime) {
+      firstTime = false;
+    } else {
+      sqlString += ',';
+    }
+    sqlString += '"' + gene + '" ';
+  });
+
+  sqlString += ')';
+  return sqlString;
+}
+
+function getPathPart(pathParts, idx) {
+  return decodeURIComponent(pathParts[idx] || '');
+}
 
 function createGeneInfoHandler(opt) {
   return (req) => {
@@ -438,47 +60,247 @@ function createGeneInfoHandler(opt) {
     const params = Object.fromEntries(url.searchParams);
 
     const path = url.pathname.slice(opt.prefix.length);
-
     const pathParts = path.split('/');
-
     const command = pathParts[1];
 
-    if (command === 'lookupEntries') {
-      const genes = pathParts[2];
-      return lookupEntries(genes);
+    if (command === 'api') {
+      const apiCommand = pathParts[2];
+
+      if (apiCommand === 'gene') {
+        return apiGene(getPathPart(pathParts, 3), params);
+      }
+      else if (apiCommand === 'genes') {
+        return apiGenes(params);
+      }
+      else if (apiCommand === 'region') {
+        return apiRegion(getPathPart(pathParts, 3), params);
+      }
+      else if (apiCommand === 'lookupGenes') {
+        return apiLookupGenes(params);
+      }
+
+      return new Response('Not found', { status: 404 });
+    }
+    else if (command === 'lookupEntries') {
+      return lookupEntries(getPathPart(pathParts, 2));
     }
     else if (command === 'lookup') {
-      const gene = pathParts[2];
-      return lookup(gene, params);
+      return lookup(getPathPart(pathParts, 2), params);
     }
     else {
-      const gene = pathParts[1];
-      return geneinfo(gene, params);
+      return geneinfo(getPathPart(pathParts, 1), params);
+    }
+  };
+}
+
+// Legacy /api/* endpoints retained for clients that still call the pre-v2 API.
+async function apiGene(gene, params) {
+  let source = params.source;
+  const { species, build } = params;
+
+  if (source == null || source == '') {
+    source = 'gencode';
+  }
+
+  let geneSqlString = 'SELECT g.*, ';
+  geneSqlString += 'gs.gene_symbol, ';
+  geneSqlString += 'GROUP_CONCAT(distinct ga.alias_symbol) AS aliases ';
+  geneSqlString += 'FROM genes g ';
+  geneSqlString += 'LEFT OUTER JOIN gene_symbol gs on gs.gene_symbol = g.gene_symbol ';
+  geneSqlString += 'LEFT OUTER JOIN gene_alias  ga on ga.gene_symbol = g.gene_symbol and ga.alias_symbol != g.gene_name ';
+  geneSqlString += 'WHERE gene_name like "' + gene + '" ';
+  geneSqlString += ' AND source = "' + source + '"';
+  if (species != null && species != '') {
+    geneSqlString  += ' AND species = "' + species + '"';
+  }
+  if (build != null && build != '') {
+    geneSqlString  += ' AND build = "' + build + '"';
+  }
+
+  const rows = await dbAll(geneSqlString);
+  let gene_data = {};
+  let transcript_ids = [];
+
+  if (rows != null && rows.length > 0) {
+    for (let i = 0; i < rows.length; i++) {
+      gene_data = rows[i];
+      if (gene_data.hasOwnProperty('transcripts') && gene_data.transcripts != null && gene_data.transcripts != '') {
+        transcript_ids = transcript_ids.concat(JSON.parse(gene_data.transcripts));
+      }
+    }
+  }
+
+  const transcripts = await Promise.all(transcript_ids.map(async (id) => {
+    let sqlString = '';
+    sqlString =  'SELECT t.* ';
+    sqlString += 'from transcripts t ';
+    sqlString += 'WHERE t.transcript_id="' + id + '" ';
+    sqlString += ' AND t.source = "' + source + '"';
+    if (species != null && species != '') {
+      sqlString  += ' AND t.species = "' + species + '"';
+    }
+    if (build != null && build != '') {
+      sqlString  += ' AND t.build = "' + build + '"';
     }
 
-    return new Response("Hi there");
-  };
+    const transcriptRows = await dbAll(sqlString);
+    if (transcriptRows != null && transcriptRows.length > 0) {
+      transcriptRows[0].features = JSON.parse(transcriptRows[0].features);
+      return transcriptRows[0];
+    }
+
+    return [];
+  }));
+
+  gene_data.transcripts = transcripts;
+
+  return jsonResponse(params.callback + '(' + JSON.stringify([gene_data]) + ');');
+}
+
+async function apiGenes(params) {
+  const genesString = params.genes;
+  const genes = genesString.split(',');
+
+  let source = params.source;
+  const { species, build } = params;
+
+  if (source == null || source == '') {
+    source = 'gencode';
+  }
+
+  let geneSqlString = 'SELECT distinct * from genes where gene_name ';
+  geneSqlString    += getGenesInClause(genes);
+  geneSqlString    += ' AND source = "' + source + '"';
+  if (species != null && species != '') {
+    geneSqlString  += ' AND species = "' + species + '"';
+  }
+  if (build != null && build != '') {
+    geneSqlString  += ' AND build = "' + build + '"';
+  }
+
+  const rows = await dbAll(geneSqlString);
+  const gene_data = {};
+
+  if (rows != null && rows.length > 0) {
+    for (let i = 0; i < rows.length; i++) {
+      const gene_record = rows[i];
+      gene_record.transcripts = [];
+      gene_data[gene_record.gene_name] = gene_record;
+    }
+  }
+
+  let sqlString = '';
+  sqlString =  'SELECT t.* ';
+  sqlString += 'FROM transcripts t ';
+  sqlString += 'WHERE t.gene_name ';
+  sqlString += getGenesInClause(genes);
+  sqlString += ' AND t.source = "' + source + '"';
+  if (species != null && species != '') {
+    sqlString  += ' AND t.species = "' + species + '"';
+  }
+  if (build != null && build != '') {
+    sqlString  += ' AND t.build = "' + build + '"';
+  }
+
+  const transcriptRows = await dbAll(sqlString);
+
+  if (transcriptRows != null && transcriptRows.length > 0) {
+    for (let i = 0; i < transcriptRows.length; i++) {
+      const transcript = transcriptRows[i];
+      transcript.features = JSON.parse(transcript.features);
+      const gene_record = gene_data[transcript.gene_name];
+      if (gene_record) {
+        gene_record.transcripts.push(transcript);
+      } else {
+        console.log('cannot find gene for transcript ' + transcript.transcript_id + ' ' + transcript.gene_name);
+      }
+    }
+  }
+
+  return jsonResponse(JSON.stringify([gene_data]));
+}
+
+async function apiRegion(region, params) {
+  const chr = region.split(':')[0];
+  const start = region.split(':')[1].split('-')[0];
+  const end = region.split(':')[1].split('-')[1];
+  let source = params.source;
+  const { species, build } = params;
+
+  // bound
+  // 'outer'   (default) means start and end specified represent the outer-bounds.  i
+  //           find all genes in the specified start and end region
+  // 'inner'   means start and end specified represent a coordinate inside.
+  //           in other words, find the gene that contains this start and end coordinate
+  let bound = params.bound;
+  if (bound == null || bound == '') {
+    bound = 'outer';
+  }
+
+  if (source == null || source == '') {
+    source = 'gencode';
+  }
+
+  let sqlString = "SELECT distinct * from genes where chr = '" + chr + '';
+  if (bound == 'outer') {
+    sqlString += "' and  (start between  " + start + ' and ' + end
+               + '        or end between ' + start + ' and ' + end + ')';
+  } else {
+    sqlString += "' and  (start   <= " + start
+               + '        and end >= ' + end + ')';
+  }
+  if (species != null && species != '') {
+    sqlString  += ' AND species = "' + species + '"';
+  }
+  if (build != null && build != '') {
+    sqlString  += ' AND build = "' + build + '"';
+  }
+  if (source != null && source != '') {
+    sqlString += ' AND source = "' + source + '"';
+  }
+
+  const genes = await dbAll(sqlString);
+  const results = await Promise.all((genes || []).map(async (gene_data) => {
+    const transcript_ids = JSON.parse(gene_data.transcripts);
+
+    const transcripts = await Promise.all(transcript_ids.map(async (id) => {
+      let transcriptSqlString = 'SELECT * from transcripts t ';
+      transcriptSqlString += 'WHERE t.transcript_id="' + id + '" ';
+      if (source != null && source != '') {
+        transcriptSqlString += ' AND t.source = "' + source + '"';
+      }
+      if (species != null && species != '') {
+        transcriptSqlString  += ' AND t.species = "' + species + '"';
+      }
+      if (build != null && build != '') {
+        transcriptSqlString  += ' AND t.build = "' + build + '"';
+      }
+
+      const rows = await dbAll(transcriptSqlString);
+      if (rows != null && rows.length > 0) {
+        rows[0].features = JSON.parse(rows[0].features);
+        return rows[0];
+      }
+
+      return [];
+    }));
+
+    gene_data.transcripts = transcripts;
+    return gene_data;
+  }));
+
+  return jsonResponse(JSON.stringify(results));
 }
 
 // v2 (cacheable) endpoints
 async function geneinfo(gene, params) {
-  let source = params.source || 'gencode';
+  const source = params.source || 'gencode';
   const { species, build } = params;
-  const db = getDb();
 
   let geneSqlString = `SELECT * from genes where gene_name like "${gene}" `;
   geneSqlString += ` AND source = "${source}"`;
   if (species) geneSqlString += ` AND species = "${species}"`;
   if (build) geneSqlString += ` AND build = "${build}"`;
-
-  // Promisified db.all
-  const dbAll = (sql) =>
-    new Promise((resolve, reject) => {
-      db.all(sql, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
 
   const geneRows = await dbAll(geneSqlString);
 
@@ -520,14 +342,7 @@ async function geneinfo(gene, params) {
 
   gene_data.transcripts = transcripts;
 
-  const body = JSON.stringify([gene_data]);
-  return new Response(body, {
-    headers: {
-      'Content-Type': 'application/json',
-      'Charset': 'utf-8',
-      'Cache-Control': 'public,max-age=84600',
-    },
-  });
+  return jsonResponse(JSON.stringify([gene_data]), { cache: true });
 }
 
 /*
@@ -631,11 +446,11 @@ function lookupEntries(genes) {
 
 
           // Update the gene with the transcript count for the
-          // row's build and source 
+          // row's build and source
           if (build && source) {
             gene[build][source] = valid_transcript_ids.length
           }
-          // Update the gene coords 
+          // Update the gene coords
           if (build && source) {
             let coord = {"chr": chr, "start": start, "end": end};
             gene.gene_coord[build][source] = coord;
@@ -648,16 +463,7 @@ function lookupEntries(genes) {
         })
         var gene_data = {'genes': genes}
 
-        const body = JSON.stringify(gene_data);
-        const res = new Response(body, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Charset': 'utf-8',
-            'Cache-Control': 'public,max-age=84600',
-          },
-        });
-
-        resolve(res);
+        resolve(jsonResponse(JSON.stringify(gene_data), { cache: true }));
       } // end of else (not err)
     }) // end of db.all
   }) // end of new Promise
@@ -724,38 +530,141 @@ function lookup(gene, params) {
               reject(err);
             } else {
               var gene_data = {'genes': rows}
-
-              const body = JSON.stringify(gene_data);
-              const res = new Response(body, {
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Charset': 'utf-8',
-                  'Cache-Control': 'public,max-age=84600',
-                },
-              });
-
-              resolve(res);
+              resolve(jsonResponse(JSON.stringify(gene_data), { cache: true }));
             }
           })
         } else {
           var gene_data = {'genes': rows};
-
-          const body = JSON.stringify(gene_data);
-          const res = new Response(body, {
-            headers: {
-              'Content-Type': 'application/json',
-              'Charset': 'utf-8',
-              'Cache-Control': 'public,max-age=84600',
-            },
-          });
-
-          resolve(res);
+          resolve(jsonResponse(JSON.stringify(gene_data), { cache: true }));
         }
       }
     });
   });
 }
 
+// Lookup multiple genes and return an array of the genes
+// found, either as the gene name or an alias. Use like
+// in the where clause to perform a case-insensitive search.
+async function apiLookupGenes(params) {
+  // genes    - The comma separated list of genes
+  // searchAlias
+  //   never  - Only search on gene names (known to gencode and refseq)
+  //   always - Search on both gene names and aliases
+  //   last   - Only search aliases if the searching on gene name returned no results
+  const genes       = params.genes;
+  const searchAlias = params.searchAlias;
+  let stmt = '';
+
+  if (searchAlias == 'always') {
+    stmt = `SELECT distinct g.gene_name, ga.alias_symbol AS 'gene_alias'
+        FROM genes g
+        LEFT JOIN gene_symbol gs
+          ON g.gene_symbol = gs.gene_symbol
+        LEFT JOIN gene_alias ga
+          ON gs.gene_symbol = ga.gene_symbol`
+
+    let firstTime = true;
+    genes.split(',').forEach(function(geneName) {
+      stmt += firstTime ? ' WHERE ' : ' OR '
+      stmt += ' g.gene_name     like ' + '"' + geneName + '"'
+      stmt += ' OR    ga.alias_symbol like ' + '"' + geneName + '"'
+      firstTime = false;
+    })
+    stmt += ' GROUP BY g.gene_name'
+  } else {
+    stmt = 'SELECT distinct g.gene_name from genes g '
+    let firstTime = true;
+    genes.split(',').forEach(function(geneName) {
+      stmt += firstTime ? ' WHERE ' : ' OR '
+      stmt += ' g.gene_name     like ' + '"' + geneName + '"'
+      firstTime = false;
+    })
+  }
+
+  const rows = await dbAll(stmt);
+
+  // Map gene name parameter to result row
+  const inputGeneMap = {};
+  genes.split(',').forEach(function(inputGeneName) {
+    const inputGeneNameUC = inputGeneName.toUpperCase();
+    inputGeneMap[inputGeneNameUC] = false;
+  })
+
+  rows.forEach(function(row) {
+    let matchedRow = inputGeneMap[row.gene_name.toUpperCase()]
+    if (matchedRow != null && matchedRow == false) {
+      const result = {'match': true, 'gene_name': row.gene_name};
+      inputGeneMap[row.gene_name.toUpperCase()] = result;
+    } else if (row.hasOwnProperty('gene_alias')) {
+      matchedRow = inputGeneMap[row.gene_alias.toUpperCase()]
+      if (matchedRow != null && matchedRow == false) {
+        const result = {'match': true, 'gene_alias': row.gene_alias};
+        inputGeneMap[row.gene_alias.toUpperCase()] = result;
+      }
+    }
+  })
+
+  const genesNoMatch = [];
+  genes.split(',').forEach(function(inputGene) {
+    const matchedRow = inputGeneMap[inputGene.toUpperCase()];
+    if (!matchedRow) {
+      genesNoMatch.push(inputGene)
+    }
+  })
+
+  if (genesNoMatch.length > 0 && searchAlias == 'last') {
+    stmt = `SELECT distinct g.gene_name 'gene_name',
+                            ga.alias_symbol as 'gene_alias'
+            FROM      genes as g
+            LEFT JOIN gene_alias as ga on ga.gene_symbol = g.gene_symbol `
+
+    let firstTime = true;
+    genesNoMatch.forEach(function(geneName) {
+      stmt += firstTime ? ' WHERE ' : ' OR '
+      stmt += ' ga.alias_symbol like ' + '"' + geneName  + '"'
+      firstTime = false;
+    })
+
+    const aliasRows = await dbAll(stmt);
+
+    // Match the input gene name to the result row for gene alias
+    aliasRows.forEach(function(aliasRow) {
+      const matchedRow = inputGeneMap[aliasRow.gene_alias.toUpperCase()]
+      if (matchedRow != null && matchedRow == false) {
+        const result = {'match': true, 'gene_alias': aliasRow.gene_alias}
+        inputGeneMap[aliasRow.gene_alias.toUpperCase()] = result;
+      }
+    })
+
+    // Now create a result set for every gene name in the parameter
+    const results = []
+    genes.split(',').forEach(function(inputGene) {
+      let resultRow = inputGeneMap[inputGene.toUpperCase()];
+      if (resultRow) {
+        resultRow.input_gene_name = inputGene;
+      } else {
+        resultRow = {'input_gene_name': inputGene, 'gene_name': '', 'gene_alias': '', 'match': ''}
+      }
+      results.push(resultRow)
+    })
+
+    return jsonResponse(JSON.stringify({'genes': results}), { cache: true });
+  } else {
+    // Now create a result set for every gene name in the parameter
+    const results = []
+    genes.split(',').forEach(function(inputGene) {
+      let resultRow = inputGeneMap[inputGene.toUpperCase()];
+      if (resultRow) {
+        resultRow.input_gene_name = inputGene;
+      } else {
+        resultRow = {'match': false, 'input_gene_name': inputGene};
+      }
+      results.push(resultRow)
+    })
+
+    return jsonResponse(JSON.stringify({'genes': results}), { cache: true });
+  }
+}
 
 export {
   createGeneInfoHandler,
