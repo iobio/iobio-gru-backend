@@ -1,0 +1,17 @@
+{
+  "bam": {
+    "path": "/"
+  },
+  "gene": {
+    "path": "/"
+  },
+  "backend": {
+    "path": "/gru"
+  },
+  "backend_map": {
+    "default": "https://backend.iobio.io",
+    "mosaic": "https://mosaic.chpc.utah.edu/gru/api/v1",
+    "https://mosaic.chpc.utah.edu": "https://mosaic.chpc.utah.edu/gru/api/v1",
+    "https://mosaic-staging.chpc.utah.edu": "https://mosaic-staging.chpc.utah.edu/gru/api/v1"
+  }
+}
