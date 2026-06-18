@@ -3,8 +3,7 @@ import fs from 'fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 
-async function phenolyzerHandler(req) {
-  const url = new URL(req.url);
+async function phenolyzerHandler(req, url = new URL(req.url)) {
   const params = {
     term: url.searchParams.get("term"),
     refresh: url.searchParams.get("refresh"),

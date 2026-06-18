@@ -38,9 +38,8 @@ function getDb() {
 //  });
 //});
 
-function hpoHandler(req) {
+function hpoHandler(req, url = new URL(req.url)) {
   return new Promise((resolve, reject) => {
-    const url = new URL(req.url);
     const params = new URLSearchParams(url.search);
 
     var searchterm = params.get('term');

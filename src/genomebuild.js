@@ -11,7 +11,7 @@ function getDb() {
   return _db;
 }
 
-function genomeBuildHandler(req) {
+function genomeBuildHandler(req, url = new URL(req.url)) {
 
   // Get all species
   var speciesSql = "SELECT * from species";
@@ -115,7 +115,6 @@ function genomeBuildHandler(req) {
                         genomeBuild['aliases'] = aliasMap[genomeBuild.id];
                       });
 
-                      const url = new URL(req.url);
                       const params = new URLSearchParams(url.search);
 
                       const body = params.get('callback') + '(' + JSON.stringify(species) +');';

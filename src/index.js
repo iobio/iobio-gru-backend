@@ -18,6 +18,9 @@ import { serve } from '@anderspitman/fetch-handler';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const appsDir = path.join(__dirname, '..', 'apps');
+const appNames = ['bam', 'gene'];
+
 const MAX_STDERR_LEN = 1048576;
 const MIN_DATA_DIR_VERSION = '1.15.0';
 
@@ -183,6 +186,10 @@ if (args['--port']) {
 }
 
 
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json')).toString());
+const mountedRoutes = buildMountedRoutes(config);
+
+
 // TODO: port and test embedded app functionality
 //import Router from 'koa-router';
 //const router = new Router();
@@ -266,8 +273,8 @@ function wrapper(handler) {
 }
 
 function addCors(handler) {
-  return async (req) => {
-    const res = await handler(req);
+  return async (req, ...args) => {
+    const res = await handler(req, ...args);
     res.headers.set('Access-Control-Allow-Origin', '*');
     return res;
   };
@@ -296,9 +303,7 @@ function withCompletedCallback(res, callback) {
   return new Response(readable, res);
 }
 
-async function handler(req) {
-
-  const url = new URL(req.url);
+async function backendHandler(req, url = new URL(req.url)) {
 
   if (url.pathname === '/') {
     return new Response(JSON.stringify(statusData), {
@@ -312,16 +317,16 @@ async function handler(req) {
     return serveStatic(req, fsPath);
   }
   else if (url.pathname.startsWith('/gene2pheno')) {
-    return g2pHandler(req);
+    return g2pHandler(req, url);
   }
   else if (url.pathname.startsWith('/geneinfo')) {
-    return geneInfoHandler(req);
+    return geneInfoHandler(req, url);
   }
   else if (url.pathname.startsWith('/genomebuild')) {
-    return genomeBuildHandler(req);
+    return genomeBuildHandler(req, url);
   }
   else if (url.pathname.startsWith('/hpo/hot/lookup')) {
-    return hpoHandler(req);
+    return hpoHandler(req, url);
   }
   else if (url.pathname.startsWith('/gru_data/')) {
     const fsPath = path.join(dataPath(''), url.pathname.slice(10));
@@ -351,7 +356,7 @@ async function handler(req) {
     });
   }
   else if (url.pathname.startsWith('/phenolyzer')) {
-    return phenoHandler(req);
+    return phenoHandler(req, url);
   }
   else {
     let params;
@@ -827,6 +832,94 @@ async function handler(req) {
   return new Response("Invalid request", {
     status: 400,
   });
+}
+
+async function handler(req) {
+  const url = new URL(req.url);
+
+  for (const route of mountedRoutes) {
+    const routeUrl = getMountedUrl(url, route);
+    if (!routeUrl) {
+      continue;
+    }
+
+    if (route.type === 'backend') {
+      return backendHandler(req, routeUrl);
+    }
+    else if (route.type === 'app') {
+      return serveApp(req, route.appName, routeUrl);
+    }
+  }
+
+  return new Response("Not found", {
+    status: 404,
+  });
+}
+
+function buildMountedRoutes(config) {
+  const backendOrigin = config.backend?.origin;
+  const routes = [{
+    type: 'backend',
+    origin: backendOrigin,
+    path: config.backend?.path || '/',
+  }];
+
+  for (const appName of appNames) {
+    const appDir = path.join(appsDir, appName);
+    if (!fs.existsSync(appDir)) {
+      continue;
+    }
+
+    const appConfig = config[appName] || {};
+    routes.push({
+      type: 'app',
+      appName,
+      origin: appConfig.origin || backendOrigin,
+      path: appConfig.path || '/',
+    });
+  }
+
+  return routes;
+}
+
+function getMountedUrl(url, route) {
+  if (route.origin && url.origin !== route.origin) {
+    return null;
+  }
+
+  if (route.path !== '/' && url.pathname !== route.path && !url.pathname.startsWith(route.path + '/')) {
+    return null;
+  }
+
+  const routeUrl = new URL(url);
+  if (route.path !== '/') {
+    routeUrl.pathname = url.pathname.slice(route.path.length) || '/';
+  }
+  return routeUrl;
+}
+
+async function serveApp(req, appName, appUrl) {
+  const appDir = path.join(appsDir, appName);
+  let fsPath = path.join(appDir, appUrl.pathname);
+
+  if (appUrl.pathname.endsWith('/')) {
+    fsPath = path.join(fsPath, 'index.html');
+  }
+
+  if (!await fileExists(fsPath)) {
+    fsPath = path.join(appDir, 'index.html');
+  }
+
+  return serveStatic(req, fsPath);
+}
+
+async function fileExists(path) {
+  try {
+    await fs.promises.access(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 serve({

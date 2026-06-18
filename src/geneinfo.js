@@ -68,9 +68,8 @@ function getPathPart(pathParts, idx) {
 }
 
 function createGeneInfoHandler(opt) {
-  return async (req) => {
+  return async (req, url = new URL(req.url)) => {
     try {
-      const url = new URL(req.url);
       const params = Object.fromEntries(url.searchParams);
 
       const path = url.pathname.slice(opt.prefix.length);

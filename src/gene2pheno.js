@@ -108,9 +108,7 @@ function promiseGetGeneDisorders(db, gene_name) {
 
 // v3 In addition to returning associated phenotypes, this endpoint also returns 
 // associated disorders for a gene.
-function gene2PhenoHandler(req) {
-  const url = new URL(req.url);
-
+function gene2PhenoHandler(req, url = new URL(req.url)) {
   const pathParts = url.pathname.split('/');
   const gene = pathParts[3];
 
