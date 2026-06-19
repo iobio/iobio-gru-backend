@@ -1,12 +1,12 @@
 {
   "bam": {
-    "path": "/"
+    "path": "/bam"
   },
   "gene": {
-    "path": "/"
+    "path": "/gene"
   },
   "backend": {
-    "path": "/gru"
+    "path": "/"
   },
   "backend_map": {
     "default": "https://backend.iobio.io",

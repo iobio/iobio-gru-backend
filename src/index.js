@@ -858,11 +858,7 @@ async function handler(req) {
 
 function buildMountedRoutes(config) {
   const backendOrigin = config.backend?.origin;
-  const routes = [{
-    type: 'backend',
-    origin: backendOrigin,
-    path: config.backend?.path || '/',
-  }];
+  const routes = [];
 
   for (const appName of appNames) {
     const appDir = path.join(appsDir, appName);
@@ -879,7 +875,34 @@ function buildMountedRoutes(config) {
     });
   }
 
-  return routes;
+  routes.push({
+    type: 'backend',
+    origin: backendOrigin,
+    path: config.backend?.path || '/',
+  });
+
+  return routes.sort(compareRoutes);
+}
+
+function compareRoutes(a, b) {
+  // More specific paths need to match before catch-all paths like '/'.
+  if (a.path.length > b.path.length) {
+    return -1;
+  }
+  else if (b.path.length > a.path.length) {
+    return 1;
+  }
+
+  // For the same path, origin-specific routes need to match before generic
+  // routes with no origin.
+  if (a.origin && !b.origin) {
+    return -1;
+  }
+  else if (b.origin && !a.origin) {
+    return 1;
+  }
+
+  return 0;
 }
 
 function getMountedUrl(url, route) {
