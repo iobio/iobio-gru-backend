@@ -24,6 +24,14 @@ const appNames = ['bam', 'gene'];
 const MAX_STDERR_LEN = 1048576;
 const MIN_DATA_DIR_VERSION = '1.15.0';
 
+function handleShutdownSignal(signal) {
+  console.log(`Received ${signal}; shutting down`);
+  process.exit(0);
+}
+
+process.on('SIGINT', () => handleShutdownSignal('SIGINT'));
+process.on('SIGTERM', () => handleShutdownSignal('SIGTERM'));
+
 const gruVersion = fs.readFileSync(path.join(__dirname, '..', 'VERSION')).toString().trim();
 
 const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString().trim();
