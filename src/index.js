@@ -194,7 +194,7 @@ if (args['--port']) {
 }
 
 
-const config = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json')).toString());
+const config = applyConfigEnvOverrides(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json')).toString()));
 const mountedRoutes = buildMountedRoutes(config);
 
 
@@ -236,7 +236,7 @@ const mountedRoutes = buildMountedRoutes(config);
 function wrapper(handler) {
   return async (req) => {
 
-    const url = new URL(req.url);
+    const url = getRequestUrl(req);
 
     const contentType = req.headers.get('content-type')?.split(';')[0];
 
@@ -843,7 +843,7 @@ async function backendHandler(req, url = new URL(req.url)) {
 }
 
 async function handler(req) {
-  const url = new URL(req.url);
+  const url = getRequestUrl(req);
 
   for (const route of mountedRoutes) {
     const routeUrl = getMountedUrl(url, route);
@@ -864,8 +864,49 @@ async function handler(req) {
   });
 }
 
+function getRequestUrl(req) {
+  const url = new URL(req.url);
+
+  const forwardedProto = req.headers.get('x-forwarded-proto');
+  if (forwardedProto) {
+    url.protocol = forwardedProto + ':';
+  }
+
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  if (host) {
+    url.host = host;
+  }
+
+  return url;
+}
+
+function applyConfigEnvOverrides(config) {
+  applyServiceConfigEnvOverrides(config, 'bam', 'IOBIO_BAM_PATH_PREFIX', 'IOBIO_BAM_ORIGIN');
+  applyServiceConfigEnvOverrides(config, 'gene', 'IOBIO_GENE_PATH_PREFIX', 'IOBIO_GENE_ORIGIN');
+  applyServiceConfigEnvOverrides(config, 'backend', 'IOBIO_BACKEND_PATH_PREFIX', 'IOBIO_BACKEND_ORIGIN');
+  return config;
+}
+
+function applyServiceConfigEnvOverrides(config, serviceName, pathEnvName, originEnvName) {
+  const pathValue = process.env[pathEnvName];
+  const originValue = process.env[originEnvName];
+
+  if (pathValue === undefined && originValue === undefined) {
+    return;
+  }
+
+  config[serviceName] = config[serviceName] || {};
+
+  if (pathValue !== undefined) {
+    config[serviceName].path = pathValue;
+  }
+
+  if (originValue !== undefined) {
+    config[serviceName].origin = originValue;
+  }
+}
+
 function buildMountedRoutes(config) {
-  const backendOrigin = config.backend?.origin;
   const routes = [];
 
   for (const appName of appNames) {
@@ -878,14 +919,14 @@ function buildMountedRoutes(config) {
     routes.push({
       type: 'app',
       appName,
-      origin: appConfig.origin || backendOrigin,
+      origin: appConfig.origin,
       path: appConfig.path || '/',
     });
   }
 
   routes.push({
     type: 'backend',
-    origin: backendOrigin,
+    origin: config.backend?.origin,
     path: config.backend?.path || '/',
   });
 
@@ -930,6 +971,16 @@ function getMountedUrl(url, route) {
 }
 
 async function serveApp(req, appName, appUrl) {
+  if (appUrl.pathname === '/config.json') {
+    const clientConfigJson = JSON.stringify(config, null, 2) + '\n';
+    return new Response(clientConfigJson, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+      },
+    });
+  }
+
   const appDir = path.join(appsDir, appName);
   let fsPath = path.join(appDir, appUrl.pathname);
 
