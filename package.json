@@ -6,7 +6,7 @@
   "main": "./src/index.js",
   "scripts": {
     "dev": "nodemon ./server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/*.test.js"
   },
   "author": "",
   "license": "ISC",

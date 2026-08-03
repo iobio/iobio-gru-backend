@@ -14,6 +14,7 @@ import { serveStatic } from './static.js';
 import { fileURLToPath } from 'node:url';
 //import AutoEncrypt from '@small-tech/auto-encrypt';
 import { serve } from '@anderspitman/fetch-handler';
+import { applyConfigEnvOverrides } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -880,32 +881,6 @@ function getRequestUrl(req) {
   return url;
 }
 
-function applyConfigEnvOverrides(config) {
-  applyServiceConfigEnvOverrides(config, 'bam', 'IOBIO_BAM_PATH_PREFIX', 'IOBIO_BAM_ORIGIN');
-  applyServiceConfigEnvOverrides(config, 'gene', 'IOBIO_GENE_PATH_PREFIX', 'IOBIO_GENE_ORIGIN');
-  applyServiceConfigEnvOverrides(config, 'backend', 'IOBIO_BACKEND_PATH_PREFIX', 'IOBIO_BACKEND_ORIGIN');
-  return config;
-}
-
-function applyServiceConfigEnvOverrides(config, serviceName, pathEnvName, originEnvName) {
-  const pathValue = process.env[pathEnvName];
-  const originValue = process.env[originEnvName];
-
-  if (pathValue === undefined && originValue === undefined) {
-    return;
-  }
-
-  config[serviceName] = config[serviceName] || {};
-
-  if (pathValue !== undefined) {
-    config[serviceName].path = pathValue;
-  }
-
-  if (originValue !== undefined) {
-    config[serviceName].origin = originValue;
-  }
-}
-
 function buildMountedRoutes(config) {
   const routes = [];
 
@@ -920,14 +895,14 @@ function buildMountedRoutes(config) {
       type: 'app',
       appName,
       origin: appConfig.origin,
-      path: appConfig.path || '/',
+      path: appConfig.path_prefix || '/',
     });
   }
 
   routes.push({
     type: 'backend',
     origin: config.backend?.origin,
-    path: config.backend?.path || '/',
+    path: config.backend?.path_prefix || '/',
   });
 
   return routes.sort(compareRoutes);
