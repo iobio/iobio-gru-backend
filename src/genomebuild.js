@@ -1,24 +1,23 @@
-const Router = require('koa-router');
+import sqlite3 from 'sqlite3';
+import { dataPath } from './utils.js';
+
 
 let _db;
 function getDb() {
   if (!_db) {
-    const sqlite3 = require('sqlite3').verbose();
-    const { dataPath } = require('./utils.js');
+    const sqlite3Verbose = sqlite3.verbose();
     _db = new sqlite3.Database(dataPath('genomebuild/genomebuild.db'));
   }
   return _db;
 }
 
-const router = new Router();
-
-router.get('/', async (ctx) => {  
+function genomeBuildHandler(req, url = new URL(req.url)) {
 
   // Get all species
   var speciesSql = "SELECT * from species";
   var species = [];
 
-  db = getDb();
+  const db = getDb();
 
   return new Promise((resolve, reject) => {
     db.all(speciesSql,function(err,speciesRows){ 
@@ -116,10 +115,17 @@ router.get('/', async (ctx) => {
                         genomeBuild['aliases'] = aliasMap[genomeBuild.id];
                       });
 
-                      ctx.set('Content-Type', 'application/json');
-                      ctx.set('Charset', 'utf-8')
-                      ctx.body = ctx.query.callback + '(' + JSON.stringify(species) +');';
-                      resolve();
+                      const params = new URLSearchParams(url.search);
+
+                      const body = params.get('callback') + '(' + JSON.stringify(species) +');';
+                      const res = new Response(body, {
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Charset': 'utf-8',
+                        },
+                      });
+
+                      resolve(res);
                     }
                   });
 
@@ -134,6 +140,8 @@ router.get('/', async (ctx) => {
       }
     });
   });
-});
+}
 
-module.exports = router;
+export {
+  genomeBuildHandler,
+};

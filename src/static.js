@@ -1,18 +1,20 @@
-const fs = require('fs');
-const path = require('path');
-const { getType } = require('mime');
+import fs from 'node:fs';
+import path from 'node:path';
+import mimelib from 'mime';
+import { Readable } from 'node:stream';
 
+async function serveStatic(req, fsPath) {
 
-async function serveStatic(ctx, fsPath) {
+  const url = new URL(req.url);
 
   let stats;
   try {
     stats = await fs.promises.stat(fsPath);
   }
   catch (e) {
-    ctx.status = 404;
-    ctx.body = "Not Found";
-    return;
+    return new Response("Not found", {
+      status: 404,
+    });
   }
 
   const lastModified = new Date(stats.mtimeMs).toUTCString();
@@ -26,7 +28,7 @@ async function serveStatic(ctx, fsPath) {
       itemsHtml += `  <div><a href='./${name}'>${name}</a></div>\n`;
     }
 
-    resHtml = `
+    const resHtml = `
       <!doctype html>
       <html>
       <head>
@@ -37,14 +39,19 @@ async function serveStatic(ctx, fsPath) {
       </html>
     `
 
-    ctx.set('Content-Type', 'text/html');
-
-    ctx.status = 200;
-    ctx.body = resHtml;
-    return;
+    return new Response(resHtml, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    });
   }
 
-  const rangeHeader = ctx.headers['range'];
+  const rangeHeader = req.headers.get('range');
+
+  let status = 500;
+  let headers = {};
+  let nodeStream;
 
   // TODO: parse byte range specs properly according to
   // https://tools.ietf.org/html/rfc7233
@@ -62,37 +69,50 @@ async function serveStatic(ctx, fsPath) {
 
     const originalSize = stats.size;
 
-    ctx.set('Content-Range', `bytes ${range.start}-${range.end}/${originalSize}`);
-    ctx.set('Content-Length', range.end - range.start + 1);
-    ctx.status = 206;
-
-    stream = fs.createReadStream(fsPath, {
+    nodeStream = fs.createReadStream(fsPath, {
       start: range.start,
       end: range.end,
     });
+
+    status = 206;
+    headers = {
+      'Content-Range': `bytes ${range.start}-${range.end}/${originalSize}`,
+      'Content-Length': range.end - range.start + 1,
+    };
   }
   else {
-    ctx.set('Content-Length', `${stats.size}`);
-    stream = fs.createReadStream(fsPath);
+    nodeStream = fs.createReadStream(fsPath);
+  
+    status = 200;
+    headers = {
+      'Content-Length': `${stats.size}`,
+    };
   }
 
-  const mime = getType(path.extname(fsPath));
+  const mime = mimelib.getType(path.extname(fsPath));
   if (mime) {
-    ctx.set('Content-Type', mime);
+    headers['Content-Type'] = mime;
   }
 
-  ctx.set('Accept-Ranges', 'bytes');
-  ctx.set('Cache-Control', 'no-store');
-  ctx.set('Last-Modified', lastModified);
+  headers['Accept-Ranges'] = 'bytes';
+  headers['Cache-Control'] = 'no-store';
+  headers['Last-Modified'] = lastModified;
 
-  if (ctx.method == 'HEAD') {
-    ctx.status = 200;
+  let body = '';
+
+  if (req.method === 'HEAD') {
+    status = 200;
   }
   else {
-    ctx.body = stream;
+    body = Readable.toWeb(nodeStream);
   }
+
+  return new Response(body, {
+    status,
+    headers,
+  });
 }
 
-module.exports = {
+export {
   serveStatic,
 };

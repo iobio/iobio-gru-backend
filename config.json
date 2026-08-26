@@ -1,0 +1,28 @@
+{
+  "bam": {
+    "path_prefix": "/bam"
+  },
+  "gene": {
+    "path_prefix": "/gene",
+    "site_name": "",
+    "default_mode": "advanced",
+    "show_intro": false,
+    "show_files_button": true,
+    "show_blogs_and_tutorials": true,
+    "phenolyzer_permitted": true,
+    "omim_api_key": "",
+    "intro_paragraph_1": "",
+    "intro_paragraph_2": "",
+    "intro_paragraph_3": "",
+    "intro_paragraph_4": ""
+  },
+  "backend": {
+    "path_prefix": "/"
+  },
+  "backend_map": {
+    "default": "https://backend.iobio.io",
+    "mosaic": "https://mosaic.chpc.utah.edu/gru/api/v1",
+    "https://mosaic.chpc.utah.edu": "https://mosaic.chpc.utah.edu/gru/api/v1",
+    "https://mosaic-staging.chpc.utah.edu": "https://mosaic-staging.chpc.utah.edu/gru/api/v1"
+  }
+}

@@ -24,8 +24,9 @@ if [ "$gnomadMergeAnnots" ]; then
     
     if [ "$genomeBuildName" == "GRCh38" ]; then
         toml="/gru_data/gnomad/vcfanno_gnomad_3.1_grch38.toml"
+    else
+        toml="/gru_data/gnomad/vcfanno_gnomad_2.1_grch37.toml"
     fi
-    	toml="/gru_data/gnomad/vcfanno_gnomad_2.1_grch37.toml"
 
     function gnomadAnnotFunc {
         # Add the gnomAD INFO fields to the input vcf

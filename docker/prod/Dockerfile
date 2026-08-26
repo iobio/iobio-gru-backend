@@ -1,28 +1,38 @@
 #FROM ubuntu:18.04
-FROM ensemblorg/ensembl-vep:release_109.3
+FROM docker.io/ensemblorg/ensembl-vep:release_115.2
 
 USER root
-WORKDIR /
 
 RUN apt-get update \
     && apt-get -y upgrade \
     && apt-get install -y \
         curl \
+        git \
         xz-utils \
-        python-pip \
         python3-pip \
         build-essential
-
-
-ARG node_version=16.x
-RUN curl -sL https://deb.nodesource.com/setup_${node_version} | bash - && \
-    apt-get install -y nodejs
 
 # clinReport dependencies
 RUN apt-get -y install libfontconfig1
 
-# We expect node binary to be named "node", but Ubuntu names it "nodejs", so we create a symbolic link
-RUN ln -s /usr/bin/nodejs /usr/local/bin/node
+# These directories are required for mounting writable singularity sandbox
+# images in the Utah CHPC environment, because of the directories that CHPC
+# automatically binds. Hopefully this won't be necessary in the future.
+RUN ["mkdir", "/uufs"]
+RUN ["mkdir", "/scratch"]
+RUN ["mkdir", "/ssd"]
+
+
+RUN ["mkdir", "/iobio-gru-backend"]
+
+WORKDIR /
+
+ARG NODE_VERSION=24.13.1
+RUN curl -O https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz \
+        && tar xf node-v${NODE_VERSION}-linux-x64.tar.xz \
+        && mv node-v${NODE_VERSION}-linux-x64 node \
+        && rm node-v${NODE_VERSION}-linux-x64.tar.xz
+RUN echo 'PATH="/node/bin:${PATH}"' >> /root/.profile
 
 #ARG gru_version=improve-logging
 #RUN git clone --depth 1 --branch ${gru_version} https://github.com/iobio/iobio-gru-backend
@@ -83,17 +93,14 @@ RUN curl -LO https://github.com/iobio/bigwig-depther-rs/releases/download/0.1.0/
         && mv bigwig-depther-0.1.0-linux-x64 tool_bin/bigWigDepther \
         && rm bigwig-depther-0.1.0-linux-x64.zip
 
-EXPOSE 9001
-
-ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js"]
-CMD ["--tools-dir=/tool_bin", "--data-dir=/gru_data"]
-
-# These directories are required for mounting writable singularity sandbox
-# images in the Utah CHPC environment, because of the directories that CHPC
-# automatically binds. Hopefully this won't be necessary in the future.
-RUN ["mkdir", "/uufs"]
-RUN ["mkdir", "/scratch"]
-RUN ["mkdir", "/ssd"]
+# Phenolyzer
+RUN cpanm --notest Bio::OntologyIO
+ARG PHENOLYZER_COMMIT=f939514f92919e1bd6c3a5bc0d7f4d396f346206 
+RUN git clone --no-checkout --depth 1 https://github.com/WGLab/phenolyzer /tool_bin/lib/phenolyzer \
+        && cd /tool_bin/lib/phenolyzer \
+        && git fetch --depth 1 origin ${PHENOLYZER_COMMIT} \
+        && git checkout ${PHENOLYZER_COMMIT}
+COPY tools/phenolyzer/phenolyzer.sh /tool_bin/phenolyzer
 
 # TODO: This is a bit hacky. Manually copying this script in order to sequence
 # the docker layers such that we can rebuild code changes without
@@ -102,8 +109,14 @@ COPY ./dev_tools/populate_static.sh populate_static.sh
 RUN ["./populate_static.sh"]
 COPY ./dev_tools/download_clinvar.sh download_clinvar.sh
 RUN ["./download_clinvar.sh"]
-COPY ./ /iobio-gru-backend
-RUN ["mv", "/static", "/iobio-gru-backend"]
+COPY ./ /iobio-gru-backend/
+RUN ["mv", "static", "/iobio-gru-backend"]
 RUN ["ln", "-s", "/tool_bin", "/iobio-gru-backend/tool_bin"]
+
 WORKDIR /iobio-gru-backend
+ENV PATH="/node/bin:${PATH}"
 RUN ["npm", "install"]
+
+EXPOSE 9001
+ENTRYPOINT ["node", "/iobio-gru-backend/src/index.js"]
+CMD ["--tools-dir=/iobio-gru-backend/tool_bin", "--data-dir=/gru_data"]

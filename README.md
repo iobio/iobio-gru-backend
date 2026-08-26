@@ -1,29 +1,55 @@
 # Run instructions
 
-## Download a copy of the data directory
+## Quickstart
 
-The iobio backend requires a ~128GB data directory which includes various
-databases and references files.
+Install [Docker](https://docs.docker.com/engine/install/) and [rclone](https://rclone.org/install/). GRU requires a roughly 128 GB data directory containing databases and reference files. Download data version `2.0.0` from `files.iobio.io`:
 
+```bash
+rclone sync --progress --http-url https://files.iobio.io \
+  :http:gru_data/data/gru_data_2.0.0/ \
+  gru_data_2.0.0
 ```
-rsync -av rsync://data.iobio.io:9009/gru/data/gru_data_1.11.0 .
+
+Running the command again synchronizes an existing local copy rather than downloading unchanged files again.
+
+Start GRU with the downloaded data mounted:
+
+```bash
+docker run --rm -it \
+  -v "$PWD/gru_data_2.0.0:/gru_data" \
+  -p 9001:9001 \
+  docker.io/iobio/iobio-gru-backend:2.0.0
 ```
 
-Note that since `gru_data_1.10.0` it's possible to upgrade data directory
-versions without a complete download. See
-[here](docs/populating_data_directory.md#incremental-updates) for details.
+In another terminal, verify that GRU is running:
 
+```bash
+curl http://localhost:9001
+```
 
-## Run the docker image
+## Runtime configuration
 
-The docker image is fairly large (~4.5GB). This creates a temporary container
-with the data directory mounted
+GRU reads `config.json`, applies environment-variable overrides, and serves the effective configuration to hosted applications at `/config.json`. Configuration keys use snake_case. Route mounts are configured with `path_prefix`, for example:
 
-`docker run --rm -it -v $PWD/gru_data_1.11.0/:/gru_data -p 9001:9001 iobio/iobio-gru-backend:1.17.0`
+```json
+{
+  "gene": {
+    "path_prefix": "/gene",
+    "default_mode": "advanced"
+  },
+  "backend": {
+    "path_prefix": "/"
+  }
+}
+```
 
+Environment variables beginning with `IOBIO_GENE_`, `IOBIO_BAM_`, or `IOBIO_BACKEND_` are published under the corresponding configuration section. The suffix is lowercased without otherwise changing its snake_case form:
 
-## Test
+```text
+IOBIO_GENE_PATH_PREFIX=/gene       -> gene.path_prefix
+IOBIO_GENE_DEFAULT_MODE=simple     -> gene.default_mode
+IOBIO_GENE_SHOW_INTRO=true         -> gene.show_intro
+IOBIO_BACKEND_ORIGIN=https://...   -> backend.origin
+```
 
-In a separate terminal, the following command should return a 200 status code
-
-`curl localhost:9001`
+Exact values `true` and `false` become JSON booleans. All other environment values remain strings. These namespaces are public application configuration because the resulting values are returned by `/config.json`.

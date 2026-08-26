@@ -1,30 +1,42 @@
-const os = require('os');
-const Koa = require('koa');
-const Router = require('koa-router');
-const cors = require('@koa/cors');
-const bodyParser = require('koa-bodyparser');
-const path = require('path');
-const spawn = require('child_process').spawn;
-const process = require('process');
-const gene2PhenoRouter = require('./gene2pheno.js');
-const geneInfoRouter = require('./geneinfo.js');
-const genomeBuildRouter = require('./genomebuild.js');
-const hpoRouter = require('./hpo.js');
-const { parseArgs, dataPath, replaceAll } = require('./utils.js');
-const fs = require('fs');
-const { serveStatic } = require('./static.js');
-const stream = require('stream');
-const semver = require('semver');
-const readline = require('readline');
+import os from 'node:os';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import process from 'node:process';
+import { gene2PhenoHandler } from './gene2pheno.js';
+import { createGeneInfoHandler } from './geneinfo.js';
+import { genomeBuildHandler } from './genomebuild.js';
+import { hpoHandler } from './hpo.js';
+import { preciseReadDepthHandler } from './precise_read_depth_handler.js';
+import { phenolyzerHandler } from './phenolyzer_handler.js';
+import { parseArgs, dataPath, replaceAll, genRegionStr, semverLess } from './utils.js';
+import fs from 'node:fs';
+import { serveStatic } from './static.js';
+import { fileURLToPath } from 'node:url';
+//import AutoEncrypt from '@small-tech/auto-encrypt';
+import { serve } from '@anderspitman/fetch-handler';
+import { applyConfigEnvOverrides } from './config.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const appsDir = path.join(__dirname, '..', 'apps');
+const appNames = ['bam', 'gene'];
 
 const MAX_STDERR_LEN = 1048576;
-const MIN_DATA_DIR_VERSION = '1.12.0';
+const MIN_DATA_DIR_VERSION = '1.15.0';
+
+function handleShutdownSignal(signal) {
+  console.log(`Received ${signal}; shutting down`);
+  process.exit(0);
+}
+
+process.on('SIGINT', () => handleShutdownSignal('SIGINT'));
+process.on('SIGTERM', () => handleShutdownSignal('SIGTERM'));
 
 const gruVersion = fs.readFileSync(path.join(__dirname, '..', 'VERSION')).toString().trim();
 
-console.log(`Using data directory ${path.resolve(dataPath(''))}`);
 const dataDirVersion = fs.readFileSync(dataPath('VERSION')).toString().trim();
-if (semver.lt(dataDirVersion, MIN_DATA_DIR_VERSION)) {
+if (semverLess(dataDirVersion, MIN_DATA_DIR_VERSION)) {
   console.error(`Data directory must be at least version ${MIN_DATA_DIR_VERSION} (found ${dataDirVersion})`);
   process.exit(1);
 }
@@ -46,729 +58,27 @@ for (const entName of tmpFiles) {
   }
 }
 
-const router = new Router();
-
-router.use('/geneinfo', geneInfoRouter.routes(), geneInfoRouter.allowedMethods());
-router.use('/gene2pheno', gene2PhenoRouter.routes(), gene2PhenoRouter.allowedMethods());
-router.use('/genomebuild', genomeBuildRouter.routes(), genomeBuildRouter.allowedMethods());
-router.use('/hpo', hpoRouter.routes(), hpoRouter.allowedMethods());
-
-router.get('/static/*', async (ctx) => {
-
-  // TODO: Hack to remove prefix when hosting app within gru because I don't
-  // really understand how to do this properly with koa-router
-  const reqPath = ctx.path.startsWith('/gru') ? ctx.path.slice(4) : ctx.path;
-
-  const fsPath = path.join(__dirname, '..', reqPath);
-  await serveStatic(ctx, fsPath);
-  ctx.set('Cache-Control', 'max-age=86400');
-});
-
-router.get('/gru_data/*', async (ctx) => {
-  const fsPath = path.join(dataPath(''), ctx.path.slice(10));
-  await serveStatic(ctx, fsPath);
-});
-
-router.post('/viewAlignments', async (ctx) => {
-  const params = JSON.parse(ctx.request.body);
-
-  const args = [params.url];
-
-  if (params.regions) {
-    const samtoolsRegions = genRegionsStr(params.regions);
-    args.push(samtoolsRegions);
-  }
-
-  await handle(ctx, 'viewAlignments.sh', args);
-});
-
-
-// bam.iobio endpoints
+// TODO: port and test embedded app functionality
+//router.get('/static/*', async (ctx) => {
 //
-router.post('/alignmentHeader', async (ctx) => {
-  const params = JSON.parse(ctx.request.body);
-  await handle(ctx, 'alignmentHeader.sh', [params.url]);
-});
-
-router.post('/baiReadDepth', async (ctx) => {
-  const params = JSON.parse(ctx.request.body);
-  await handle(ctx, 'baiReadDepth.sh', [params.url]);
-});
-
-router.post('/craiReadDepth', async (ctx) => {
-  const params = JSON.parse(ctx.request.body);
-  await handle(ctx, 'craiReadDepth.sh', [params.url]);
-});
-
-router.post('/preciseReadDepth', async (ctx) => {
-
-  const params = JSON.parse(ctx.request.body);
-
-  // +1 because samtools regions are 1-based
-  const numBases = 1 + params.region.end - params.region.start;
-
-  if (numBases > 20000000) {
-    throw new Error("region too large");
-  }
-
-  if (numBases < params.numBins) {
-    throw new Error("end-start must be more than numBins");
-  }
-
-  const samtoolsRegion = genRegionStr(params.region);
-
-  const indexUrl = params.indexUrl ? params.indexUrl : '';
-
-  const scriptPath = path.join(__dirname, '../scripts', 'preciseReadDepth.sh');
-  const args = [
-    params.url,
-    indexUrl,
-    samtoolsRegion,
-    dataPath(''),
-  ];
-  const proc = spawn(scriptPath, args, {});
-
-  const binSize = Math.ceil(numBases / params.numBins);
-
-  const out = stream.PassThrough();
-  ctx.body = out;
-
-  const rl = readline.createInterface({
-    input: proc.stdout,
-  });
-
-  let aggDepth = 0;
-  let binIdx = 0;
-  rl.on('line', (line) => {
-    const parts = line.split('\t');
-    const base = parseInt(parts[1]);
-    const depth = parseInt(parts[2]);
-    aggDepth += depth;
-
-    const baseIdx = base - params.region.start;
-    const assignedBin = Math.floor((baseIdx / numBases) * params.numBins);
-
-    if (assignedBin > binIdx || binIdx === params.numBins - 1) {
-      binIdx += 1;
-
-      const avgDepth = Math.floor(aggDepth / binSize);
-      out.write(`${avgDepth}\n`);
-
-      aggDepth = 0;
-    }
-  });
-
-  rl.on('close', () => {
-    out.end();
-  });
-});
-
-router.post('/alignmentStatsStream', async (ctx) => {
-
-  const params = JSON.parse(ctx.request.body);
-
-  const samtoolsRegions = genRegionsStr(params.regions);
-  const bamstatsRegions = JSON.stringify(params.regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
-
-  const indexUrl = params.indexUrl ? params.indexUrl : '';
-
-  await handle(ctx, 'alignmentStatsStream.sh', [
-    params.url,
-    indexUrl,
-    samtoolsRegions,
-    bamstatsRegions,
-    dataPath(''),
-  ], { ignoreStderr: true });
-});
-
-
-// gene.iobio & oncogene & cohort-gene endpoints
+//  // TODO: Hack to remove prefix when hosting app within gru because I don't
+//  // really understand how to do this properly with koa-router
+//  const reqPath = ctx.path.startsWith('/gru') ? ctx.path.slice(4) : ctx.path;
 //
-router.post('/bedRegion', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-    const url = params.url;
-    const indexUrl = params.indexUrl ? params.indexUrl : '';
-    const region = genRegionStr(params.region);
-    await handle(ctx, 'bedRegion.sh', [params.url, indexUrl, region]);
-});
+//  const fsPath = path.join(__dirname, '..', reqPath);
+//  await serveStatic(ctx, fsPath);
+//  ctx.set('Cache-Control', 'max-age=86400');
+//});
 
-router.post('/bigWigDepther', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-    const url = params.url;
-    const region = genRegionStr(params.region);
-    await handle(ctx, 'bigWigDepther.sh', ["--url", params.url, "--region", region]);
-});
 
+function runScript(req, scriptName, args, gruParams, options) {
 
-router.post('/getReferenceSequence', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-    const refFastaPath = dataPath(params.fastaPath);
-    const region = genRegionStr(params.region);
-    await handle(ctx, 'getReferenceSequence.sh', [refFastaPath, region]);
-});
-
-router.post('/variantHeader', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-    const indexUrl = params.indexUrl ? params.indexUrl : '';
-    await handle(ctx, 'variantHeader.sh', [params.url, indexUrl]);
-});
-
-router.post('/getChromosomes', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-    const indexUrl = params.indexUrl ? params.indexUrl : '';
-    await handle(ctx, 'getChromosomes.sh', [params.url, indexUrl]);
-});
-
-router.post('/vcfReadDepth', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-    await handle(ctx, 'vcfReadDepth.sh', [params.url]);
-});
-
-router.post('/alignmentCoverage', async (ctx) => {
-
-  const params = JSON.parse(ctx.request.body);
-
-  const url = params.url;
-  const indexUrl = params.indexUrl ? params.indexUrl : '';
-  const samtoolsRegion = params.samtoolsRegion;
-  const maxPoints = params.maxPoints;
-  const coverageRegions = params.coverageRegions;
-  const qualityCutoff = params.qualityCutoff;
-  const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
-  const spanningRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
-
-  const coverageRegionsArg = coverageRegions.length === 0 ? '' :
-    coverageRegions
-      .filter(d => d.name && d.start && d.end)
-      .map(d => d.name + ":" + d.start + ':' + d.end)
-      .join(',');
-
-  const maxPointsArg = maxPoints;
-
-  const args = [
-    url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg,
-    coverageRegionsArg, qualityCutoff, dataPath(''),
-  ];
-
-  await handle(ctx, 'alignmentCoverage.sh', args, { ignoreStderr: true });
-});
-
-router.post('/geneCoverage', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-
-    // Pull from passed params
-    const url = params.url;
-    const indexUrl = params.indexUrl ? params.indexUrl : '';
-    const refName = params.refName;
-    const geneName = params.geneName;
-    const regionStart = params.regionStart;
-    const regionEnd = params.regionEnd;
-    const regions = params.regions;
-
-    const dataDir = dataPath('');
-
-    // Format params
-    let regionStr = "#" + geneName + "\n";
-    regions.forEach(function(region) {
-        regionStr += refName + ":" + region.start + "-" + region.end + "\n";
-    });
-    const samtoolsRegionArg = refName + ':' + regionStart + '-' + regionEnd;
-    const args = [url, indexUrl, samtoolsRegionArg, regionStr, dataDir];
-
-    await handle(ctx, 'geneCoverage.sh', args, { ignoreStderr: true });
-});
-
-router.post('/normalizeVariants', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-
-    // Pull from passed params
-    const vcfUrl = params.vcfUrl;
-    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-    const refName = params.refName;
-    const regions = params.regions;
-    const contigStr = decodeURIComponent(params.contigStr);
-    const refFastaFile = dataPath(decodeURIComponent(params.refFastaFile));
-
-    // Format params
-    let regionParm = "";
-    regions.forEach(function(region) {
-        if (regionParm.length > 0) {
-            regionParm += " ";
-        }
-        regionParm += region.refName + ":" + region.start + "-" + region.end;
-    });
-    const args = [vcfUrl, tbiUrl, refName, regionParm, contigStr, refFastaFile];
-
-    await handle(ctx, 'normalizeVariants.sh', args);
-});
-
-router.post('/getClinvarVariants', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-
-    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-    const contigStr = genContigFileStr(params.refNames);
-    const regionStr = genRegionsStr(params.regions);
-    const refFastaFile = dataPath(params.refFastaFile);
-    const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
-    const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
-    const gnomadHeaderFile = dataPath('gnomad_header.txt');
-    const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
-
-    const args = [
-        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile, 
-        params.genomeBuildName, gnomadUrl, gnomadRegionStr, 
-        gnomadHeaderFile, gnomadRenameChr, params.clinSigFilterPhrase
-    ];
-
-    await handle(ctx, 'getClinvarVariants.sh', args, { ignoreStderr: true });
-});
-
-router.post('/getClinvarVariantsV2', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-
-    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-    const contigStr = genContigFileStr(params.refNames);
-    const regionStr = genRegionsStr(params.regions);
-    const refFastaFile = dataPath(params.refFastaFile);
-    const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
-
-    const args = [
-        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile, 
-        params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
-    ];
-
-    await handle(ctx, 'getClinvarVariantsV2.sh', args, { ignoreStderr: true });
-});
-
-router.post('/annotateVariants', async (ctx) => {
-
-    const params = JSON.parse(ctx.request.body);
-
-    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-    const contigStr = genContigFileStr(params.refNames);
-    const regionStr = genRegionsStr(params.regions);
-    const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
-    const refFastaFile = dataPath(params.refFastaFile);
-    const vepCacheDir = dataPath('vep-cache');
-    const vepREVELFile = dataPath(params.vepREVELFile);
-    const vepPluginDir = dataPath('vep-cache/Plugins');
-
-    const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
-    const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
-    const gnomadHeaderFile = dataPath('gnomad_header.txt');
-    const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
-
-
-    const args = [
-        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
-        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadUrl,
-        gnomadRegionStr, gnomadHeaderFile, params.decompose, gnomadRenameChr
-
-    ];
-
-    await handle(ctx, 'annotateVariants.sh', args, { ignoreStderr: true });
-});
-
-
-router.post('/annotateVariantsV2', async (ctx) => {
-
-    const params = JSON.parse(ctx.request.body);
-
-    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-    const contigStr = genContigFileStr(params.refNames);
-    const regionStr = genRegionsStr(params.regions);
-    const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
-    const refFastaFile = dataPath(params.refFastaFile);
-    const vepCacheDir = dataPath('vep-cache');
-    const vepREVELFile = dataPath(params.vepREVELFile);
-    const vepPluginDir = dataPath('vep-cache/Plugins');
-    const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
-
-    const args = [
-        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
-        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadMergeAnnots, 
-        params.decompose
-
-    ];
-
-    await handle(ctx, 'annotateVariantsV2.sh', args, { ignoreStderr: true });
-});
-router.post('/annotateVariantsV3', async (ctx) => {
-
-  const params = JSON.parse(ctx.request.body);
-
-  const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-  const contigStr = genContigFileStr(params.refNames);
-  const regionStr = genRegionsStr(params.regions);
-  const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
-  const refFastaFile = dataPath(params.refFastaFile);
-  const vepCacheDir = dataPath('vep-cache');
-  const vepREVELFile = dataPath(params.vepREVELFile);
-  const vepPluginDir = dataPath('vep-cache/Plugins');
-
-  const args = [
-      params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
-      refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile,
-      vepPluginDir, params.hgvsNotation, params.getRsId, params.decompose
-
-  ];
-
-  await handle(ctx, 'annotateVariantsV3.sh', args, { ignoreStderr: true });
-});
-router.post('/annotateEnrichmentCounts', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-
-    const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
-    const contigStr = genContigFileStr(params.refNames);
-    const regionStr = genRegionsStr(params.regions);
-    const refFastaFile = dataPath(params.refFastaFile);
-    const filterArgs = params.filterArgs ? params.filterArgs : '';
-    const experStr = params.expIdString ? params.expIdString : '';
-    const controlStr = params.controlIdString ? params.controlIdString : '';
-
-    const args = [
-        params.vcfUrl, tbiUrl, regionStr, contigStr,
-        refFastaFile, params.filterArgs,
-        experStr, controlStr
-    ];
-
-    await handle(ctx, 'annotateEnrichmentCounts.sh', args, { ignoreStderr: true });
-});
-
-// secondary option used by oncogene
-router.post('/annotateSomaticVariantsVep', async (ctx) => {
-  const params = JSON.parse(ctx.request.body);
-  const vepCacheDir = dataPath('vep-cache');
-
-  let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
-  if (params.genomeBuildName === 'GRCh38') {
-    refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
-  }
-  
-  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, params.genomeBuildName, vepCacheDir, refFastaFile];
-  
-  await handle(ctx, 'annotateSomaticVariantsVep.sh', args, { ignoreStderr: true });
-});
-
-// primary, faster option used by oncogene
-router.post('/annotateSomaticVariantsBcsq', async (ctx) => {
-  const params = JSON.parse(ctx.request.body);
-
-  let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
-  let gffFile = '/iobio-gru-backend/static/ensembl/GRCh37/geneSet37.gff3.gz';
-
-  if (params.genomeBuildName === 'GRCh38') {
-    refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
-    gffFile = '/iobio-gru-backend/static/ensembl/GRCh38/geneSet38.gff3.gz';
-  }
-
-  const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, refFastaFile, gffFile];
-  
-  await handle(ctx, 'annotateSomaticVariantsBcsq.sh', args, { ignoreStderr: true });
-});
-
-router.post('/freebayesJointCall', async (ctx) => {
-
-  const params = JSON.parse(ctx.request.body);
-
-  const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
-  const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
-  const region = genRegionStr(params.region);
-  const vepREVELFile = dataPath(params.vepREVELFile);
-  const refFastaFile = dataPath(params.refFastaFile);
-  const contigStr = genContigFileStr(params.refNames);
-  const samplesFileStr = params.sampleNames.join('\n');
-
-  const vepCacheDir = dataPath('vep-cache');
-  const vepPluginDir = dataPath('vep-cache/Plugins');
-
-
-  const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
-  const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
-  const gnomadHeaderFile = dataPath('gnomad_header.txt');
-  const decompose = params.decompose ? params.decompose : '';
-
-  const fbArgs = params.fbArgs;
-  const freebayesArgs = [];
-  if (fbArgs) {
-    for (var key in fbArgs) {
-      var theArg = fbArgs[key];
-      if (theArg.hasOwnProperty('argName')) {
-        if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
-          if (theArg.value && theArg.value == true) {
-              freebayesArgs.push(theArg.argName);
-          }
-        } else {
-          if (theArg.value && theArg.value != '') {
-            freebayesArgs.push(theArg.argName);
-            freebayesArgs.push(theArg.value);
-          }
-        }
-
-      }
-    }
-  }
-
-  const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
-
-  const extraArgs = freebayesArgs;
-
-  const args = [
-    alignments, indices, region, refFastaFile, useSuggestedVariants,
-    params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
-    samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
-    gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose, dataPath(''),
-  ];
-
-  await handle(ctx, 'freebayesJointCall.sh', args, { ignoreStderr: true });
-});
-
-
-router.post('/freebayesJointCallV2', async (ctx) => {
-
-  const params = JSON.parse(ctx.request.body);
-
-  const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
-  const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
-  const region = genRegionStr(params.region);
-  const vepREVELFile = dataPath(params.vepREVELFile);
-  const refFastaFile = dataPath(params.refFastaFile);
-  const contigStr = genContigFileStr(params.refNames);
-  const samplesFileStr = params.sampleNames.join('\n');
-
-  const vepCacheDir = dataPath('vep-cache');
-  const vepPluginDir = dataPath('vep-cache/Plugins');
-
-  const decompose = params.decompose ? params.decompose : '';
-
-
-  const fbArgs = params.fbArgs;
-  const freebayesArgs = [];
-  if (fbArgs) {
-    for (var key in fbArgs) {
-      var theArg = fbArgs[key];
-      if (theArg.hasOwnProperty('argName')) {
-        if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
-          if (theArg.value && theArg.value == true) {
-              freebayesArgs.push(theArg.argName);
-          }
-        } else {
-          if (theArg.value && theArg.value != '') {
-            freebayesArgs.push(theArg.argName);
-            freebayesArgs.push(theArg.value);
-          }
-        }
-
-      }
-    }
-  }
-
-
-  const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
-
-  const extraArgs = freebayesArgs;
-
-  const dataDir = dataPath('');
-
-  const args = [
-    alignments, indices, region, refFastaFile, useSuggestedVariants,
-    params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
-    samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
-    decompose, contigStr, dataDir
-  ];
-
-  await handle(ctx, 'freebayesJointCallV2.sh', args, { ignoreStderr: true });
-});
-
-router.post('/freebayesJointCallV3', async (ctx) => {
-
-  const params = JSON.parse(ctx.request.body);
-
-  const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
-  const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
-  const region = genRegionStr(params.region);
-  const vepREVELFile = dataPath(params.vepREVELFile);
-  const refFastaFile = dataPath(params.refFastaFile);
-  const contigStr = genContigFileStr(params.refNames);
-  const samplesFileStr = params.sampleNames.join('\n');
-
-  const vepCacheDir = dataPath('vep-cache');
-  const vepPluginDir = dataPath('vep-cache/Plugins');
-
-  const decompose = params.decompose ? params.decompose : '';
-
-
-  const fbArgs = params.fbArgs;
-  const freebayesArgs = [];
-  if (fbArgs) {
-    for (var key in fbArgs) {
-      var theArg = fbArgs[key];
-      if (theArg.hasOwnProperty('argName')) {
-        if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
-          if (theArg.value && theArg.value == true) {
-              freebayesArgs.push(theArg.argName);
-          }
-        } else {
-          if (theArg.value && theArg.value != '') {
-            freebayesArgs.push(theArg.argName);
-            freebayesArgs.push(theArg.value);
-          }
-        }
-
-      }
-    }
-  }
-
-
-  const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
-
-  const extraArgs = freebayesArgs;
-
-  const dataDir = dataPath('');
-
-  const args = [
-    alignments, indices, region, refFastaFile, useSuggestedVariants,
-    params.clinvarUrl, params.genomeBuildName, vepREVELFile,
-    samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
-    decompose, contigStr, dataDir
-  ];
-
-  await handle(ctx, 'freebayesJointCallV3.sh', args, { ignoreStderr: true });
-});
-
-router.post('/clinvarCountsForGene', async (ctx) => {
-  const params = JSON.parse(ctx.request.body);
-
-  const region = genRegionStr(params.region);
-  const regions = params.regions;
-
-  let regionParts = "";
-  if (regions) {
-    regions.forEach(function(region) {
-      if (regionParts.length > 0) {
-        regionParts += ",";
-      }
-      regionParts += region.start + "-" + region.end;
-    })
-  }
-
-  const binLength = params.binLength ? params.binLength : '';
-  const annotationMode = params.annotationMode ? params.annotationMode : '';
-  const requiresVepService = params.requiresVepService ? params.requiresVepService : false;
-  const vepArgs = params.vepArgs ? params.vepArgs : '';
-
-  const args = [
-    params.clinvarUrl, region, binLength, regionParts, annotationMode, requiresVepService, vepArgs
-  ];
-
-  await handle(ctx, 'clinvarCountsForGene.sh', args);
-});
-
-
-
-// genepanel endpoints
-//
-router.get('/clinphen', async (ctx) => {
- 
-  const args = [ctx.query.notes];
-
-  await handle(ctx, 'clinphen.sh', args);
-});
-
-router.get('/phenotypeExtractor', async (ctx) => { 
-
-  const args = [ctx.query.notes];
-
-  await handle(ctx, 'phenotypeExtractor.sh', args);
-});
-
-router.post('/clinReport', async (ctx) => { 	 
-  // Copy the data into a temporary file and then pass the path. It was failing
-  // before, I'm pretty sure because the file was too large (~3MB) to pass
-  // through the child spawing interface.
-  const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'gru-'));
-  const tmpFilePath = path.join(tmpDir, 'clin_report');
-  await fs.promises.writeFile(tmpFilePath, ctx.request.body);
-  const args = [tmpFilePath];
-  await handle(ctx, 'clinReport.sh', args); 	
-  await fs.promises.rm(tmpDir, { recursive: true, force: true });
-});
-	
-
-
-
-// oncogene endpoints
-//
-router.post('/bcftoolsView', async (ctx) => {
-
-    const params = JSON.parse(ctx.request.body);
-
-    const regionStr = params.regions == undefined ? "" : genRegionsStr(params.regions, ",");
-    const numRecords = params.numRecords == undefined ? "" : params.numRecords;
-    const args = [
-        params.vcfUrl, regionStr, numRecords
-    ];
-
-    await handle(ctx, 'bcftoolsView.sh', args, { ignoreStderr: true });
-});
-
-router.post('/checkBamBai', async (ctx) => {
-    const params = JSON.parse(ctx.request.body);
-
-    const indexUrl = params.indexUrl ? params.indexUrl : '';
-
-    const args = [ params.url, indexUrl, params.region, dataPath('') ];
-    await handle(ctx, 'checkBamBai.sh', args, { ignoreStderr: true });
-});
-
-
-
-// vcf.iobio endpoints
-router.post('/vcfStatsStream', async (ctx) => {
-
-  const params = JSON.parse(ctx.request.body);
-
-  const regionStr = genRegionsStr(params.regions);
-  const contigStr = genContigFileStr(params.refNames);
-
-  let sampleNamesStr = "";
-  if (params.sampleNames) {
-    sampleNamesStr = params.sampleNames.join('\n');
-  }
-
-  const indexUrl = params.indexUrl ? params.indexUrl : '';
-
-  const args = [
-    params.url, indexUrl, regionStr, contigStr, sampleNamesStr
-  ];
-
-  await handle(ctx, 'vcfStatsStream.sh', args, { ignoreStderr: true });
-}); 
-
-
-async function handle(ctx, scriptName, args, options) {
+  const url = new URL(req.url);
+  const requestId = gruParams?._requestId || '';
 
   const scriptPath = path.join(__dirname, '../scripts', scriptName);
 
-  if (ctx.query.print_script === 'true') {
-    let script = fs.readFileSync(scriptPath).toString();
-
-    args.forEach((arg, i) => {
-      script = replaceAll(script, '$' + (i + 1), `"${arg}"`);
-      script = replaceAll(script, '${' + (i + 1) + '}', `"${arg}"`);
-    });
-
-    ctx.body = script;
-    return;
-  }
-
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gru-'));
-
-  if (ctx.gruParams) {
-    fs.writeFileSync(path.join(tmpDir, `gru_params_${scriptName}.json`), JSON.stringify(ctx.gruParams, null, 2));
-  }
 
   const opts = {cwd: tmpDir, ...options};
   
@@ -777,24 +87,24 @@ async function handle(ctx, scriptName, args, options) {
   // Kill process if it runs for more than 5 minutes
   const MINUTE_MS = 60*1000;
   const timeoutId = setTimeout(() => {
-    console.error("Timed out. Killing process for request", ctx.gruParams._requestId);
+    console.error("Timed out. Killing process for request", requestId);
     proc.kill('SIGKILL');
   }, 5 * MINUTE_MS);
 
-  const out = stream.PassThrough();
+  const { readable, writable } = new TransformStream();
 
-  ctx.body = out;
+  const writer = writable.getWriter();
 
   let closed = false;
 
-  ctx.res.once('close', () => {
+  req.signal.addEventListener('abort', (evt) => {
     closed = true;
     proc.stdout.destroy();
   });
 
-  proc.stdout.on('data', (chunk) => {
+  proc.stdout.on('data', async (chunk) => {
     if (!closed) {
-      out.write(chunk);
+      await writer.write(chunk);
     }
   });
 
@@ -805,7 +115,7 @@ async function handle(ctx, scriptName, args, options) {
     }
   });
 
-  proc.on('exit', (exitCode) => {
+  proc.on('exit', async (exitCode) => {
 
     clearTimeout(timeoutId);
 
@@ -813,22 +123,31 @@ async function handle(ctx, scriptName, args, options) {
 
     if (exitCode !== 0) {
       const timestamp = new Date().toISOString();
-      console.log(`${timestamp}\t${ctx.gruParams._requestId}\terror\t${ctx.url}`);
+      console.log(`${timestamp}\t${requestId}\terror\t${req.url}`);
       console.log("stderr:");
       console.log(stderr);
       console.log("params:");
-      console.log(ctx.gruParams);
+      console.log(gruParams);
 
-      if (ctx.gruParams._appendErrors === true) {
-        out.write("GRU_ERROR_SENTINEL");
-        out.write(JSON.stringify({
-          stderr,
-        }));
+      if (gruParams._appendErrors === true) {
+        if (!closed) {
+          await writer.write("GRU_ERROR_SENTINEL");
+          await writer.write(JSON.stringify({
+            stderr,
+          }));
+        }
       }
     }
 
-    out.end();
+    if (!closed) {
+      writer.close();
+    }
   });
+
+  const res = new Response(readable);
+  res.headers.set('Access-Control-Allow-Origin', '*');
+
+  return res;
 }
 
 function genContigFileStr(refNames) {
@@ -837,10 +156,6 @@ function genContigFileStr(refNames) {
     contigStr += "##contig=<ID=" + ref + ">\n";
   }
   return contigStr;
-}
-
-function genRegionStr(region) {
-  return region.refName + ':' + region.start + '-' + region.end;
 }
 
 function genRegionsStr(regions, delim = " ") {
@@ -880,91 +195,793 @@ if (args['--port']) {
 }
 
 
-let rootRouter = router;
+const config = applyConfigEnvOverrides(JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json')).toString()));
+const mountedRoutes = buildMountedRoutes(config);
 
+
+// TODO: port and test embedded app functionality
+//import Router from 'koa-router';
+//const router = new Router();
+//let rootRouter = router;
+//
 // Allows a frontend app to be hosted in the same process. This is particularly
 // useful if you want to run an entire app frontend and backend in a single
 // docker container.
-if (args['--app-dir']) {
-  rootRouter = new Router();
-  rootRouter.use('/gru', router.routes(), router.allowedMethods());
+//if (args['--app-dir']) {
+//  rootRouter = new Router();
+//  rootRouter.use('/gru', router.routes(), router.allowedMethods());
+//
+//  rootRouter.get('/gru', async (ctx) => {
+//    ctx.body = statusData;
+//  });
+//
+//  rootRouter.get('/*', async (ctx, next) => {
+//
+//    const fsPath = path.join(args['--app-dir'], ctx.path);
+//    await serveStatic(ctx, fsPath);
+//
+//    // Bit of a hack. If previous attempt to serve didn't find the file,
+//    // default to the root index.html.
+//    if (ctx.status === 404) {
+//      const fsPath = path.join(args['--app-dir'], 'index.html');
+//      await serveStatic(ctx, fsPath);
+//    }
+//  });
+//}
+//else {
+//  rootRouter.get('/', async (ctx) => {
+//    ctx.body = statusData;
+//  });
+//}
 
-  rootRouter.get('/gru', async (ctx) => {
-    ctx.body = statusData;
-  });
+function wrapper(handler) {
+  return async (req) => {
 
-  rootRouter.get('/*', async (ctx, next) => {
+    const url = getRequestUrl(req);
 
-    const fsPath = path.join(args['--app-dir'], ctx.path);
-    await serveStatic(ctx, fsPath);
+    const contentType = req.headers.get('content-type')?.split(';')[0];
 
-    // Bit of a hack. If previous attempt to serve didn't find the file,
-    // default to the root index.html.
-    if (ctx.status === 404) {
-      const fsPath = path.join(args['--app-dir'], 'index.html');
-      await serveStatic(ctx, fsPath);
+    let timestamp = new Date().toISOString();
+
+    if (req.method !== 'POST' || contentType != 'text/plain') {
+      console.log(`${timestamp}\t${req.method}\t${url.pathname}`);
+      const res = await handler(req);
+      return res;
     }
-  });
+
+    // Read logging params from a cloned request so the original body stream can
+    // still be consumed by downstream handlers.
+    const bodyReq = req.clone();
+    let bodyParams = {};
+    try {
+      bodyParams = await bodyReq.json();
+    }
+    catch (e) {
+      bodyParams = {};
+    }
+
+    const requestId = bodyParams._requestId || '';
+    const attemptNum = bodyParams._attemptNum || '';
+
+    const start = Date.now();
+    console.log(`${timestamp}\t${requestId}\tstart\t${url.pathname}\t${attemptNum}`);
+
+    const res = await handler(req);
+
+    if (res && res.body) {
+      return withCompletedCallback(res, () => {
+        timestamp = new Date().toISOString();
+        const seconds = (Date.now() - start) / 1000;
+        console.log(`${timestamp}\t${requestId}\tfinish\t${url.pathname}\t${seconds} seconds`);
+      });
+    }
+    else {
+      return res;
+    }
+  };
 }
-else {
-  rootRouter.get('/', async (ctx) => {
-    ctx.body = statusData;
-  });
+
+function addCors(handler) {
+  return async (req, ...args) => {
+    const res = await handler(req, ...args);
+    res.headers.set('Access-Control-Allow-Origin', '*');
+    return res;
+  };
 }
 
-async function logger(ctx, next) {
-  const contentType = ctx.get('content-type').split(';')[0];
+const geneInfoHandler = addCors(createGeneInfoHandler({ prefix: '/geneinfo' }));
+const g2pHandler = addCors(gene2PhenoHandler);
+const phenoHandler = addCors(phenolyzerHandler);
 
-  let timestamp = new Date().toISOString();
-
-  if (ctx.method !== 'POST' || contentType != 'text/plain') {
-    console.log(`${timestamp}\t${ctx.method}\t${ctx.url}`);
-    await next();
-    return;
+function withCompletedCallback(res, callback) {
+  if (!res.body) {
+    callback();
+    return res;
   }
 
-  const params = JSON.parse(ctx.request.body);
+  const { readable, writable } = new TransformStream();
 
-  ctx.gruParams = params;
+  res.body.pipeTo(writable)
+    .catch((e) => {
+      console.error("Error in withCompletedCallback stream:", e);
+    })
+    .finally(() => {
+      callback();
+    });
 
-  const start = Date.now();
-  console.log(`${timestamp}\t${params._requestId}\tstart\t${ctx.url}\t${params._attemptNum}`);
+  return new Response(readable, res);
+}
 
-  await next();
+async function backendHandler(req, url = new URL(req.url)) {
 
-  // Modifed from https://github.com/koajs/logger/blob/f8edfa00cb5af7e696cf276ddc8b482accd9f7a9/index.js#L76
-  const { res } = ctx;
+  if (url.pathname === '/') {
+    return new Response(JSON.stringify(statusData), {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+  else if (url.pathname.startsWith('/static')) {
+    const fsPath = path.join(__dirname, '..', url.pathname);
+    return serveStatic(req, fsPath);
+  }
+  else if (url.pathname.startsWith('/gene2pheno')) {
+    return g2pHandler(req, url);
+  }
+  else if (url.pathname.startsWith('/geneinfo')) {
+    return geneInfoHandler(req, url);
+  }
+  else if (url.pathname.startsWith('/genomebuild')) {
+    return genomeBuildHandler(req, url);
+  }
+  else if (url.pathname.startsWith('/hpo/hot/lookup')) {
+    return hpoHandler(req, url);
+  }
+  else if (url.pathname.startsWith('/gru_data/')) {
+    const fsPath = path.join(dataPath(''), url.pathname.slice(10));
+    return serveStatic(req, fsPath);
+  }
+  else if (url.pathname === '/clinphen') {
+    const notes = url.searchParams.get('notes');
+    return runScript(req, 'clinphen.sh', [notes], { notes });
+  }
+  else if (url.pathname === '/phenotypeExtractor') {
+    const notes = url.searchParams.get('notes');
+    return runScript(req, 'phenotypeExtractor.sh', [notes], { notes });
+  }
+  else if (url.pathname === '/clinReport') {
+    // Copy the data into a temporary file and then pass the path. It was failing
+    // before, I'm pretty sure because the file was too large (~3MB) to pass
+    // through the child spawing interface.
+    const body = await req.text();
+    const gruParams = {};
+    const tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'gru-'));
+    const tmpFilePath = path.join(tmpDir, 'clin_report');
+    await fs.promises.writeFile(tmpFilePath, body);
+    const args = [tmpFilePath];
+    const res = runScript(req, 'clinReport.sh', args, gruParams);
+    return withCompletedCallback(res, () => {
+      fs.promises.rm(tmpDir, { recursive: true, force: true });
+    });
+  }
+  else if (url.pathname.startsWith('/phenolyzer')) {
+    return phenoHandler(req, url);
+  }
+  else {
+    let params;
 
-  const onFinish = done.bind(null, 'finish');
-  const onClose = done.bind(null, 'close');
+    try {
+      params = await req.json();
+    }
+    catch (e) {
+      return new Response("Invalid JSON payload", {
+        status: 400,
+      });
+    }
 
-  res.once('finish', onFinish);
-  res.once('close', onClose);
+    if (url.pathname === '/viewAlignments') {
+      const args = [params.url];
 
-  function done(evt) {
-    res.removeListener('finish', onFinish);
-    res.removeListener('close', onClose);
+      if (params.regions) {
+        const samtoolsRegions = genRegionsStr(params.regions);
+        args.push(samtoolsRegions);
+      }
+      return runScript(req, 'viewAlignments.sh', args, params);
+    }
+    else if (url.pathname === '/alignmentHeader') {
+      return runScript(req, 'alignmentHeader.sh', [params.url], params);
+    }
+    else if (url.pathname === '/baiReadDepth') {
+      return runScript(req, 'baiReadDepth.sh', [params.url], params);
+    }
+    else if (url.pathname === '/craiReadDepth') {
+      return runScript(req, 'craiReadDepth.sh', [params.url], params);
+    }
+    else if (url.pathname === '/alignmentStatsStream') {
+      const samtoolsRegions = genRegionsStr(params.regions);
+      const bamstatsRegions = JSON.stringify(params.regions.map(function(d) { return {start:d.start,end:d.end,chr:d.name};}));
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const args = [
+        params.url,
+        indexUrl,
+        samtoolsRegions,
+        bamstatsRegions,
+        dataPath(''),
+      ];
+      return runScript(req, 'alignmentStatsStream.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/bedRegion') {
+      const url = params.url;
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const region = genRegionStr(params.region);
+      return runScript(req, 'bedRegion.sh', [params.url, indexUrl, region], params);
+    }
+    else if (url.pathname === '/bigWigDepther') {
+      const url = params.url;
+      const region = genRegionStr(params.region);
+      return runScript(req, 'bigWigDepther.sh', ["--url", params.url, "--region", region], params);
+    }
+    else if (url.pathname === '/getReferenceSequence') {
+      const refFastaPath = dataPath(params.fastaPath);
+      const region = genRegionStr(params.region);
+      return runScript(req, 'getReferenceSequence.sh', [refFastaPath, region], params);
+    }
+    else if (url.pathname === '/variantHeader') {
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      return runScript(req, 'variantHeader.sh', [params.url, indexUrl], params);
+    }
+    else if (url.pathname === '/getChromosomes') {
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      return runScript(req, 'getChromosomes.sh', [params.url, indexUrl], params);
+    }
+    else if (url.pathname === '/vcfReadDepth') {
+      return runScript(req, 'vcfReadDepth.sh', [params.url], params);
+    }
+    else if (url.pathname === '/alignmentCoverage') {
+      const url = params.url;
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const samtoolsRegion = params.samtoolsRegion;
+      const maxPoints = params.maxPoints;
+      const coverageRegions = params.coverageRegions;
+      const qualityCutoff = params.qualityCutoff;
+      const samtoolsRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + '-' + samtoolsRegion.end;
+      const spanningRegionArg = samtoolsRegion.refName + ':' + samtoolsRegion.start + ':' + samtoolsRegion.end;
 
-    const message = evt === 'finish' ? 'finish' : 'canceled';
+      const coverageRegionsArg = coverageRegions.length === 0 ? '' :
+      coverageRegions
+        .filter(d => d.name && d.start && d.end)
+        .map(d => d.name + ":" + d.start + ':' + d.end)
+        .join(',');
 
-    timestamp = new Date().toISOString();
-    const seconds = (Date.now() - start) / 1000;
-    console.log(`${timestamp}\t${params._requestId}\t${message}\t${ctx.url}\t${seconds} seconds`);
+      const maxPointsArg = maxPoints;
+
+      const args = [
+        url, indexUrl, samtoolsRegionArg, maxPointsArg, spanningRegionArg,
+        coverageRegionsArg, qualityCutoff, dataPath(''),
+      ];
+      return runScript(req, 'alignmentCoverage.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/geneCoverage') {
+      const url = params.url;
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const refName = params.refName;
+      const geneName = params.geneName;
+      const regionStart = params.regionStart;
+      const regionEnd = params.regionEnd;
+      const regions = params.regions;
+
+      const dataDir = dataPath('');
+
+      // Format params
+      let regionStr = "#" + geneName + "\n";
+      regions.forEach(function(region) {
+        regionStr += refName + ":" + region.start + "-" + region.end + "\n";
+      });
+      const samtoolsRegionArg = refName + ':' + regionStart + '-' + regionEnd;
+      const args = [url, indexUrl, samtoolsRegionArg, regionStr, dataDir];
+      return runScript(req, 'geneCoverage.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/normalizeVariants') {
+      const vcfUrl = params.vcfUrl;
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const refName = params.refName;
+      const regions = params.regions;
+      const contigStr = decodeURIComponent(params.contigStr);
+      const refFastaFile = dataPath(decodeURIComponent(params.refFastaFile));
+
+      // Format params
+      let regionParm = "";
+      regions.forEach(function(region) {
+        if (regionParm.length > 0) {
+          regionParm += " ";
+        }
+        regionParm += region.refName + ":" + region.start + "-" + region.end;
+      });
+      const args = [vcfUrl, tbiUrl, refName, regionParm, contigStr, refFastaFile];
+      return runScript(req, 'normalizeVariants.sh', args, params);
+    }
+    else if (url.pathname === '/getClinvarVariants') {
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+      const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+      const gnomadHeaderFile = dataPath('gnomad_header.txt');
+      const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
+
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile,
+        params.genomeBuildName, gnomadUrl, gnomadRegionStr,
+        gnomadHeaderFile, gnomadRenameChr, params.clinSigFilterPhrase
+      ];
+
+      return runScript(req, 'getClinvarVariants.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/getClinvarVariantsV2') {
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
+
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile,
+        params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
+      ];
+
+      return runScript(req, 'getClinvarVariantsV2.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/getClinvarVariantsV3') {
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
+
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, refFastaFile,
+        params.genomeBuildName, gnomadMergeAnnots, params.clinSigFilterPhrase
+      ];
+
+      return runScript(req, 'getClinvarVariantsV3.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/annotateVariants') {
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+      const refFastaFile = dataPath(params.refFastaFile);
+      const vepCacheDir = dataPath('vep-cache');
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const vepPluginDir = dataPath('vep-cache/Plugins');
+
+      const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+      const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+      const gnomadHeaderFile = dataPath('gnomad_header.txt');
+      const gnomadRenameChr = params.gnomadRenameChr ? params.gnomadRenameChr : '';
+
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
+        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadUrl,
+        gnomadRegionStr, gnomadHeaderFile, params.decompose, gnomadRenameChr
+      ];
+      return runScript(req, 'annotateVariants.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/annotateVariantsV2') {
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+      const refFastaFile = dataPath(params.refFastaFile);
+      const vepCacheDir = dataPath('vep-cache');
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const vepPluginDir = dataPath('vep-cache/Plugins');
+      const gnomadMergeAnnots = params.gnomadMergeAnnots ? params.gnomadMergeAnnots : '';
+
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile, params.vepAF,
+        vepPluginDir, params.hgvsNotation, params.getRsId, gnomadMergeAnnots,
+        params.decompose
+      ];
+      return runScript(req, 'annotateVariantsV2.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/annotateVariantsV3') {
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const vcfSampleNamesStr = params.vcfSampleNames.join("\n");
+      const refFastaFile = dataPath(params.refFastaFile);
+      const vepCacheDir = dataPath('vep-cache');
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const vepPluginDir = dataPath('vep-cache/Plugins');
+
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr, vcfSampleNamesStr,
+        refFastaFile, params.genomeBuildName, vepCacheDir, vepREVELFile,
+        vepPluginDir, params.hgvsNotation, params.getRsId, params.decompose
+      ];
+      return runScript(req, 'annotateVariantsV3.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/annotateEnrichmentCounts') {
+      const tbiUrl = params.tbiUrl ? params.tbiUrl : '';
+      const contigStr = genContigFileStr(params.refNames);
+      const regionStr = genRegionsStr(params.regions);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const filterArgs = params.filterArgs ? params.filterArgs : '';
+      const experStr = params.expIdString ? params.expIdString : '';
+      const controlStr = params.controlIdString ? params.controlIdString : '';
+
+      const args = [
+        params.vcfUrl, tbiUrl, regionStr, contigStr,
+        refFastaFile, params.filterArgs,
+        experStr, controlStr
+      ];
+      return runScript(req, 'annotateEnrichmentCounts.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/annotateSomaticVariantsVep') {
+      const vepCacheDir = dataPath('vep-cache');
+      let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
+      if (params.genomeBuildName === 'GRCh38') {
+        refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
+      }
+      const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, params.genomeBuildName, vepCacheDir, refFastaFile];
+      return runScript(req, 'annotateSomaticVariantsVep.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/annotateSomaticVariantsBcsq') {
+      let refFastaFile = dataPath('references/GRCh37/human_g1k_v37_decoy_phix.fasta');
+      let gffFile = '/iobio-gru-backend/static/ensembl/GRCh37/geneSet37.gff3.gz';
+
+      if (params.genomeBuildName === 'GRCh38') {
+        refFastaFile = dataPath('references/GRCh38/human_g1k_v38_decoy_phix.fasta');
+        gffFile = '/iobio-gru-backend/static/ensembl/GRCh38/geneSet38.gff3.gz';
+      }
+      const args = [params.vcfUrl, params.selectedSamplesStr, params.geneRegionsStr, params.somaticFilterPhrase, refFastaFile, gffFile];
+      return runScript(req, 'annotateSomaticVariantsBcsq.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/freebayesJointCall') {
+      const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
+      const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
+      const region = genRegionStr(params.region);
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const contigStr = genContigFileStr(params.refNames);
+      const samplesFileStr = params.sampleNames.join('\n');
+
+      const vepCacheDir = dataPath('vep-cache');
+      const vepPluginDir = dataPath('vep-cache/Plugins');
+
+      const gnomadUrl = params.gnomadUrl ? params.gnomadUrl : '';
+      const gnomadRegionStr = params.gnomadRegionStr ? params.gnomadRegionStr : '';
+      const gnomadHeaderFile = dataPath('gnomad_header.txt');
+      const decompose = params.decompose ? params.decompose : '';
+
+      const fbArgs = params.fbArgs;
+      const freebayesArgs = [];
+      if (fbArgs) {
+        for (var key in fbArgs) {
+          var theArg = fbArgs[key];
+          if (theArg.hasOwnProperty('argName')) {
+            if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
+              if (theArg.value && theArg.value == true) {
+                  freebayesArgs.push(theArg.argName);
+              }
+            } else {
+              if (theArg.value && theArg.value != '') {
+                freebayesArgs.push(theArg.argName);
+                freebayesArgs.push(theArg.value);
+              }
+            }
+          }
+        }
+      }
+      const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
+      const extraArgs = freebayesArgs;
+      const args = [
+        alignments, indices, region, refFastaFile, useSuggestedVariants,
+        params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
+        samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+        gnomadUrl, gnomadRegionStr, gnomadHeaderFile, decompose, dataPath(''),
+      ];
+      return runScript(req, 'freebayesJointCall.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/freebayesJointCallV2') {
+      const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
+      const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
+      const region = genRegionStr(params.region);
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const contigStr = genContigFileStr(params.refNames);
+      const samplesFileStr = params.sampleNames.join('\n');
+
+      const vepCacheDir = dataPath('vep-cache');
+      const vepPluginDir = dataPath('vep-cache/Plugins');
+
+      const decompose = params.decompose ? params.decompose : '';
+
+      const fbArgs = params.fbArgs;
+      const freebayesArgs = [];
+      if (fbArgs) {
+        for (var key in fbArgs) {
+          var theArg = fbArgs[key];
+          if (theArg.hasOwnProperty('argName')) {
+            if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
+              if (theArg.value && theArg.value == true) {
+                freebayesArgs.push(theArg.argName);
+              }
+            } else {
+              if (theArg.value && theArg.value != '') {
+                freebayesArgs.push(theArg.argName);
+                freebayesArgs.push(theArg.value);
+              }
+            }
+          }
+        }
+      }
+
+      const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
+      const extraArgs = freebayesArgs;
+      const dataDir = dataPath('');
+
+      const args = [
+        alignments, indices, region, refFastaFile, useSuggestedVariants,
+        params.clinvarUrl, params.genomeBuildName, vepREVELFile, params.vepAF,
+        samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+        decompose, contigStr, dataDir
+      ];
+      return runScript(req, 'freebayesJointCallV2.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/freebayesJointCallV3') {
+      const alignments = params.alignmentSources.map(aln => aln.bamUrl).join(',');
+      const indices = params.alignmentSources.map(aln => aln.baiUrl).join(',');
+      const region = genRegionStr(params.region);
+      const vepREVELFile = dataPath(params.vepREVELFile);
+      const refFastaFile = dataPath(params.refFastaFile);
+      const contigStr = genContigFileStr(params.refNames);
+      const samplesFileStr = params.sampleNames.join('\n');
+
+      const vepCacheDir = dataPath('vep-cache');
+      const vepPluginDir = dataPath('vep-cache/Plugins');
+
+      const decompose = params.decompose ? params.decompose : '';
+
+      const fbArgs = params.fbArgs;
+      const freebayesArgs = [];
+      if (fbArgs) {
+        for (var key in fbArgs) {
+          var theArg = fbArgs[key];
+          if (theArg.hasOwnProperty('argName')) {
+            if (theArg.hasOwnProperty('isFlag') && theArg.isFlag == true) {
+              if (theArg.value && theArg.value == true) {
+                freebayesArgs.push(theArg.argName);
+              }
+            } else {
+              if (theArg.value && theArg.value != '') {
+                freebayesArgs.push(theArg.argName);
+                freebayesArgs.push(theArg.value);
+              }
+            }
+          }
+        }
+      }
+
+      const useSuggestedVariants = params.fbArgs.useSuggestedVariants.value ? 'true' : '';
+      const extraArgs = freebayesArgs;
+      const dataDir = dataPath('');
+
+      const args = [
+        alignments, indices, region, refFastaFile, useSuggestedVariants,
+        params.clinvarUrl, params.genomeBuildName, vepREVELFile,
+        samplesFileStr, extraArgs, vepCacheDir, vepPluginDir,
+        decompose, contigStr, dataDir
+      ];
+      return runScript(req, 'freebayesJointCallV3.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/clinvarCountsForGene') {
+      const region = genRegionStr(params.region);
+      const regions = params.regions;
+
+      let regionParts = "";
+      if (regions) {
+        regions.forEach(function(region) {
+          if (regionParts.length > 0) {
+            regionParts += ",";
+          }
+          regionParts += region.start + "-" + region.end;
+        })
+      }
+
+      const binLength = params.binLength ? params.binLength : '';
+      const annotationMode = params.annotationMode ? params.annotationMode : '';
+      const requiresVepService = params.requiresVepService ? params.requiresVepService : false;
+      const vepArgs = params.vepArgs ? params.vepArgs : '';
+
+      const args = [
+        params.clinvarUrl, region, binLength, regionParts, annotationMode, requiresVepService, vepArgs
+      ];
+
+      return runScript(req, 'clinvarCountsForGene.sh', args, params);
+    }
+    else if (url.pathname === '/bcftoolsView') {
+      const regionStr = params.regions == undefined ? "" : genRegionsStr(params.regions, ",");
+      const numRecords = params.numRecords == undefined ? "" : params.numRecords;
+      const args = [
+        params.vcfUrl, regionStr, numRecords
+      ];
+      return runScript(req, 'bcftoolsView.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/checkBamBai') {
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+      const args = [ params.url, indexUrl, params.region, dataPath('') ];
+      return runScript(req, 'checkBamBai.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/vcfStatsStream') {
+      const regionStr = genRegionsStr(params.regions);
+      const contigStr = genContigFileStr(params.refNames);
+
+      let sampleNamesStr = "";
+      if (params.sampleNames) {
+        sampleNamesStr = params.sampleNames.join('\n');
+      }
+
+      const indexUrl = params.indexUrl ? params.indexUrl : '';
+
+      const args = [
+        params.url, indexUrl, regionStr, contigStr, sampleNamesStr
+      ];
+      return runScript(req, 'vcfStatsStream.sh', args, params, { ignoreStderr: true });
+    }
+    else if (url.pathname === '/preciseReadDepth') {
+      return preciseReadDepthHandler(req, params);
+    }
+  }
+
+  return new Response("Invalid request", {
+    status: 400,
+  });
+}
+
+async function handler(req) {
+  const url = getRequestUrl(req);
+
+  for (const route of mountedRoutes) {
+    const routeUrl = getMountedUrl(url, route);
+    if (!routeUrl) {
+      continue;
+    }
+
+    if (route.type === 'backend') {
+      return backendHandler(req, routeUrl);
+    }
+    else if (route.type === 'app') {
+      return serveApp(req, route.appName, routeUrl);
+    }
+  }
+
+  return new Response("Not found", {
+    status: 404,
+  });
+}
+
+function getRequestUrl(req) {
+  const url = new URL(req.url);
+
+  const forwardedProto = req.headers.get('x-forwarded-proto');
+  if (forwardedProto) {
+    url.protocol = forwardedProto + ':';
+  }
+
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  if (host) {
+    url.host = host;
+  }
+
+  return url;
+}
+
+function buildMountedRoutes(config) {
+  const routes = [];
+
+  for (const appName of appNames) {
+    const appDir = path.join(appsDir, appName);
+    if (!fs.existsSync(appDir)) {
+      continue;
+    }
+
+    const appConfig = config[appName] || {};
+    routes.push({
+      type: 'app',
+      appName,
+      origin: appConfig.origin,
+      path: appConfig.path_prefix || '/',
+    });
+  }
+
+  routes.push({
+    type: 'backend',
+    origin: config.backend?.origin,
+    path: config.backend?.path_prefix || '/',
+  });
+
+  return routes.sort(compareRoutes);
+}
+
+function compareRoutes(a, b) {
+  // More specific paths need to match before catch-all paths like '/'.
+  if (a.path.length > b.path.length) {
+    return -1;
+  }
+  else if (b.path.length > a.path.length) {
+    return 1;
+  }
+
+  // For the same path, origin-specific routes need to match before generic
+  // routes with no origin.
+  if (a.origin && !b.origin) {
+    return -1;
+  }
+  else if (b.origin && !a.origin) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function getMountedUrl(url, route) {
+  if (route.origin && url.origin !== route.origin) {
+    return null;
+  }
+
+  if (route.path !== '/' && url.pathname !== route.path && !url.pathname.startsWith(route.path + '/')) {
+    return null;
+  }
+
+  const routeUrl = new URL(url);
+  if (route.path !== '/') {
+    routeUrl.pathname = url.pathname.slice(route.path.length) || '/';
+  }
+  return routeUrl;
+}
+
+async function serveApp(req, appName, appUrl) {
+  if (appUrl.pathname === '/config.json') {
+    const clientConfigJson = JSON.stringify(config, null, 2) + '\n';
+    return new Response(clientConfigJson, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+      },
+    });
+  }
+
+  const appDir = path.join(appsDir, appName);
+  let fsPath = path.join(appDir, appUrl.pathname);
+
+  if (appUrl.pathname.endsWith('/')) {
+    fsPath = path.join(fsPath, 'index.html');
+  }
+
+  if (!await fileExists(fsPath)) {
+    fsPath = path.join(appDir, 'index.html');
+  }
+
+  return serveStatic(req, fsPath);
+}
+
+async function fileExists(path) {
+  try {
+    await fs.promises.access(path);
+    return true;
+  } catch {
+    return false;
   }
 }
 
-const server = new Koa();
-server
-  .use(cors({
-    origin: '*',
-    maxAge: 86400,
-  }))
-  .use(bodyParser({
-    enableTypes: ['json', 'text'],
-    jsonLimit: '10mb',
-    textLimit: '10mb',
-  }))
-  .use(logger)
-  .use(rootRouter.routes())
-  .use(rootRouter.allowedMethods())
-  .listen(port);
+serve({
+  handler: wrapper(handler),
+  keyPath: args['--key-path'],
+  certPath: args['--cert-path'],
+  port,
+});

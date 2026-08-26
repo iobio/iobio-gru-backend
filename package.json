@@ -1,23 +1,18 @@
 {
   "name": "iobio-backend",
   "version": "0.3.0",
+  "type": "module",
   "description": "",
   "main": "./src/index.js",
   "scripts": {
     "dev": "nodemon ./server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/*.test.js"
   },
   "author": "",
   "license": "ISC",
-  "devDependencies": {},
   "dependencies": {
-    "@koa/cors": "^3.0.0",
-    "async": "^3.2.0",
-    "koa": "^2.11.0",
-    "koa-bodyparser": "^4.3.0",
-    "koa-router": "^8.0.0",
-    "mime": "^3.0.0",
-    "semver": "^7.3.8",
-    "sqlite3": "^5.0.9"
+    "@anderspitman/fetch-handler": "^0.7.0",
+    "mime": "^4.1.0",
+    "sqlite3": "^5.1.7"
   }
 }

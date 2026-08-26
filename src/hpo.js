@@ -1,17 +1,15 @@
-const Router = require('koa-router');
-var async = require('async');
+import sqlite3 from 'sqlite3';
+import { dataPath } from './utils.js';
+
 
 let _db;
 function getDb() {
   if (!_db) {
-    const sqlite3 = require('sqlite3').verbose();
-    const { dataPath } = require('./utils.js');
+    const sqlite3Verbose = sqlite3.verbose();
     _db = new sqlite3.Database(dataPath('hpo/hpo.db'));
   }
   return _db;
 }
-
-const router = new Router();
 
 // TODO: commenting this out for now, since it's the same endpoint as the one
 // below, so I'm pretty sure it's not doing anything. Need to verify which one
@@ -40,10 +38,11 @@ const router = new Router();
 //  });
 //});
 
-router.get('/hot/lookup', async (ctx) => {
-
+function hpoHandler(req, url = new URL(req.url)) {
   return new Promise((resolve, reject) => {
-    var searchterm = ctx.query.term;
+    const params = new URLSearchParams(url.search);
+
+    var searchterm = params.get('term');
 
     var sqlString = "SELECT distinct disease_term from hot_disease_term where disease_term like \""+searchterm+"%\"";
 
@@ -58,17 +57,23 @@ router.get('/hot/lookup', async (ctx) => {
           hot_list.push({id: hot_data.disease_term, label: hot_data.disease_term, value: hot_data.disease_term});
         }
       }
-      ctx.set('Content-Type', 'application/json');
-      ctx.set('Charset', 'utf-8')
-      ctx.set("Access-Control-Allow-Origin","*")
-      ctx.set("Access-Control-Allow-Methods", "GET");
-      ctx.set("Access-Control-Allow-Headers", "Content-Type");
-      ctx.body = JSON.stringify(hot_list);
 
-      resolve();
+      const body = JSON.stringify(hot_list);
+      const res = new Response(body, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Charset': 'utf-8',
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      });
+
+      resolve(res);
     });
   });
-});
+}
 
-
-module.exports = router;
+export {
+  hpoHandler,
+};
