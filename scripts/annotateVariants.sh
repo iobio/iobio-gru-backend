@@ -68,8 +68,22 @@ if [ "$gnomadUrl" ]; then
 
         tabix gnomad.vcf.gz
         
+
+        tabix gnomad.vcf.gz -R gnomad_regions.txt | cut -f 1-2 > variant_regions.txt
+
+        # For big genes like DMD, specifying the exact positions speeds up bcftools 
+        # annotate from 2 minutes to a few seconds.
+        # We only want to use exact positions of variants when there are under a few 
+        # hundred variants; otherwise, bcftools slows down terribly. 
+        if (($(wc -l <"variant_regions.txt") >= 20)); then
+            regions_file=gnomad_regions.txt
+        else
+            regions_file=variant_regions.txt
+        fi
+
         # Add the gnomAD INFO fields to the input vcf
-        bcftools annotate -a $gnomadUrl -h $gnomadHeaderFile -c $annotsToAdd -R gnomad_regions.txt gnomad.vcf.gz
+        bcftools annotate -a $gnomadUrl -h $gnomadHeaderFile -c $annotsToAdd -R $regions_file gnomad.vcf.gz
+
     }
 
     gnomadAnnotStage=gnomadAnnotFunc
